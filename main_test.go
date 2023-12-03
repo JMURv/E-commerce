@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"e-commerce/pkg/controllers"
 	"e-commerce/pkg/models"
 	"encoding/json"
 	"github.com/gorilla/mux"
@@ -52,6 +53,6 @@ func TestCreateItem(t *testing.T) {
 
 func createTestRouter() *mux.Router {
 	r := mux.NewRouter()
-	r.HandleFunc("/items", ListCreateItems).Methods("POST")
+	r.HandleFunc("/items", controllers.ListCreateItems).Methods("POST")
 	return r
 }
