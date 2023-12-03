@@ -1,0 +1,46 @@
+version: '3.3'
+services:
+  postgres:
+    container_name: postgres
+    image: postgres:15.0-alpine
+    restart: always
+    ports:
+      - "5432:5432"
+    env_file:
+      - ./.env
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
+#  pgadmin:
+#    container_name: pgadmin
+#    image: dpage/pgadmin4
+#    env_file:
+#      - ./.env
+#    ports:
+#      - "15432:80"
+#    volumes:
+#      - pgadmin:/var/lib/pgadmin
+#    depends_on:
+#      - postgres
+
+  backend:
+    container_name: backend
+    image: "ecom_backend:latest"
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - ./.env
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    expose:
+      - "8000"
+    depends_on:
+      - postgres
+    command: sh -c "go run main.go"
+
+volumes:
+  pg_data:
+#  pgadmin:
