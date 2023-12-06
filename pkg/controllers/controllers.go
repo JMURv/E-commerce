@@ -4,6 +4,7 @@ import (
 	"e-commerce/pkg/models"
 	"e-commerce/pkg/utils"
 	"encoding/json"
+	"fmt"
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
@@ -11,27 +12,51 @@ import (
 )
 
 func ListCreateCategory(w http.ResponseWriter, r *http.Request) {
-	if r.Method == http.MethodGet {
-		return
-		//var categories []models.Category
-		//result := db.Find(&categories)
+	switch r.Method {
+	case http.MethodGet:
+		categoriesList := models.GetAllCategories()
+		responseData, _ := json.Marshal(categoriesList)
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write(responseData)
+	case http.MethodPost:
+		NewCategory := &models.Category{}
+		utils.ParseBody(r, NewCategory)
+
+		category, err := NewCategory.CreateCategory()
+		if err != nil {
+			log.Printf("[ERROR] Creating category error: %v\n", err)
+			http.Error(w, fmt.Sprintf("Creating category error: %v", err), http.StatusBadRequest)
+			return
+		}
+		responseData, _ := json.Marshal(category)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		w.Write(responseData)
 	}
 }
 
 func ListCreateItems(w http.ResponseWriter, r *http.Request) {
-	if r.Method == "GET" {
-		newItems := models.GetAllItems()
-		res, _ := json.Marshal(newItems)
+	switch r.Method {
+	case http.MethodGet:
+		itemsList := models.GetAllItems()
+		res, _ := json.Marshal(itemsList)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		w.Write(res)
-		return
-	} else if r.Method == "POST" {
-		CreateItem := &models.Item{}
-		utils.ParseBody(r, CreateItem)
-		item := CreateItem.CreateItem()
-		res, _ := json.Marshal(item)
+	case http.MethodPost:
+		NewItem := &models.Item{}
+		utils.ParseBody(r, NewItem)
 
+		item, err := NewItem.CreateItem()
+		if err != nil {
+			log.Printf("[ERROR] Creating item error: %v\n", err)
+			http.Error(w, fmt.Sprintf("Creating item error: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		res, _ := json.Marshal(item)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
 		w.Write(res)
@@ -39,34 +64,27 @@ func ListCreateItems(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetUpdateDeleteItem(w http.ResponseWriter, r *http.Request) {
-	if r.Method == http.MethodGet {
-		vars := mux.Vars(r)
-		itemID := vars["id"]
+	vars := mux.Vars(r)
+	id, err := strconv.ParseInt(vars["id"], 0, 0)
+	if err != nil {
+		log.Println("Parse error", err.Error())
+	}
 
-		id, err := strconv.ParseInt(itemID, 0, 0)
-		if err != nil {
-			log.Println("Parse error", err.Error())
-		}
-
+	switch r.Method {
+	case http.MethodGet:
 		itemDetails, _ := models.GetItemByID(id)
 		res, _ := json.Marshal(itemDetails)
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		w.Write(res)
-	} else if r.Method == http.MethodPut {
+
+	case http.MethodPut:
 		var updateItem = &models.Item{}
 		utils.ParseBody(r, updateItem)
 
-		vars := mux.Vars(r)
-		itemID := vars["id"]
-
-		id, err := strconv.ParseInt(itemID, 0, 0)
-		if err != nil {
-			log.Println("Parse error", err.Error())
-		}
-
 		itemDetails, db := models.GetItemByID(id)
+
 		if updateItem.Name != "" {
 			itemDetails.Name = updateItem.Name
 		}
@@ -88,15 +106,7 @@ func GetUpdateDeleteItem(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write(res)
 
-	} else if r.Method == http.MethodDelete {
-		vars := mux.Vars(r)
-		itemID := vars["id"]
-
-		id, err := strconv.ParseInt(itemID, 0, 0)
-		if err != nil {
-			log.Println("Parse error", err.Error())
-		}
-
+	case http.MethodDelete:
 		item := models.DeleteItem(id)
 		res, _ := json.Marshal(item)
 

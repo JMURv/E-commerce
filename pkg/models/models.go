@@ -2,6 +2,7 @@ package models
 
 import (
 	"e-commerce/pkg/config"
+	"errors"
 	"gorm.io/gorm"
 	"log"
 )
@@ -10,25 +11,20 @@ var db *gorm.DB
 
 type Item struct {
 	gorm.Model
-	ID          uint     `json:"id" gorm:"type:serial;primaryKey"`
-	Name        string   `json:"name"`
-	Description string   `json:"description"`
-	Price       float64  `json:"price"`
-	CategoryID  *uint    `json:"categoryID"`
-	Category    Category `json:"category" gorm:"foreignKey:CategoryID"`
-	Tags        []Tag    `gorm:"many2many:item_tags;"`
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	Price       float64   `json:"price"`
+	CategoryID  *uint     `json:"categoryID"`
+	Category    *Category `json:"category" gorm:"foreignKey:CategoryID"`
+	Tags        []Tag     `json:"tags" gorm:"many2many:item_tags;"`
 }
 
 type Category struct {
 	gorm.Model
-	Name          string      `json:"name"`
-	SubcategoryID uint        `json:"subcategoryID"`
-	Subcategory   Subcategory `json:"subcategory"`
-}
-
-type Subcategory struct {
-	gorm.Model
-	Name string `json:"name"`
+	Name             string    `json:"name"`
+	Description      string    `json:"description"`
+	ParentCategoryID *uint     `json:"parentCategoryID"`
+	ParentCategory   *Category `json:"parentCategory" gorm:"foreignKey:ParentCategoryID"`
 }
 
 type Tag struct {
@@ -47,21 +43,72 @@ func init() {
 	config.Connect()
 	db = config.GetDB()
 
-	err = db.AutoMigrate(&Item{}, &Category{}, &Tag{})
+	err = db.AutoMigrate(&Item{}, &Category{}, &Tag{}, &User{})
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
-func (i *Item) CreateItem() *Item {
-	db.Create(&i)
-	return i
+func (i *Item) CreateItem() (*Item, error) {
+
+	if i.Name == "" {
+		return i, errors.New("name is required")
+	}
+	if i.Description == "" {
+		return i, errors.New("description is required")
+	}
+	if i.Price == 0 {
+		return i, errors.New("price is required")
+	}
+
+	for idx := range i.Tags {
+		existingTag := &Tag{}
+		if err := db.Where("name = ?", i.Tags[idx].Name).First(existingTag).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				if err := db.Create(&i.Tags[idx]).Error; err != nil {
+					return nil, err
+				}
+				if err := db.Where("name = ?", i.Tags[idx].Name).First(existingTag).Error; err != nil {
+					return nil, err
+				}
+			} else {
+				return nil, err
+			}
+		}
+		i.Tags[idx] = *existingTag
+	}
+
+	result := db.Create(&i)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return i, nil
+}
+
+func (c *Category) CreateCategory() (*Category, error) {
+	if c.Name == "" {
+		return c, errors.New("name is required")
+	}
+	if c.Description == "" {
+		return c, errors.New("description is required")
+	}
+	result := db.Create(&c)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return c, nil
 }
 
 func GetAllItems() []Item {
 	var Items []Item
-	db.Find(&Items)
+	db.Preload("Tags").Find(&Items)
 	return Items
+}
+
+func GetAllCategories() []Category {
+	var Categories []Category
+	db.Preload("ParentCategory").Find(&Categories)
+	return Categories
 }
 
 func GetItemByID(id int64) (*Item, *gorm.DB) {
