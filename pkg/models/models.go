@@ -85,6 +85,26 @@ func (i *Item) CreateItem() (*Item, error) {
 	return i, nil
 }
 
+func (i *Item) UpdateItem(newData *Item) (*Item, error) {
+	if newData.Name != "" {
+		i.Name = newData.Name
+	}
+
+	if newData.Description != "" {
+		i.Description = newData.Description
+	}
+
+	if newData.Price != 0 {
+		i.Price = newData.Price
+	}
+
+	if newData.CategoryID != i.CategoryID {
+		i.CategoryID = newData.CategoryID
+	}
+	db.Save(&i)
+	return i, nil
+}
+
 func (c *Category) CreateCategory() (*Category, error) {
 	if c.Name == "" {
 		return c, errors.New("name is required")
@@ -111,13 +131,13 @@ func GetAllCategories() []Category {
 	return Categories
 }
 
-func GetItemByID(id int64) (*Item, *gorm.DB) {
+func GetItemByID(id string) *Item {
 	var getItem Item
-	db := db.Where("ID=?", id).Find(&getItem)
-	return &getItem, db
+	db.Preload("Tags").Where("ID=?", id).Find(&getItem)
+	return &getItem
 }
 
-func DeleteItem(id int64) Item {
+func DeleteItem(id string) Item {
 	var item Item
 	db.Delete(&item, id)
 	return item

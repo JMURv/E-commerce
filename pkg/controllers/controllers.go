@@ -8,14 +8,18 @@ import (
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
-	"strconv"
 )
 
 func ListCreateCategory(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
 		categoriesList := models.GetAllCategories()
-		responseData, _ := json.Marshal(categoriesList)
+		responseData, err := json.Marshal(categoriesList)
+		if err != nil {
+			log.Printf("[ERROR] Encoding error: %v\n", err)
+			http.Error(w, "Encoding error", http.StatusBadRequest)
+			return
+		}
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
@@ -30,7 +34,14 @@ func ListCreateCategory(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, fmt.Sprintf("Creating category error: %v", err), http.StatusBadRequest)
 			return
 		}
-		responseData, _ := json.Marshal(category)
+
+		responseData, err := json.Marshal(category)
+		if err != nil {
+			log.Printf("[ERROR] Encoding error: %v\n", err)
+			http.Error(w, "Invalid request body", http.StatusBadRequest)
+			return
+		}
+
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
 		w.Write(responseData)
@@ -41,10 +52,16 @@ func ListCreateItems(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
 		itemsList := models.GetAllItems()
-		res, _ := json.Marshal(itemsList)
+		responseData, err := json.Marshal(itemsList)
+		if err != nil {
+			log.Printf("[ERROR] Encoding error: %v\n", err)
+			http.Error(w, "Invalid request body", http.StatusBadRequest)
+			return
+		}
+
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write(res)
+		w.Write(responseData)
 	case http.MethodPost:
 		NewItem := &models.Item{}
 		utils.ParseBody(r, NewItem)
@@ -56,61 +73,68 @@ func ListCreateItems(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		res, _ := json.Marshal(item)
+		responseData, err := json.Marshal(item)
+		if err != nil {
+			log.Printf("[ERROR] Encoding error: %v\n", err)
+			http.Error(w, "Invalid request body", http.StatusBadRequest)
+			return
+		}
+
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
-		w.Write(res)
+		w.Write(responseData)
 	}
 }
 
 func GetUpdateDeleteItem(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id, err := strconv.ParseInt(vars["id"], 0, 0)
-	if err != nil {
-		log.Println("Parse error", err.Error())
-	}
+	itemId := mux.Vars(r)["id"]
 
 	switch r.Method {
 	case http.MethodGet:
-		itemDetails, _ := models.GetItemByID(id)
-		res, _ := json.Marshal(itemDetails)
+		itemDetails := models.GetItemByID(itemId)
+		responseData, err := json.Marshal(itemDetails)
+		if err != nil {
+			log.Printf("[ERROR] Encoding error: %v\n", err)
+			http.Error(w, "Invalid request body", http.StatusBadRequest)
+			return
+		}
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write(res)
+		w.Write(responseData)
 
 	case http.MethodPut:
 		var updateItem = &models.Item{}
 		utils.ParseBody(r, updateItem)
 
-		itemDetails, db := models.GetItemByID(id)
-
-		if updateItem.Name != "" {
-			itemDetails.Name = updateItem.Name
+		itemToUpdate := models.GetItemByID(itemId)
+		updatedItem, err := itemToUpdate.UpdateItem(updateItem)
+		if err != nil {
+			log.Printf("[ERROR] Updating item error: %v\n", err)
+			http.Error(w, fmt.Sprintf("Updating item error: %v", err), http.StatusBadRequest)
+			return
 		}
 
-		if updateItem.Description != "" {
-			itemDetails.Description = updateItem.Description
+		responseData, err := json.Marshal(updatedItem)
+		if err != nil {
+			log.Printf("[ERROR] Encoding error: %v\n", err)
+			http.Error(w, "Encoding error", http.StatusInternalServerError)
+			return
 		}
 
-		if updateItem.Price != 0 {
-			itemDetails.Price = updateItem.Price
-		}
-
-		if updateItem.CategoryID != itemDetails.CategoryID {
-			itemDetails.CategoryID = updateItem.CategoryID
-		}
-
-		db.Save(&itemDetails)
-		res, _ := json.Marshal(itemDetails)
 		w.WriteHeader(http.StatusOK)
-		w.Write(res)
+		w.Write(responseData)
 
 	case http.MethodDelete:
-		item := models.DeleteItem(id)
-		res, _ := json.Marshal(item)
+		item := models.DeleteItem(itemId)
+		responseData, err := json.Marshal(item)
+		if err != nil {
+			log.Printf("[ERROR] Encoding error: %v\n", err)
+			http.Error(w, "Encoding error", http.StatusInternalServerError)
+			return
+		}
 
 		w.WriteHeader(http.StatusNoContent)
-		w.Write(res)
+		w.Write(responseData)
 	}
 }
