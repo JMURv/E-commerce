@@ -16,6 +16,7 @@ type Item struct {
 	Price       float64   `json:"price"`
 	CategoryID  *uint     `json:"categoryID"`
 	Category    *Category `json:"category" gorm:"foreignKey:CategoryID"`
+	Sellers     []Seller  `json:"sellers" gorm:"many2many:seller_items;"`
 	Tags        []Tag     `json:"tags" gorm:"many2many:item_tags;"`
 }
 
@@ -27,15 +28,69 @@ type Category struct {
 	ParentCategory   *Category `json:"parentCategory" gorm:"foreignKey:ParentCategoryID"`
 }
 
-type Tag struct {
-	gorm.Model
-	Name string `json:"name"`
-}
-
 type User struct {
 	gorm.Model
 	Username string `json:"username"`
 	Email    string `json:"email"`
+}
+
+type Favorite struct {
+	gorm.Model
+	Author         User `json:"author" gorm:"foreignKey:AuthorID"`
+	AuthorID       uint `json:"authorID"`
+	FavoriteItem   Item `json:"favoriteItem" gorm:"foreignKey:FavoriteItemID"`
+	FavoriteItemID uint `json:"favoriteItemID"`
+}
+
+type Seller struct {
+	gorm.Model
+	Username  string `json:"username"`
+	Email     string `json:"email"`
+	SoldItems []Item `json:"soldItems" gorm:"many2many:seller_items;"`
+}
+
+type Cart struct {
+	gorm.Model
+	UserID uint       `json:"userID"`
+	Items  []CartItem `json:"items" gorm:"many2many:cart_items;"`
+}
+
+type CartItem struct {
+	CartID   uint `gorm:"primaryKey"`
+	ItemID   uint `gorm:"primaryKey"`
+	Quantity int  `json:"quantity"`
+}
+
+type Order struct {
+	gorm.Model
+	UserID   uint        `json:"userID"`
+	Items    []OrderItem `json:"items" gorm:"many2many:order_items;"`
+	Status   string      `json:"status"`
+	Payment  string      `json:"payment"`
+	Shipping string      `json:"shipping"`
+}
+
+type OrderItem struct {
+	OrderID  uint `gorm:"primaryKey"`
+	ItemID   uint `gorm:"primaryKey"`
+	Quantity int  `json:"quantity"`
+}
+
+type Review struct {
+	gorm.Model
+	Author         User   `json:"author" gorm:"foreignKey:AuthorID"`
+	AuthorID       uint   `json:"authorID"`
+	ReviewedItem   Item   `json:"reviewedItem" gorm:"foreignKey:ReviewedItemID"`
+	ReviewedItemID uint   `json:"reviewedItemID"`
+	Advantages     string `json:"advantages"`
+	Disadvantages  string `json:"disadvantages"`
+	ReviewText     string `json:"reviewText"`
+	Rating         int    `json:"rating"`
+}
+
+type Tag struct {
+	gorm.Model
+	Name string `json:"name"`
 }
 
 func init() {
@@ -43,7 +98,7 @@ func init() {
 	config.Connect()
 	db = config.GetDB()
 
-	err = db.AutoMigrate(&Item{}, &Category{}, &Tag{}, &User{})
+	err = db.AutoMigrate(&Item{}, &Category{}, &Tag{}, &User{}, &Seller{}, &Cart{}, &CartItem{}, &Order{}, &OrderItem{}, &Favorite{})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -105,6 +160,19 @@ func (i *Item) UpdateItem(newData *Item) (*Item, error) {
 	return i, nil
 }
 
+func UpdateUser(userId string, newData *User) (*User, error) {
+	user := GetUserByID(userId)
+	if newData.Username != "" {
+		user.Username = newData.Username
+	}
+
+	if newData.Email != "" {
+		user.Email = newData.Email
+	}
+	db.Save(&user)
+	return user, nil
+}
+
 func (c *Category) CreateCategory() (*Category, error) {
 	if c.Name == "" {
 		return c, errors.New("name is required")
@@ -119,6 +187,20 @@ func (c *Category) CreateCategory() (*Category, error) {
 	return c, nil
 }
 
+func (u *User) CreateUser() (*User, error) {
+	if u.Username == "" {
+		return u, errors.New("username is required")
+	}
+	if u.Email == "" {
+		return u, errors.New("email is required")
+	}
+	result := db.Create(&u)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return u, nil
+}
+
 func GetAllItems() []Item {
 	var Items []Item
 	db.Preload("Tags").Find(&Items)
@@ -131,14 +213,32 @@ func GetAllCategories() []Category {
 	return Categories
 }
 
+func GetAllUsers() []User {
+	var Users []User
+	db.Find(&Users)
+	return Users
+}
+
 func GetItemByID(id string) *Item {
 	var getItem Item
-	db.Preload("Tags").Where("ID=?", id).Find(&getItem)
+	db.Preload("Tags").Where("ID=?", id).First(&getItem)
 	return &getItem
+}
+
+func GetUserByID(id string) *User {
+	var user User
+	db.Where("ID=?", id).First(&user)
+	return &user
 }
 
 func DeleteItem(id string) Item {
 	var item Item
 	db.Delete(&item, id)
 	return item
+}
+
+func DeleteUser(id string) User {
+	var user User
+	db.Delete(&user, id)
+	return user
 }
