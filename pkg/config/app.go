@@ -9,6 +9,7 @@ import (
 )
 
 var db *gorm.DB
+var JWTsecretKey string
 
 func Connect() {
 	var err error
@@ -19,6 +20,7 @@ func Connect() {
 	}
 	log.Println(".env file has been loaded")
 
+	jwt := os.Getenv("JWTSECRET")
 	dsn := os.Getenv("DSN")
 	database, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
@@ -28,6 +30,7 @@ func Connect() {
 	log.Println("Connected to the database")
 
 	db = database
+	JWTsecretKey = jwt
 }
 
 func GetDB() *gorm.DB {

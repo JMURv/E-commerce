@@ -26,7 +26,7 @@ func ListCreateSeller(w http.ResponseWriter, r *http.Request) {
 		w.Write(responseData)
 
 	case http.MethodPost:
-		var newSellerData = &models.User{}
+		var newSellerData = &models.Seller{}
 		utils.ParseBody(r, newSellerData)
 
 		seller, err := newSellerData.CreateSeller()

@@ -16,7 +16,6 @@ func TestCreateItem(t *testing.T) {
 		Name:        "TestProduct",
 		Description: "A test product",
 		Price:       29.99,
-		CategoryID:  1,
 		Tags:        []models.Tag{{Name: "Tag1"}, {Name: "Tag2"}},
 	}
 
