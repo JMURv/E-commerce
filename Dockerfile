@@ -2,10 +2,7 @@ FROM golang:latest
 
 WORKDIR /app
 
-COPY . .
+COPY go.mod go.sum ./
+RUN go mod download
 
-RUN go get -u github.com/gorilla/mux
-RUN go get -u github.com/lib/pq
-RUN go get -u github.com/joho/godotenv
-RUN go get -u gorm.io/driver/postgres
-RUN go get -u gorm.io/gorm
+COPY . .
