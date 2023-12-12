@@ -17,6 +17,12 @@ func GetUserByID(id string) *User {
 	return &user
 }
 
+func GetUserByEmail(email string) *User {
+	var user User
+	db.Where("Email=?", email).First(&user)
+	return &user
+}
+
 func GetAllUsers() []User {
 	var Users []User
 	db.Find(&Users)

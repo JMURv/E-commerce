@@ -1,14 +1,21 @@
 package routes
 
 import (
+	"e-commerce/pkg/auth"
 	"e-commerce/pkg/controllers"
 	"github.com/gorilla/mux"
 	"net/http"
 )
 
+var RegisterAuthRoutes = func(router *mux.Router) {
+	router.HandleFunc("/login", controllers.LoginHandler).Methods(http.MethodPost)
+}
+
 var RegisterUsersRoutes = func(router *mux.Router) {
 	router.HandleFunc("/users", controllers.ListCreateUsers).Methods(http.MethodGet, http.MethodPost)
-	router.HandleFunc("/users/{id}", controllers.GetUpdateDeleteUser).Methods(http.MethodGet, http.MethodPut, http.MethodDelete)
+	router.HandleFunc("/users/{id}", controllers.GetUser).Methods(http.MethodGet)
+	router.HandleFunc("/users/{id}", auth.AuthMiddleware(controllers.UpdateUser)).Methods(http.MethodPut)
+	router.HandleFunc("/users/{id}", auth.AuthMiddleware(controllers.DeleteUser)).Methods(http.MethodDelete)
 }
 
 var RegisterSellersRoutes = func(router *mux.Router) {

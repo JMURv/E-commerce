@@ -34,8 +34,8 @@ func TestCreateItem(t *testing.T) {
 	router := createTestRouter()
 	router.ServeHTTP(rr, req)
 
-	if status := rr.Code; status != http.StatusOK {
-		t.Errorf("Handler returned wrong status code: got %v want %v", status, http.StatusOK)
+	if status := rr.Code; status != http.StatusCreated {
+		t.Errorf("Handler returned wrong status code: got %v want %v", status, http.StatusCreated)
 	}
 
 	var createdItem models.Item

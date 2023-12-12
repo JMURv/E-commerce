@@ -48,54 +48,68 @@ func ListCreateUsers(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func GetUpdateDeleteUser(w http.ResponseWriter, r *http.Request) {
+func GetUser(w http.ResponseWriter, r *http.Request) {
+	userId := mux.Vars(r)["id"]
+	userDetails := models.GetUserByID(userId)
+
+	responseData, err := json.Marshal(userDetails)
+	if err != nil {
+		log.Printf("[ERROR] Encoding error: %v\n", err)
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(responseData)
+}
+
+func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	userId := mux.Vars(r)["id"]
 
-	switch r.Method {
-	case http.MethodGet:
-		userDetails := models.GetUserByID(userId)
-
-		responseData, err := json.Marshal(userDetails)
-		if err != nil {
-			log.Printf("[ERROR] Encoding error: %v\n", err)
-			http.Error(w, "Invalid request body", http.StatusBadRequest)
-			return
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		w.Write(responseData)
-
-	case http.MethodPut:
-		var updatedUser = &models.User{}
-		utils.ParseBody(r, updatedUser)
-
-		newUserData, err := models.UpdateUser(userId, updatedUser)
-		if err != nil {
-			log.Printf("[ERROR] Updating user error: %v\n", err)
-			http.Error(w, fmt.Sprintf("Updating user error: %v", err), http.StatusBadRequest)
-			return
-		}
-
-		responseData, err := json.Marshal(newUserData)
-		if err != nil {
-			log.Printf("[ERROR] Encoding error: %v\n", err)
-			http.Error(w, "Encoding error", http.StatusInternalServerError)
-			return
-		}
-
-		w.WriteHeader(http.StatusOK)
-		w.Write(responseData)
-
-	case http.MethodDelete:
-		user := models.DeleteUser(userId)
-		responseData, err := json.Marshal(user)
-		if err != nil {
-			log.Printf("[ERROR] Encoding error: %v\n", err)
-			http.Error(w, "Encoding error", http.StatusInternalServerError)
-			return
-		}
-		w.WriteHeader(http.StatusNoContent)
-		w.Write(responseData)
+	reqUserId := r.Context().Value("reqUserId")
+	if reqUserId != userId {
+		http.Error(w, "you have no permissions", http.StatusForbidden)
+		return
 	}
+
+	var updatedUser = &models.User{}
+	utils.ParseBody(r, updatedUser)
+
+	newUserData, err := models.UpdateUser(userId, updatedUser)
+	if err != nil {
+		log.Printf("[ERROR] Updating user error: %v\n", err)
+		http.Error(w, fmt.Sprintf("Updating user error: %v", err), http.StatusBadRequest)
+		return
+	}
+
+	responseData, err := json.Marshal(newUserData)
+	if err != nil {
+		log.Printf("[ERROR] Encoding error: %v\n", err)
+		http.Error(w, "Encoding error", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write(responseData)
+}
+
+func DeleteUser(w http.ResponseWriter, r *http.Request) {
+	userId := mux.Vars(r)["id"]
+	reqUserId := r.Context().Value("reqUserId")
+
+	if reqUserId != userId {
+		http.Error(w, "you have no permissions", http.StatusForbidden)
+		return
+	}
+
+	user := models.DeleteUser(userId)
+	responseData, err := json.Marshal(user)
+	if err != nil {
+		log.Printf("[ERROR] Encoding error: %v\n", err)
+		http.Error(w, "Encoding error", http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+	w.Write(responseData)
 }
