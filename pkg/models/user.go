@@ -9,6 +9,7 @@ type User struct {
 	gorm.Model
 	Username string `json:"username"`
 	Email    string `json:"email"`
+	IsAdmin  bool   `json:"isAdmin"`
 }
 
 func GetUserByID(id string) *User {

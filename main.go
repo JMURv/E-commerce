@@ -20,11 +20,10 @@ func main() {
 	routes.RegisterItemsRoutes(router)
 	routes.RegisterCategoriesRoutes(router)
 
-	//routes.RegisterCartsRoutes(router)
-	//routes.RegisterOrdersRoutes(router)
-	//routes.RegisterOrderItemsRoutes(router)
+	routes.RegisterCartsRoutes(router)
+	routes.RegisterOrdersRoutes(router)
 
-	//routes.RegisterReviewsRoutes(router)
+	routes.RegisterReviewsRoutes(router)
 
 	log.Println("Server is running on port 8000")
 	err := http.ListenAndServe(":8000", handlers.LoggingHandler(os.Stdout, router))

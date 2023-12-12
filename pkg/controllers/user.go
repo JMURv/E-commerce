@@ -10,7 +10,7 @@ import (
 	"net/http"
 )
 
-func ListCreateUsers(w http.ResponseWriter, r *http.Request) {
+func ListCreateUser(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
 		usersList := models.GetAllUsers()
@@ -35,7 +35,7 @@ func ListCreateUsers(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, fmt.Sprintf("Creating user error: %v", err), http.StatusBadRequest)
 			return
 		}
-
+		// TODO: Sent token
 		responseData, err := json.Marshal(user)
 		if err != nil {
 			log.Printf("[ERROR] Encoding error: %v\n", err)

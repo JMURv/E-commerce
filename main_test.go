@@ -24,13 +24,12 @@ func TestCreateItem(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	req, err := http.NewRequest("POST", "/items", bytes.NewBuffer(jsonPayload))
+	req, err := http.NewRequest(http.MethodPost, "/items", bytes.NewBuffer(jsonPayload))
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	rr := httptest.NewRecorder()
-
 	router := createTestRouter()
 	router.ServeHTTP(rr, req)
 
@@ -48,10 +47,13 @@ func TestCreateItem(t *testing.T) {
 		t.Errorf("Expected item name %s, got %s", newItem.Name, createdItem.Name)
 	}
 
+	if len(createdItem.Tags) != 2 {
+		t.Errorf("Expected 2 item tags got %v", len(createdItem.Tags))
+	}
 }
 
 func createTestRouter() *mux.Router {
 	r := mux.NewRouter()
-	r.HandleFunc("/items", controllers.ListCreateItems).Methods("POST")
+	r.HandleFunc("/items", controllers.CreateItem).Methods("POST")
 	return r
 }
