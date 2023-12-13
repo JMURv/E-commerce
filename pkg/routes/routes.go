@@ -27,8 +27,8 @@ var RegisterSellersRoutes = func(router *mux.Router) {
 	router.HandleFunc("/sellers/{id}", auth.AuthMiddleware(controllers.DeleteSeller)).Methods(http.MethodDelete)
 
 	router.HandleFunc("/sellers/{id}/items", controllers.ListSellerItems).Methods(http.MethodGet)
-	router.HandleFunc("/sellers/{id}/items", auth.AuthMiddleware(controllers.CreateSellerItem)).Methods(http.MethodPost)
 
+	router.HandleFunc("/sellers/{id}/items/{itemId}", auth.AuthMiddleware(controllers.LinkItemToSeller)).Methods(http.MethodPost)
 	router.HandleFunc("/sellers/{id}/items/{itemId}", auth.AuthMiddleware(controllers.UpdateSellerItem)).Methods(http.MethodPut)
 	router.HandleFunc("/sellers/{id}/items/{itemId}", auth.AuthMiddleware(controllers.DeleteSellerItem)).Methods(http.MethodDelete)
 }

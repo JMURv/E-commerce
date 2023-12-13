@@ -7,13 +7,13 @@ import (
 
 type Item struct {
 	gorm.Model
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	Price       float64   `json:"price"`
-	CategoryID  *uint     `json:"categoryID"`
-	Category    *Category `json:"category" gorm:"foreignKey:CategoryID"`
-	Sellers     []Seller  `json:"sellers" gorm:"many2many:seller_items;"`
-	Tags        []Tag     `json:"tags" gorm:"many2many:item_tags;"`
+	Name        string       `json:"name"`
+	Description string       `json:"description"`
+	Price       float64      `json:"price"`
+	CategoryID  *uint        `json:"categoryID"`
+	Category    *Category    `json:"category" gorm:"foreignKey:CategoryID"`
+	Sellers     []SellerItem `json:"sellers"`
+	Tags        []Tag        `json:"tags" gorm:"many2many:item_tags;"`
 }
 
 func GetItemByID(id string) *Item {
@@ -24,7 +24,7 @@ func GetItemByID(id string) *Item {
 
 func GetAllItems() []Item {
 	var Items []Item
-	db.Preload("Tags").Find(&Items)
+	db.Preload("Tags").Preload("Sellers").Find(&Items)
 	return Items
 }
 
@@ -40,6 +40,7 @@ func (i *Item) CreateItem() (*Item, error) {
 		return i, errors.New("price is required")
 	}
 
+	// Link or create tags if specified
 	for idx := range i.Tags {
 		existingTag := &Tag{}
 		if err := db.Where("name = ?", i.Tags[idx].Name).First(existingTag).Error; err != nil {
@@ -57,10 +58,12 @@ func (i *Item) CreateItem() (*Item, error) {
 		i.Tags[idx] = *existingTag
 	}
 
+	// Perform item's save
 	result := db.Create(&i)
 	if result.Error != nil {
 		return nil, result.Error
 	}
+
 	return i, nil
 }
 

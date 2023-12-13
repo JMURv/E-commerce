@@ -14,11 +14,12 @@ func init() {
 	db = config.GetDB()
 
 	err = db.AutoMigrate(
-		&Item{},
 		&Category{},
 		&Tag{},
 		&User{},
 		&Seller{},
+		&Item{},
+		&SellerItem{},
 		&Cart{},
 		&CartItem{},
 		&Order{},
@@ -28,4 +29,5 @@ func init() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
 }
