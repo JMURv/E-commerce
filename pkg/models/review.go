@@ -11,17 +11,17 @@ type ItemReview struct {
 	Advantages     string `json:"advantages"`
 	Disadvantages  string `json:"disadvantages"`
 	ReviewText     string `json:"reviewText"`
-	Rating         int    `json:"rating"`
+	Rating         uint   `json:"rating"`
 }
 
 type SellerReview struct {
 	gorm.Model
 	Author           User   `json:"author" gorm:"foreignKey:AuthorID"`
 	AuthorID         uint   `json:"authorID"`
-	ReviewedSeller   Item   `json:"reviewedSeller" gorm:"foreignKey:ReviewedItemID"`
+	ReviewedSeller   Seller `json:"reviewedSeller" gorm:"foreignKey:ReviewedItemID"`
 	ReviewedSellerID uint   `json:"reviewedSellerID"`
 	Advantages       string `json:"advantages"`
 	Disadvantages    string `json:"disadvantages"`
 	ReviewText       string `json:"reviewText"`
-	Rating           int    `json:"rating"`
+	Rating           uint   `json:"rating"`
 }

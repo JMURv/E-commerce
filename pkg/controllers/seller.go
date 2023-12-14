@@ -43,6 +43,7 @@ func CreateSeller(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	w.Write(responseData)
 }
@@ -82,6 +83,7 @@ func UpdateSeller(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(responseData)
 }
@@ -95,6 +97,8 @@ func DeleteSeller(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Encoding error", http.StatusInternalServerError)
 		return
 	}
+
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusNoContent)
 	w.Write(responseData)
 }
@@ -158,34 +162,79 @@ func LinkItemToSeller(w http.ResponseWriter, r *http.Request) {
 	w.Write(response)
 }
 
+func GetSellerItem(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+
+	sellerItemID, err := strconv.ParseUint(vars["sellerItemId"], 10, 64)
+	if err != nil {
+		http.Error(w, "Cannot parse itemID", http.StatusInternalServerError)
+		return
+	}
+
+	sellerItem := models.GetSellerItemByID(sellerItemID)
+
+	responseData, err := json.Marshal(sellerItem)
+	if err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(responseData)
+}
+
 func UpdateSellerItem(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
-	sellerID, err := strconv.ParseUint(vars["id"], 10, 64)
+	sellerItemID, err := strconv.ParseUint(vars["sellerItemId"], 10, 64)
 	if err != nil {
-		http.Error(w, "cannot parse sellerID", http.StatusInternalServerError)
+		http.Error(w, "Cannot parse itemID", http.StatusInternalServerError)
 		return
 	}
 
-	itemID, err := strconv.ParseUint(vars["itemId"], 10, 64)
+	var ItemToUpdate = &models.SellerItem{}
+	utils.ParseBody(r, ItemToUpdate)
+
+	UpdatedItem, err := models.UpdateSellerItem(sellerItemID, ItemToUpdate)
 	if err != nil {
-		http.Error(w, "cannot parse itemID", http.StatusInternalServerError)
+		http.Error(w, "Cannot link item to seller", http.StatusInternalServerError)
 		return
 	}
 
-	var newItemToSeller = &models.SellerItem{
-		SellerID: sellerID,
-		ItemID:   itemID,
-	}
-
-	utils.ParseBody(r, newItemToSeller)
-	newItemToSeller, err = newItemToSeller.LinkItemToSeller()
+	responseData, err := json.Marshal(UpdatedItem)
 	if err != nil {
-		http.Error(w, "cannot link item to seller", http.StatusInternalServerError)
+		http.Error(w, "Encoding error", http.StatusInternalServerError)
 		return
 	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(responseData)
 }
 
 func DeleteSellerItem(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
 
+	sellerItemID, err := strconv.ParseUint(vars["sellerItemId"], 10, 64)
+	if err != nil {
+		http.Error(w, "Cannot parse sellerItemID", http.StatusInternalServerError)
+		return
+	}
+
+	sellerItem, err := models.DeleteSellerItem(sellerItemID)
+	if err != nil {
+		http.Error(w, "Cannot delete seller item", http.StatusInternalServerError)
+		return
+	}
+
+	responseData, err := json.Marshal(sellerItem)
+	if err != nil {
+		http.Error(w, "Encoding error", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusNoContent)
+	w.Write(responseData)
 }

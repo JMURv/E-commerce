@@ -78,7 +78,15 @@ func DeleteSeller(id string) Seller {
 	return seller
 }
 
+func GetSellerItemByID(sellerItemID uint64) *SellerItem {
+	var sellerItem SellerItem
+	db.Preload("Item").Preload("Seller").Where("ID=?", sellerItemID).First(&sellerItem)
+	return &sellerItem
+}
+
 func (s *SellerItem) LinkItemToSeller() (*SellerItem, error) {
+
+	// TODO: Check for duplicates
 
 	if s.Quantity == 0 {
 		return s, errors.New("quantity is required")
@@ -94,14 +102,23 @@ func (s *SellerItem) LinkItemToSeller() (*SellerItem, error) {
 	return s, nil
 }
 
-func (s *SellerItem) UpdateSellerItem(newData *SellerItem) (*SellerItem, error) {
+func UpdateSellerItem(sellerItemID uint64, newData *SellerItem) (*SellerItem, error) {
+	currSeller := GetSellerItemByID(sellerItemID)
 
-	if newData.Quantity != s.Quantity {
-		s.Quantity = newData.Quantity
+	if newData.Quantity != currSeller.Quantity {
+		currSeller.Quantity = newData.Quantity
 	}
 
-	if err := db.Save(&s).Error; err != nil {
+	if err := db.Save(&currSeller).Error; err != nil {
 		return nil, err
 	}
-	return s, nil
+	return currSeller, nil
+}
+
+func DeleteSellerItem(sellerItemID uint64) (SellerItem, error) {
+	var sellerItem SellerItem
+	if err := db.Delete(&sellerItem, sellerItemID).Error; err != nil {
+		return sellerItem, err
+	}
+	return sellerItem, nil
 }
