@@ -22,7 +22,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := auth.GenerateToken(int(userDetails.ID))
+	token, err := auth.GenerateToken(userDetails.ID)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Failed to generate token: %v", err), http.StatusInternalServerError)
 		return

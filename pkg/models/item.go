@@ -12,6 +12,7 @@ type Item struct {
 	Price       float64      `json:"price"`
 	CategoryID  *uint        `json:"categoryID"`
 	Category    *Category    `json:"category" gorm:"foreignKey:CategoryID"`
+	Reviews     []Review     `json:"reviews"`
 	Sellers     []SellerItem `json:"sellers"`
 	Tags        []Tag        `json:"tags" gorm:"many2many:item_tags;"`
 }

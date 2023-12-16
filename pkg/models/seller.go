@@ -22,6 +22,7 @@ type Seller struct {
 	Username    string       `json:"username"`
 	Email       string       `json:"email"`
 	SellerItems []SellerItem `json:"sellerItems"`
+	Reviews     []Review     `json:"reviews"`
 }
 
 func GetSellerByID(sellerId string) *Seller {

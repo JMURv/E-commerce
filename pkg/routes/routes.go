@@ -54,12 +54,20 @@ var RegisterCategoriesRoutes = func(router *mux.Router) {
 }
 
 var RegisterReviewsRoutes = func(router *mux.Router) {
+	router.HandleFunc("/reviews", auth.AuthMiddleware(controllers.CreateReview)).Methods(http.MethodPost)
+
 	router.HandleFunc("/reviews/{id}", controllers.GetReview).Methods(http.MethodGet)
 	router.HandleFunc("/reviews/{id}", auth.AuthMiddleware(controllers.UpdateReview)).Methods(http.MethodPut)
 	router.HandleFunc("/reviews/{id}", auth.AuthMiddleware(controllers.DeleteReview)).Methods(http.MethodDelete)
+}
 
-	router.HandleFunc("/reviews/sellers/{sellerId}", auth.AuthMiddleware(controllers.CreateSellerReview)).Methods(http.MethodPost)
-	router.HandleFunc("/reviews/items/{itemId}", auth.AuthMiddleware(controllers.CreateItemReview)).Methods(http.MethodPost)
+var RegisterFavoriteRoutes = func(router *mux.Router) {
+	router.HandleFunc("/favorites", auth.AuthMiddleware(controllers.ListUserFavorites)).Methods(http.MethodGet)
+	router.HandleFunc("/favorites", auth.AuthMiddleware(controllers.CreateFavorites)).Methods(http.MethodPost)
+
+	router.HandleFunc("/favorites/{id}", auth.AuthMiddleware(controllers.GetFavorites)).Methods(http.MethodGet)
+	router.HandleFunc("/favorites/{id}", auth.AuthMiddleware(controllers.UpdateFavorites)).Methods(http.MethodPut)
+	router.HandleFunc("/favorites/{id}", auth.AuthMiddleware(controllers.DeleteFavorites)).Methods(http.MethodDelete)
 }
 
 var RegisterCartsRoutes = func(router *mux.Router) {

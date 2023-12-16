@@ -28,27 +28,6 @@ func ListCategory(w http.ResponseWriter, r *http.Request) {
 	w.Write(response)
 }
 
-func CreateCategory(w http.ResponseWriter, r *http.Request) {
-	NewCategory := &models.Category{}
-	utils.ParseBody(r, NewCategory)
-
-	category, err := NewCategory.CreateCategory()
-	if err != nil {
-		http.Error(w, fmt.Sprintf("Creating category error: %v", err), http.StatusBadRequest)
-		return
-	}
-
-	response, err := json.Marshal(category)
-	if err != nil {
-		http.Error(w, "Encoding error", http.StatusBadRequest)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	w.Write(response)
-}
-
 func GetCategory(w http.ResponseWriter, r *http.Request) {
 	categoryID, err := strconv.ParseUint(mux.Vars(r)["id"], 10, 32)
 	if err != nil {
@@ -70,6 +49,27 @@ func GetCategory(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
+	w.Write(response)
+}
+
+func CreateCategory(w http.ResponseWriter, r *http.Request) {
+	newCategory := &models.Category{}
+	utils.ParseBody(r, newCategory)
+
+	category, err := newCategory.CreateCategory()
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Creating category error: %v", err), http.StatusBadRequest)
+		return
+	}
+
+	response, err := json.Marshal(category)
+	if err != nil {
+		http.Error(w, "Encoding error", http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
 	w.Write(response)
 }
 

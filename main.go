@@ -23,6 +23,7 @@ func main() {
 	routes.RegisterCartsRoutes(router)
 	routes.RegisterOrdersRoutes(router)
 
+	routes.RegisterFavoriteRoutes(router)
 	routes.RegisterReviewsRoutes(router)
 
 	log.Println("Server is running on port 8000")

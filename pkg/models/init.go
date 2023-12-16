@@ -24,6 +24,7 @@ func init() {
 		&CartItem{},
 		&Order{},
 		&OrderItem{},
+		&Review{},
 		&Favorite{},
 	)
 	if err != nil {

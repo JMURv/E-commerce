@@ -13,55 +13,66 @@ import (
 func ListCreateUser(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
-		usersList := models.GetAllUsers()
-		responseData, err := json.Marshal(usersList)
+		users := models.GetAllUsers()
+
+		response, err := json.Marshal(users)
 		if err != nil {
-			log.Printf("[ERROR] Encoding error: %v\n", err)
 			http.Error(w, "Invalid request body", http.StatusBadRequest)
 			return
 		}
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write(responseData)
+		w.Write(response)
 
 	case http.MethodPost:
-		var newUserData = &models.User{}
-		utils.ParseBody(r, newUserData)
+		var userData = &models.User{}
+		utils.ParseBody(r, userData)
 
-		user, err := newUserData.CreateUser()
+		user, accessToken, err := userData.CreateUser()
 		if err != nil {
-			log.Printf("[ERROR] Creating user error: %v\n", err)
 			http.Error(w, fmt.Sprintf("Creating user error: %v", err), http.StatusBadRequest)
 			return
 		}
-		// TODO: Sent token
-		responseData, err := json.Marshal(user)
+
+		userWithToken := struct {
+			User  *models.User `json:"user"`
+			Token string       `json:"token"`
+		}{
+			User:  user,
+			Token: accessToken,
+		}
+
+		response, err := json.Marshal(userWithToken)
 		if err != nil {
-			log.Printf("[ERROR] Encoding error: %v\n", err)
 			http.Error(w, "Encoding error", http.StatusInternalServerError)
 			return
 		}
 
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
-		w.Write(responseData)
+		w.Write(response)
 	}
 }
 
 func GetUser(w http.ResponseWriter, r *http.Request) {
 	userId := mux.Vars(r)["id"]
-	userDetails := models.GetUserByID(userId)
 
-	responseData, err := json.Marshal(userDetails)
+	userDetails, err := models.GetUserByID(userId)
 	if err != nil {
-		log.Printf("[ERROR] Encoding error: %v\n", err)
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		http.Error(w, "Cannot get user error", http.StatusBadRequest)
+		return
+	}
+
+	response, err := json.Marshal(userDetails)
+	if err != nil {
+		http.Error(w, "Encoding error", http.StatusBadRequest)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write(responseData)
+	w.Write(response)
 }
 
 func UpdateUser(w http.ResponseWriter, r *http.Request) {
