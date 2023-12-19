@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
-	"log"
 	"net/http"
+	"strconv"
 )
 
 func ListCreateUser(w http.ResponseWriter, r *http.Request) {
@@ -17,7 +17,7 @@ func ListCreateUser(w http.ResponseWriter, r *http.Request) {
 
 		response, err := json.Marshal(users)
 		if err != nil {
-			http.Error(w, "Invalid request body", http.StatusBadRequest)
+			http.Error(w, fmt.Sprintf("Invalid request body: %v", err), http.StatusBadRequest)
 			return
 		}
 
@@ -45,7 +45,7 @@ func ListCreateUser(w http.ResponseWriter, r *http.Request) {
 
 		response, err := json.Marshal(userWithToken)
 		if err != nil {
-			http.Error(w, "Encoding error", http.StatusInternalServerError)
+			http.Error(w, fmt.Sprintf("Encoding error: %v", err), http.StatusInternalServerError)
 			return
 		}
 
@@ -56,17 +56,21 @@ func ListCreateUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetUser(w http.ResponseWriter, r *http.Request) {
-	userId := mux.Vars(r)["id"]
-
-	userDetails, err := models.GetUserByID(userId)
+	userID, err := strconv.ParseUint(mux.Vars(r)["id"], 10, 64)
 	if err != nil {
-		http.Error(w, "Cannot get user error", http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("Cannot parse userID: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	userDetails, err := models.GetUserByID(uint(userID))
+	if err != nil {
+		http.Error(w, fmt.Sprintf("User does not exist: %v", err), http.StatusNotFound)
 		return
 	}
 
 	response, err := json.Marshal(userDetails)
 	if err != nil {
-		http.Error(w, "Encoding error", http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("Encoding error: %v", err), http.StatusBadRequest)
 		return
 	}
 
@@ -76,10 +80,14 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func UpdateUser(w http.ResponseWriter, r *http.Request) {
-	userId := mux.Vars(r)["id"]
+	userID, err := strconv.ParseUint(mux.Vars(r)["id"], 10, 64)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Cannot parse userID: %v", err), http.StatusInternalServerError)
+		return
+	}
 
-	reqUserId := r.Context().Value("reqUserId")
-	if reqUserId != userId {
+	reqUserID := r.Context().Value("reqUserId")
+	if reqUserID != uint(userID) {
 		http.Error(w, "you have no permissions", http.StatusForbidden)
 		return
 	}
@@ -87,17 +95,15 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	var updatedUser = &models.User{}
 	utils.ParseBody(r, updatedUser)
 
-	newUserData, err := models.UpdateUser(userId, updatedUser)
+	newUserData, err := models.UpdateUser(uint(userID), updatedUser)
 	if err != nil {
-		log.Printf("[ERROR] Updating user error: %v\n", err)
 		http.Error(w, fmt.Sprintf("Updating user error: %v", err), http.StatusBadRequest)
 		return
 	}
 
 	responseData, err := json.Marshal(newUserData)
 	if err != nil {
-		log.Printf("[ERROR] Encoding error: %v\n", err)
-		http.Error(w, "Encoding error", http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Encoding error: %v", err), http.StatusInternalServerError)
 		return
 	}
 
@@ -107,19 +113,27 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeleteUser(w http.ResponseWriter, r *http.Request) {
-	userId := mux.Vars(r)["id"]
-	reqUserId := r.Context().Value("reqUserId")
+	userID, err := strconv.ParseUint(mux.Vars(r)["id"], 10, 64)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Cannot parse userID: %v", err), http.StatusInternalServerError)
+		return
+	}
 
-	if reqUserId != userId {
+	reqUserID := r.Context().Value("reqUserId")
+	if reqUserID != uint(userID) {
 		http.Error(w, "you have no permissions", http.StatusForbidden)
 		return
 	}
 
-	user := models.DeleteUser(userId)
+	user, err := models.DeleteUser(uint(userID))
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Deleting user error: %v", err), http.StatusInternalServerError)
+		return
+	}
+
 	responseData, err := json.Marshal(user)
 	if err != nil {
-		log.Printf("[ERROR] Encoding error: %v\n", err)
-		http.Error(w, "Encoding error", http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Encoding error: %v", err), http.StatusInternalServerError)
 		return
 	}
 

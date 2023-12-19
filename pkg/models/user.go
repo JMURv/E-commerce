@@ -12,14 +12,15 @@ type User struct {
 	Username  string     `json:"username"`
 	Email     string     `json:"email"`
 	IsAdmin   bool       `json:"isAdmin"`
+	Items     []Item     `json:"items"`
 	Favorites []Favorite `json:"favorites"`
 	Reviews   []Review   `json:"reviews"`
 }
 
-func GetUserByID(id string) (*User, error) {
+func GetUserByID(id uint) (*User, error) {
 	var user User
-	if err := db.Where("ID=?", id).First(&user).Error; err != nil {
-		return &user, err
+	if err := db.Preload("Items").Preload("Reviews").Preload("Favorites").Where("ID=?", id).First(&user).Error; err != nil {
+		return nil, err
 	}
 	return &user, nil
 }
@@ -58,7 +59,7 @@ func (u *User) CreateUser() (*User, string, error) {
 	return u, token, nil
 }
 
-func UpdateUser(userId string, newData *User) (*User, error) {
+func UpdateUser(userId uint, newData *User) (*User, error) {
 	user, err := GetUserByID(userId)
 	if err != nil {
 		return user, err
@@ -75,8 +76,10 @@ func UpdateUser(userId string, newData *User) (*User, error) {
 	return user, nil
 }
 
-func DeleteUser(id string) User {
+func DeleteUser(id uint) (*User, error) {
 	var user User
-	db.Delete(&user, id)
-	return user
+	if err := db.Delete(&user, id).Error; err != nil {
+		return nil, err
+	}
+	return &user, nil
 }

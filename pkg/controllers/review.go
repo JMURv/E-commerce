@@ -13,19 +13,19 @@ import (
 func GetReview(w http.ResponseWriter, r *http.Request) {
 	reviewID, err := strconv.ParseUint(mux.Vars(r)["id"], 10, 64)
 	if err != nil {
-		http.Error(w, "Cannot parse reviewID", http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Cannot parse reviewID: %v", err), http.StatusInternalServerError)
 		return
 	}
 
 	review, err := models.GetReviewByID(uint(reviewID))
 	if err != nil {
-		http.Error(w, "Cannot get review error", http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("Cannot get review error: %v", err), http.StatusNotFound)
 		return
 	}
 
 	response, err := json.Marshal(review)
 	if err != nil {
-		http.Error(w, "Encoding error", http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("Encoding error: %v", err), http.StatusBadRequest)
 		return
 	}
 
@@ -46,7 +46,7 @@ func CreateReview(w http.ResponseWriter, r *http.Request) {
 
 	response, err := json.Marshal(review)
 	if err != nil {
-		http.Error(w, "Encoding error", http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("Encoding error: %v", err), http.StatusBadRequest)
 		return
 	}
 
@@ -58,7 +58,7 @@ func CreateReview(w http.ResponseWriter, r *http.Request) {
 func UpdateReview(w http.ResponseWriter, r *http.Request) {
 	reviewID, err := strconv.ParseUint(mux.Vars(r)["id"], 10, 32)
 	if err != nil {
-		http.Error(w, "Cannot parse reviewID", http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Cannot parse reviewID: %v", err), http.StatusInternalServerError)
 		return
 	}
 
@@ -67,13 +67,13 @@ func UpdateReview(w http.ResponseWriter, r *http.Request) {
 
 	newReviewData, err := models.UpdateReview(uint(reviewID), newData)
 	if err != nil {
-		http.Error(w, "Cannot update review", http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Cannot update review: %v", err), http.StatusInternalServerError)
 		return
 	}
 
 	response, err := json.Marshal(newReviewData)
 	if err != nil {
-		http.Error(w, "Encoding error", http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("Encoding error: %v", err), http.StatusBadRequest)
 		return
 	}
 
@@ -85,19 +85,19 @@ func UpdateReview(w http.ResponseWriter, r *http.Request) {
 func DeleteReview(w http.ResponseWriter, r *http.Request) {
 	reviewID, err := strconv.ParseUint(mux.Vars(r)["id"], 10, 32)
 	if err != nil {
-		http.Error(w, "Cannot parse reviewID", http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Cannot parse reviewID: %v", err), http.StatusInternalServerError)
 		return
 	}
 
 	deletedReview, err := models.DeleteReview(uint(reviewID))
 	if err != nil {
-		http.Error(w, "Cannot delete review", http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Cannot delete review: %v", err), http.StatusInternalServerError)
 		return
 	}
 
 	response, err := json.Marshal(deletedReview)
 	if err != nil {
-		http.Error(w, "Encoding error", http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("Encoding error: %v", err), http.StatusBadRequest)
 		return
 	}
 

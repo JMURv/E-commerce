@@ -15,13 +15,9 @@ func main() {
 	routes.RegisterAuthRoutes(router)
 
 	routes.RegisterUsersRoutes(router)
-	routes.RegisterSellersRoutes(router)
 
 	routes.RegisterItemsRoutes(router)
 	routes.RegisterCategoriesRoutes(router)
-
-	routes.RegisterCartsRoutes(router)
-	routes.RegisterOrdersRoutes(router)
 
 	routes.RegisterFavoriteRoutes(router)
 	routes.RegisterReviewsRoutes(router)

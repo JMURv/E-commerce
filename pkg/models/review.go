@@ -7,21 +7,21 @@ import (
 
 type Review struct {
 	gorm.Model
-	User          User   `json:"user" gorm:"foreignKey:UserID"`
-	UserID        uint   `json:"userID"`
-	Item          Item   `json:"item" gorm:"foreignKey:ItemID"`
-	ItemID        uint   `json:"itemID"`
-	Seller        Seller `json:"seller" gorm:"foreignKey:SellerID"`
-	SellerID      uint   `json:"sellerID"`
-	Advantages    string `json:"advantages"`
-	Disadvantages string `json:"disadvantages"`
-	ReviewText    string `json:"reviewText"`
-	Rating        uint   `json:"rating"`
+	UserID         uint   `json:"userID"`
+	User           User   `json:"user" gorm:"foreignKey:UserID;references:ID"`
+	ItemID         uint   `json:"itemID"`
+	Item           Item   `json:"item" gorm:"foreignKey:ItemID"`
+	ReviewedUserID uint   `json:"reviewedUserID"`
+	ReviewedUser   User   `json:"reviewedUser" gorm:"foreignKey:ReviewedUserID;references:ID"`
+	Advantages     string `json:"advantages"`
+	Disadvantages  string `json:"disadvantages"`
+	ReviewText     string `json:"reviewText"`
+	Rating         uint   `json:"rating"`
 }
 
 func GetReviewByID(reviewID uint) (*Review, error) {
 	var review Review
-	if err := db.Preload("User").Preload("Item").Preload("Seller").Where("ID=?", reviewID).First(&review).Error; err != nil {
+	if err := db.Preload("User").Preload("Item").Preload("ReviewedUser").Where("ID=?", reviewID).First(&review).Error; err != nil {
 		return nil, err
 	}
 	return &review, nil
@@ -32,8 +32,8 @@ func (r *Review) CreateReview() (*Review, error) {
 		return nil, errors.New("userID is required")
 	}
 
-	if r.ItemID == 0 && r.SellerID == 0 {
-		return nil, errors.New("itemID or sellerID is required")
+	if r.ItemID == 0 && r.ReviewedUserID == 0 {
+		return nil, errors.New("itemID or ReviewedUserID is required")
 	}
 
 	if r.Rating == 0 {
@@ -61,8 +61,8 @@ func UpdateReview(reviewID uint, newData *Review) (*Review, error) {
 		review.ItemID = newData.ItemID
 	}
 
-	if newData.SellerID != review.SellerID {
-		review.SellerID = newData.SellerID
+	if newData.ReviewedUserID != review.ReviewedUserID {
+		review.ReviewedUserID = newData.ReviewedUserID
 	}
 
 	if newData.Advantages != "" {

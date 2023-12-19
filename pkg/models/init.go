@@ -17,13 +17,7 @@ func init() {
 		&Category{},
 		&Tag{},
 		&User{},
-		&Seller{},
 		&Item{},
-		&SellerItem{},
-		&Cart{},
-		&CartItem{},
-		&Order{},
-		&OrderItem{},
 		&Review{},
 		&Favorite{},
 	)

@@ -6,16 +6,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
-	"log"
 	"net/http"
+	"strconv"
 )
 
 func ListItem(w http.ResponseWriter, r *http.Request) {
 	itemsList := models.GetAllItems()
+
 	responseData, err := json.Marshal(itemsList)
 	if err != nil {
-		log.Printf("[ERROR] Encoding error: %v\n", err)
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("Invalid request body: %v", err), http.StatusBadRequest)
 		return
 	}
 
@@ -30,15 +30,13 @@ func CreateItem(w http.ResponseWriter, r *http.Request) {
 
 	item, err := NewItem.CreateItem()
 	if err != nil {
-		log.Printf("[ERROR] Creating item error: %v\n", err)
 		http.Error(w, fmt.Sprintf("Creating item error: %v", err), http.StatusBadRequest)
 		return
 	}
 
 	responseData, err := json.Marshal(item)
 	if err != nil {
-		log.Printf("[ERROR] Encoding error: %v\n", err)
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("Invalid request body: %v", err), http.StatusBadRequest)
 		return
 	}
 
@@ -48,12 +46,16 @@ func CreateItem(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetItem(w http.ResponseWriter, r *http.Request) {
-	itemId := mux.Vars(r)["id"]
-	itemDetails := models.GetItemByID(itemId)
+	itemId, err := strconv.ParseUint(mux.Vars(r)["id"], 10, 64)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Cannot parse itemId: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	itemDetails := models.GetItemByID(uint(itemId))
 	responseData, err := json.Marshal(itemDetails)
 	if err != nil {
-		log.Printf("[ERROR] Encoding error: %v\n", err)
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("Invalid request body: %v", err), http.StatusBadRequest)
 		return
 	}
 
@@ -63,22 +65,32 @@ func GetItem(w http.ResponseWriter, r *http.Request) {
 }
 
 func UpdateItem(w http.ResponseWriter, r *http.Request) {
-	itemId := mux.Vars(r)["id"]
+	itemId, err := strconv.ParseUint(mux.Vars(r)["id"], 10, 64)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Cannot parse itemId: %v", err), http.StatusInternalServerError)
+		return
+	}
+
 	var updateItem = &models.Item{}
 	utils.ParseBody(r, updateItem)
 
-	itemToUpdate := models.GetItemByID(itemId)
+	itemToUpdate := models.GetItemByID(uint(itemId))
+
+	reqUserId := r.Context().Value("reqUserId")
+	if reqUserId != itemToUpdate.UserID {
+		http.Error(w, "you have no permissions", http.StatusForbidden)
+		return
+	}
+
 	updatedItem, err := itemToUpdate.UpdateItem(updateItem)
 	if err != nil {
-		log.Printf("[ERROR] Updating item error: %v\n", err)
 		http.Error(w, fmt.Sprintf("Updating item error: %v", err), http.StatusBadRequest)
 		return
 	}
 
 	responseData, err := json.Marshal(updatedItem)
 	if err != nil {
-		log.Printf("[ERROR] Encoding error: %v\n", err)
-		http.Error(w, "Encoding error", http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Encoding error: %v", err), http.StatusInternalServerError)
 		return
 	}
 
@@ -88,12 +100,28 @@ func UpdateItem(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeleteItem(w http.ResponseWriter, r *http.Request) {
-	itemId := mux.Vars(r)["id"]
-	item := models.DeleteItem(itemId)
+	itemId, err := strconv.ParseUint(mux.Vars(r)["id"], 10, 64)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Cannot parse itemId: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	itemToDelete := models.GetItemByID(uint(itemId))
+	reqUserId := r.Context().Value("reqUserId")
+	if reqUserId != itemToDelete.UserID {
+		http.Error(w, "you have no permissions", http.StatusForbidden)
+		return
+	}
+
+	item, err := models.DeleteItem(uint(itemId))
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Cannot delete item error: %v", err), http.StatusInternalServerError)
+		return
+	}
+
 	responseData, err := json.Marshal(item)
 	if err != nil {
-		log.Printf("[ERROR] Encoding error: %v\n", err)
-		http.Error(w, "Encoding error", http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Encoding error: %v", err), http.StatusInternalServerError)
 		return
 	}
 

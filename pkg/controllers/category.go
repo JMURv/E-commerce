@@ -31,7 +31,7 @@ func ListCategory(w http.ResponseWriter, r *http.Request) {
 func GetCategory(w http.ResponseWriter, r *http.Request) {
 	categoryID, err := strconv.ParseUint(mux.Vars(r)["id"], 10, 32)
 	if err != nil {
-		http.Error(w, "Cannot parse categoryID", http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Cannot parse categoryID: %v", err), http.StatusInternalServerError)
 		return
 	}
 
@@ -43,7 +43,7 @@ func GetCategory(w http.ResponseWriter, r *http.Request) {
 
 	response, err := json.Marshal(category)
 	if err != nil {
-		http.Error(w, "Encoding error", http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("Encoding error: %v", err), http.StatusBadRequest)
 		return
 	}
 
