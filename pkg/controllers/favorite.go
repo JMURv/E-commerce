@@ -42,7 +42,7 @@ func CreateFavorites(w http.ResponseWriter, r *http.Request) {
 
 	response, err := json.Marshal(favorite)
 	if err != nil {
-		http.Error(w, "Encoding error", http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("Encoding error: %v", err), http.StatusBadRequest)
 		return
 	}
 

@@ -22,6 +22,8 @@ func main() {
 	routes.RegisterFavoriteRoutes(router)
 	routes.RegisterReviewsRoutes(router)
 
+	routes.RegisterTagsRoutes(router)
+
 	log.Println("Server is running on port 8000")
 	err := http.ListenAndServe(":8000", handlers.LoggingHandler(os.Stdout, router))
 	if err != nil {
