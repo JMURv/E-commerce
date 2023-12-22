@@ -7,6 +7,11 @@ import (
 	"gorm.io/gorm"
 )
 
+type UserWithToken struct {
+	User  *User  `json:"user"`
+	Token string `json:"token"`
+}
+
 type User struct {
 	gorm.Model
 	Username  string     `json:"username"`

@@ -24,10 +24,10 @@ func main() {
 
 	routes.RegisterTagsRoutes(router)
 
-	log.Println("Server is running on port 8000")
-	err := http.ListenAndServe(":8000", handlers.LoggingHandler(os.Stdout, router))
-	if err != nil {
-		log.Fatalf("Unable to start server: %v", err)
-	}
+	routes.RegisterWSRoutes(router)
+	routes.RegisterRoomRoutes(router)
+	routes.RegisterMessageRoutes(router)
 
+	log.Println("Server is running on port 8000")
+	log.Fatal(http.ListenAndServe(":8000", handlers.LoggingHandler(os.Stdout, router)))
 }

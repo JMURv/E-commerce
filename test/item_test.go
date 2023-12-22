@@ -1,11 +1,9 @@
-package main
+package test
 
 import (
 	"bytes"
-	"e-commerce/pkg/controllers"
 	"e-commerce/pkg/models"
 	"encoding/json"
-	"github.com/gorilla/mux"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -13,6 +11,8 @@ import (
 
 func TestCreateItem(t *testing.T) {
 	newItem := models.Item{
+		UserID:      1,
+		CategoryID:  1,
 		Name:        "TestProduct",
 		Description: "A test product",
 		Price:       29.99,
@@ -50,10 +50,4 @@ func TestCreateItem(t *testing.T) {
 	if len(createdItem.Tags) != 2 {
 		t.Errorf("Expected 2 item tags got %v", len(createdItem.Tags))
 	}
-}
-
-func createTestRouter() *mux.Router {
-	r := mux.NewRouter()
-	r.HandleFunc("/items", controllers.CreateItem).Methods("POST")
-	return r
 }

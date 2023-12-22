@@ -2,12 +2,13 @@ package models
 
 import (
 	"errors"
-	"gorm.io/gorm"
+	"time"
 )
 
 type Tag struct {
-	gorm.Model
-	Name string `json:"name" gorm:"unique"`
+	Name      string    `json:"name" gorm:"primaryKey"`
+	CreatedAt time.Time `json:"createdAd"`
+	UpdatedAt time.Time `json:"updatedAt"`
 }
 
 func GetAllTags() ([]Tag, error) {
@@ -31,7 +32,7 @@ func (t *Tag) CreateTag() (*Tag, error) {
 
 func DeleteTag(tagID uint) error {
 	var tag Tag
-	if err := db.Delete(&tag, tagID).Error; err != nil {
+	if err := db.Unscoped().Delete(&tag, tagID).Error; err != nil {
 		return err
 	}
 	return nil

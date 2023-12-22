@@ -7,7 +7,7 @@ import (
 )
 
 type Item struct {
-	gorm.Model
+	ID          uint      `gorm:"primaryKey"`
 	Name        string    `json:"name"`
 	Description string    `json:"description"`
 	Price       float64   `json:"price"`
@@ -17,8 +17,10 @@ type Item struct {
 	User        User      `json:"user" gorm:"foreignKey:UserID"`
 	Reviews     []Review  `json:"reviews"`
 	Tags        []Tag     `json:"tags" gorm:"many2many:item_tags;"`
+	Status      string    `json:"status"`
 	Quantity    int32     `json:"quantity"`
 	CreatedAt   time.Time `json:"createdAt"`
+	UpdatedAt   time.Time `json:"updatedAt"`
 }
 
 func GetItemByID(id uint) *Item {
@@ -66,6 +68,7 @@ func (i *Item) CreateItem() (*Item, error) {
 		i.Tags[idx] = *existingTag
 	}
 
+	i.Status = "created"
 	i.CreatedAt = time.Now()
 	// Perform item's save
 	if err := db.Create(&i).Error; err != nil {

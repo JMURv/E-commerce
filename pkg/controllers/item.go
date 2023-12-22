@@ -24,6 +24,10 @@ func ListItem(w http.ResponseWriter, r *http.Request) {
 	w.Write(responseData)
 }
 
+func ListUserRecommendsItem(w http.ResponseWriter, r *http.Request) {
+	
+}
+
 func CreateItem(w http.ResponseWriter, r *http.Request) {
 	NewItem := &models.Item{}
 	utils.ParseBody(r, NewItem)

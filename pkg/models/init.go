@@ -20,6 +20,8 @@ func init() {
 		&Item{},
 		&Review{},
 		&Favorite{},
+		&Room{},
+		&Message{},
 	)
 	if err != nil {
 		log.Fatal(err)
