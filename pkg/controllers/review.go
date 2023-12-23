@@ -67,7 +67,7 @@ func CreateReview(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Error while encoding notification message: %v", err)
 	}
 
-	broadcast(review.UserID, review.ReviewedUserID, notificationBytes)
+	go broadcast(review.UserID, review.ReviewedUserID, notificationBytes)
 
 	utils.ResponseOk(w, http.StatusCreated, response)
 }

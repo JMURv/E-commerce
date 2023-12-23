@@ -7,8 +7,8 @@ import (
 )
 
 func ResponseOk(w http.ResponseWriter, status int, body []byte) {
-	w.WriteHeader(status)
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
 	w.Write(body)
 }
 
