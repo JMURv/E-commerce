@@ -67,10 +67,10 @@ func UpdateCategory(categoryID uint, newData *Category) (*Category, error) {
 	return category, nil
 }
 
-func DeleteCategory(categoryID uint) (Category, error) {
+func DeleteCategory(categoryID uint) error {
 	var category Category
 	if err := db.Delete(&category, categoryID).Error; err != nil {
-		return category, err
+		return err
 	}
-	return category, nil
+	return nil
 }

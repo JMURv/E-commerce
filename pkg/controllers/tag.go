@@ -23,9 +23,7 @@ func ListTags(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(response)
+	utils.ResponseOk(w, http.StatusOK, response)
 }
 
 func CreateTag(w http.ResponseWriter, r *http.Request) {
@@ -44,9 +42,7 @@ func CreateTag(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	w.Write(response)
+	utils.ResponseOk(w, http.StatusCreated, response)
 }
 
 func DeleteTag(w http.ResponseWriter, r *http.Request) {
@@ -62,6 +58,5 @@ func DeleteTag(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusNoContent)
 }

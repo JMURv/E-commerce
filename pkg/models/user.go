@@ -81,10 +81,10 @@ func UpdateUser(userId uint, newData *User) (*User, error) {
 	return user, nil
 }
 
-func DeleteUser(id uint) (*User, error) {
+func DeleteUser(id uint) error {
 	var user User
 	if err := db.Delete(&user, id).Error; err != nil {
-		return nil, err
+		return err
 	}
-	return &user, nil
+	return nil
 }

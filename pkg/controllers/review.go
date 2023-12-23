@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
+	"log"
 	"net/http"
 	"strconv"
 )
@@ -29,9 +30,7 @@ func GetReview(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(response)
+	utils.ResponseOk(w, http.StatusOK, response)
 }
 
 func CreateReview(w http.ResponseWriter, r *http.Request) {
@@ -50,9 +49,27 @@ func CreateReview(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	w.Write(response)
+	// Create notification for item's author and send message via WS
+	newNotification := models.Notification{
+		Type:       "notification",
+		UserID:     review.UserID,
+		ReceiverID: review.ReviewedUserID,
+		Message:    "new review",
+	}
+
+	notification, err := newNotification.CreateNotification()
+	if err != nil {
+		log.Printf("Error while creating notification: %v", err)
+	}
+
+	notificationBytes, err := json.Marshal(notification)
+	if err != nil {
+		log.Printf("Error while encoding notification message: %v", err)
+	}
+
+	broadcast(review.UserID, review.ReviewedUserID, notificationBytes)
+
+	utils.ResponseOk(w, http.StatusCreated, response)
 }
 
 func UpdateReview(w http.ResponseWriter, r *http.Request) {
@@ -77,9 +94,7 @@ func UpdateReview(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(response)
+	utils.ResponseOk(w, http.StatusOK, response)
 }
 
 func DeleteReview(w http.ResponseWriter, r *http.Request) {
@@ -89,19 +104,11 @@ func DeleteReview(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	deletedReview, err := models.DeleteReview(uint(reviewID))
+	err = models.DeleteReview(uint(reviewID))
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Cannot delete review: %v", err), http.StatusInternalServerError)
 		return
 	}
 
-	response, err := json.Marshal(deletedReview)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("Encoding error: %v", err), http.StatusBadRequest)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusNoContent)
-	w.Write(response)
 }

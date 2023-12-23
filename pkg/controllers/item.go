@@ -13,19 +13,17 @@ import (
 func ListItem(w http.ResponseWriter, r *http.Request) {
 	itemsList := models.GetAllItems()
 
-	responseData, err := json.Marshal(itemsList)
+	response, err := json.Marshal(itemsList)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Invalid request body: %v", err), http.StatusBadRequest)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(responseData)
+	utils.ResponseOk(w, http.StatusOK, response)
 }
 
 func ListUserRecommendsItem(w http.ResponseWriter, r *http.Request) {
-	
+
 }
 
 func CreateItem(w http.ResponseWriter, r *http.Request) {
@@ -38,15 +36,13 @@ func CreateItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	responseData, err := json.Marshal(item)
+	response, err := json.Marshal(item)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Invalid request body: %v", err), http.StatusBadRequest)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	w.Write(responseData)
+	utils.ResponseOk(w, http.StatusCreated, response)
 }
 
 func GetItem(w http.ResponseWriter, r *http.Request) {
@@ -57,15 +53,13 @@ func GetItem(w http.ResponseWriter, r *http.Request) {
 	}
 
 	itemDetails := models.GetItemByID(uint(itemId))
-	responseData, err := json.Marshal(itemDetails)
+	response, err := json.Marshal(itemDetails)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Invalid request body: %v", err), http.StatusBadRequest)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(responseData)
+	utils.ResponseOk(w, http.StatusOK, response)
 }
 
 func UpdateItem(w http.ResponseWriter, r *http.Request) {
@@ -92,15 +86,13 @@ func UpdateItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	responseData, err := json.Marshal(updatedItem)
+	response, err := json.Marshal(updatedItem)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Encoding error: %v", err), http.StatusInternalServerError)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(responseData)
+	utils.ResponseOk(w, http.StatusOK, response)
 }
 
 func DeleteItem(w http.ResponseWriter, r *http.Request) {
@@ -117,19 +109,11 @@ func DeleteItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	item, err := models.DeleteItem(uint(itemId))
+	err = models.DeleteItem(uint(itemId))
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Cannot delete item error: %v", err), http.StatusInternalServerError)
 		return
 	}
 
-	responseData, err := json.Marshal(item)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("Encoding error: %v", err), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusNoContent)
-	w.Write(responseData)
 }

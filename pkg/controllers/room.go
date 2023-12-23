@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"e-commerce/pkg/models"
+	"e-commerce/pkg/utils"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -22,9 +23,7 @@ func ListRoom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(response)
+	utils.ResponseOk(w, http.StatusOK, response)
 }
 
 func CreateRoom(w http.ResponseWriter, r *http.Request) {
@@ -50,9 +49,7 @@ func CreateRoom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	w.Write(response)
+	utils.ResponseOk(w, http.StatusCreated, response)
 }
 
 func DeleteRoom(w http.ResponseWriter, r *http.Request) {

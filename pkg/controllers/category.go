@@ -23,9 +23,7 @@ func ListCategory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(response)
+	utils.ResponseOk(w, http.StatusOK, response)
 }
 
 func GetCategory(w http.ResponseWriter, r *http.Request) {
@@ -47,9 +45,7 @@ func GetCategory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(response)
+	utils.ResponseOk(w, http.StatusOK, response)
 }
 
 func CreateCategory(w http.ResponseWriter, r *http.Request) {
@@ -68,9 +64,7 @@ func CreateCategory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	w.Write(response)
+	utils.ResponseOk(w, http.StatusCreated, response)
 }
 
 func UpdateCategory(w http.ResponseWriter, r *http.Request) {
@@ -95,9 +89,7 @@ func UpdateCategory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(response)
+	utils.ResponseOk(w, http.StatusOK, response)
 }
 
 func DeleteCategory(w http.ResponseWriter, r *http.Request) {
@@ -107,19 +99,11 @@ func DeleteCategory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	deletedCategory, err := models.DeleteCategory(uint(categoryID))
+	err = models.DeleteCategory(uint(categoryID))
 	if err != nil {
 		http.Error(w, "Cannot delete category", http.StatusInternalServerError)
 		return
 	}
 
-	response, err := json.Marshal(deletedCategory)
-	if err != nil {
-		http.Error(w, "Encoding error", http.StatusBadRequest)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusNoContent)
-	w.Write(response)
 }

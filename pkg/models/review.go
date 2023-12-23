@@ -87,10 +87,10 @@ func UpdateReview(reviewID uint, newData *Review) (*Review, error) {
 	return review, nil
 }
 
-func DeleteReview(reviewID uint) (Review, error) {
+func DeleteReview(reviewID uint) error {
 	var review Review
 	if err := db.Delete(&review, reviewID).Error; err != nil {
-		return review, err
+		return err
 	}
-	return review, nil
+	return nil
 }

@@ -66,13 +66,42 @@ func reader(conn *websocket.Conn) {
 			response, err := json.Marshal(newMessage)
 			if err != nil {
 				log.Printf("Error while encoding new message: %v", err)
+				continue
 			}
 
 			broadcast(receivedMessage.UserID, receivedMessage.ReceiverID, response)
 		case "edit":
 			log.Println("Get edit message type")
+
+			updatedMessage, err := models.UpdateMessage(receivedMessage.MessageData.ID, &receivedMessage.MessageData)
+			if err != nil {
+				log.Printf("Error while updating message: %v", err)
+				continue
+			}
+
+			response, err := json.Marshal(updatedMessage)
+			if err != nil {
+				log.Printf("Error while encoding updated message: %v", err)
+				continue
+			}
+
+			broadcast(receivedMessage.UserID, receivedMessage.ReceiverID, response)
 		case "delete":
 			log.Println("Get delete message type")
+
+			deletedMessage, err := models.DeleteMessage(receivedMessage.MessageData.ID)
+			if err != nil {
+				log.Printf("Error while deleting message: %v", err)
+				continue
+			}
+
+			response, err := json.Marshal(deletedMessage)
+			if err != nil {
+				log.Printf("Error while encoding deleting message: %v", err)
+				continue
+			}
+
+			broadcast(receivedMessage.UserID, receivedMessage.ReceiverID, response)
 		}
 	}
 }

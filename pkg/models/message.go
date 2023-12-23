@@ -17,6 +17,19 @@ type Message struct {
 	ReplyToID *uint     `json:"replyToID"`
 	ReplyTo   *Message  `json:"replyTo" gorm:"foreignKey:ReplyToID"`
 	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
+}
+
+func GetMessageByID(messageID uint) (*Message, error) {
+	var message Message
+	if err := db.Preload("User").
+		Preload("Room").
+		Preload("ReplyTo").
+		Where("ID=?", messageID).
+		First(&message).Error; err != nil {
+		return nil, err
+	}
+	return &message, nil
 }
 
 func (m *Message) CreateMessage() (*Message, error) {
@@ -37,4 +50,31 @@ func (m *Message) CreateMessage() (*Message, error) {
 	}
 
 	return m, nil
+}
+
+func UpdateMessage(messageID uint, newData *Message) (*Message, error) {
+	message, err := GetMessageByID(messageID)
+	if err != nil {
+		return nil, err
+	}
+
+	if newData.Text != "" {
+		message.Text = newData.Text
+	}
+
+	message.Edited = true
+	message.UpdatedAt = time.Now()
+
+	if err := db.Save(&message).Error; err != nil {
+		return nil, err
+	}
+	return message, nil
+}
+
+func DeleteMessage(messageID uint) (Message, error) {
+	var message Message
+	if err := db.Delete(&message, messageID).Error; err != nil {
+		return message, err
+	}
+	return message, nil
 }

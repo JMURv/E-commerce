@@ -22,6 +22,7 @@ func init() {
 		&Favorite{},
 		&Room{},
 		&Message{},
+		&Notification{},
 	)
 	if err != nil {
 		log.Fatal(err)

@@ -104,11 +104,11 @@ func (i *Item) UpdateItem(newData *Item) (*Item, error) {
 	return i, nil
 }
 
-func DeleteItem(id uint) (*Item, error) {
+func DeleteItem(id uint) error {
 	var item Item
 
 	if err := db.Delete(&item, id).Error; err != nil {
-		return nil, err
+		return err
 	}
-	return &item, nil
+	return nil
 }

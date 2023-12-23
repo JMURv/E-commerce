@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
+	"log"
 	"net/http"
 	"strconv"
 )
@@ -25,9 +26,7 @@ func ListFavorites(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(response)
+	utils.ResponseOk(w, http.StatusOK, response)
 }
 
 func CreateFavorites(w http.ResponseWriter, r *http.Request) {
@@ -46,9 +45,27 @@ func CreateFavorites(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	w.Write(response)
+	// Create notification for item's author and send message via WS
+	newNotification := models.Notification{
+		Type:       "notification",
+		UserID:     favorite.UserID,
+		ReceiverID: favorite.Item.UserID,
+		Message:    "new favorite",
+	}
+
+	notification, err := newNotification.CreateNotification()
+	if err != nil {
+		log.Printf("Error while creating notification: %v", err)
+	}
+
+	notificationBytes, err := json.Marshal(notification)
+	if err != nil {
+		log.Printf("Error while encoding notification message: %v", err)
+	}
+
+	go broadcast(favorite.UserID, favorite.Item.UserID, notificationBytes)
+
+	utils.ResponseOk(w, http.StatusCreated, response)
 }
 
 func DeleteFavorite(w http.ResponseWriter, r *http.Request) {
@@ -76,13 +93,5 @@ func DeleteFavorite(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	responseData, err := json.Marshal(favorite)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("Encoding error: %v", err), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusNoContent)
-	w.Write(responseData)
 }

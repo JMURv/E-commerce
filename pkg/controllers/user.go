@@ -20,10 +20,7 @@ func ListCreateUser(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, fmt.Sprintf("Invalid request body: %v", err), http.StatusBadRequest)
 			return
 		}
-
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		w.Write(response)
+		utils.ResponseOk(w, http.StatusOK, response)
 
 	case http.MethodPost:
 		var userData = &models.User{}
@@ -49,9 +46,7 @@ func ListCreateUser(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusCreated)
-		w.Write(response)
+		utils.ResponseOk(w, http.StatusCreated, response)
 	}
 }
 
@@ -74,9 +69,7 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(response)
+	utils.ResponseOk(w, http.StatusOK, response)
 }
 
 func UpdateUser(w http.ResponseWriter, r *http.Request) {
@@ -101,15 +94,13 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	responseData, err := json.Marshal(newUserData)
+	response, err := json.Marshal(newUserData)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Encoding error: %v", err), http.StatusInternalServerError)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(responseData)
+	utils.ResponseOk(w, http.StatusOK, response)
 }
 
 func DeleteUser(w http.ResponseWriter, r *http.Request) {
@@ -125,19 +116,11 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := models.DeleteUser(uint(userID))
+	err = models.DeleteUser(uint(userID))
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Deleting user error: %v", err), http.StatusInternalServerError)
 		return
 	}
 
-	responseData, err := json.Marshal(user)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("Encoding error: %v", err), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusNoContent)
-	w.Write(responseData)
 }
