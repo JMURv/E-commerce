@@ -11,10 +11,10 @@ import (
 
 type Claims struct {
 	jwt.RegisteredClaims
-	UserId uint `json:"userId"`
+	UserId uint64 `json:"userId"`
 }
 
-func GenerateToken(userID uint) (string, error) {
+func GenerateToken(userID uint64) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, Claims{
 		UserId: userID,
 		RegisteredClaims: jwt.RegisteredClaims{

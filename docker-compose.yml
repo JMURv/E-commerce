@@ -57,9 +57,9 @@ services:
     volumes:
       - ./:/app
     ports:
-      - "500:500"
+      - "50070:50070"
     expose:
-      - "500"
+      - "50070"
     depends_on:
       - postgres
     command: sh -c "cd ./reviews && go run main.go"

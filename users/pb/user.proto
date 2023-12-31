@@ -4,57 +4,65 @@ package main;
 
 option go_package = "./pb";
 
-service ReviewService {
+service UserService {
   rpc ListUser (EmptyRequest) returns (ListUserResponse) {}
-  rpc GetUserByID (GetUserByIDRequest) returns (UserResponse) {}
-  rpc CreateReview (CreateUserRequest) returns (UserResponse) {}
-  rpc UpdateReview (UpdateUserRequest) returns (UserResponse) {}
-  rpc DeleteReview (DeleteUserRequest) returns (EmptyResponse) {}
+  rpc GetUserByID (GetUserByIDRequest) returns (User) {}
+  rpc GetUserByEmail (GetUserByEmailRequest) returns (User) {}
+  rpc CreateUser (CreateUserRequest) returns (CreateUserResponse) {}
+  rpc UpdateUser (UpdateUserRequest) returns (User) {}
+  rpc DeleteUser (DeleteUserRequest) returns (EmptyResponse) {}
 }
 
 message EmptyRequest {}
 message EmptyResponse {}
 
+message Item {} // TODO: import it from github
+message Favorite {}
+message Review {}
+
+message User {
+  uint64 id = 1;
+  string username = 2;
+  string email = 3;
+  bool is_admin = 4;
+  repeated Item items = 5;
+  repeated Favorite favorites = 6;
+  repeated Review reviews = 7;
+}
+
+message ListUserResponse {
+  repeated User users = 1;
+}
+
 message GetUserByIDRequest {
   uint64 user_id = 1;
 }
 
+message GetUserByEmailRequest {
+  string email = 1;
+}
+
 message CreateUserRequest {
-  uint64 item_id = 2;
-  uint64 reviewed_user_id = 3;
-  string advantages = 4;
-  string disadvantages = 5;
-  string review_text = 6;
-  uint32 rating = 7;
+  string username = 1;
+  string email = 2;
+}
+
+message CreateUserResponse {
+  User user = 1;
+  string token = 2;
+  string error_message = 3;
 }
 
 message UpdateUserRequest {
-  uint64 review_id = 1;
-  uint64 user_id = 2;
-  uint64 item_id = 3;
-  uint64 reviewed_user_id = 4;
-  string advantages = 5;
-  string disadvantages = 6;
-  string review_text = 7;
-  uint32 rating = 8;
+  uint64 user_id = 1;
+  User new_data = 2;
+}
+
+message UpdateUserResponse {
+  User user = 1;
+  string error_message = 2;
 }
 
 message DeleteUserRequest {
   uint64 user_id = 1;
 }
-
-message UserResponse {
-  uint64 review_id = 1;
-  uint64 user_id = 2;
-  uint64 item_id = 3;
-  uint64 reviewed_user_id = 4;
-  string advantages = 5;
-  string disadvantages = 6;
-  string review_text = 7;
-  uint32 rating = 8;
-}
-
-message ListUserResponse {
-  repeated UserResponse = 1;
-}
-

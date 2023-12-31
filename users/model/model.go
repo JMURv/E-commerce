@@ -1,11 +1,42 @@
-package models
+package model
 
 import (
 	"e-commerce/pkg/auth"
 	"errors"
 	"fmt"
+	"github.com/joho/godotenv"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"log"
+	"os"
 )
+
+var db *gorm.DB
+
+func init() {
+	var err error
+
+	if err := godotenv.Load("../.env"); err != nil {
+		log.Fatal("Error loading .env file")
+		return
+	}
+
+	dsn := os.Getenv("DSN")
+	database, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	db = database
+
+	err = db.AutoMigrate(
+		&User{},
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+}
 
 type UserWithToken struct {
 	User  *User  `json:"user"`
