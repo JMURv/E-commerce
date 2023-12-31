@@ -7,13 +7,13 @@ import (
 
 type Favorite struct {
 	gorm.Model
-	User   User `json:"user" gorm:"foreignKey:UserID"`
-	UserID uint `json:"userID"`
-	Item   Item `json:"item" gorm:"foreignKey:ItemID"`
-	ItemID uint `json:"itemID"`
+	User   User   `json:"user" gorm:"foreignKey:UserID"`
+	UserID uint64 `json:"userID"`
+	Item   Item   `json:"item" gorm:"foreignKey:ItemID"`
+	ItemID uint64 `json:"itemID"`
 }
 
-func GetAllUserFavorites(userID uint) ([]Favorite, error) {
+func GetAllUserFavorites(userID uint64) ([]Favorite, error) {
 	var favorites []Favorite
 	if err := db.Preload("User").Preload("Item").Where("favorites.user_id = ?", userID).Find(&favorites).Error; err != nil {
 		return nil, err
@@ -21,7 +21,7 @@ func GetAllUserFavorites(userID uint) ([]Favorite, error) {
 	return favorites, nil
 }
 
-func GetFavoriteByID(favoriteID uint) (*Favorite, error) {
+func GetFavoriteByID(favoriteID uint64) (*Favorite, error) {
 	var favorite Favorite
 	if err := db.Preload("User").Preload("Item").Where("ID = ?", favoriteID).First(&favorite).Error; err != nil {
 		return nil, err
@@ -43,7 +43,7 @@ func (f *Favorite) CreateFavorite() (*Favorite, error) {
 	return f, nil
 }
 
-func DeleteFavorite(favoriteID uint) error {
+func DeleteFavorite(favoriteID uint64) error {
 	var favorite Favorite
 	if err := db.Delete(&favorite, favoriteID).Error; err != nil {
 		return err

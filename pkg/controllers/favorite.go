@@ -12,7 +12,7 @@ import (
 )
 
 func ListFavorites(w http.ResponseWriter, r *http.Request) {
-	reqUserID := r.Context().Value("reqUserId").(uint)
+	reqUserID := r.Context().Value("reqUserId").(uint64)
 
 	favorites, err := models.GetAllUserFavorites(reqUserID)
 	if err != nil {
@@ -49,7 +49,7 @@ func CreateFavorites(w http.ResponseWriter, r *http.Request) {
 	newNotification := models.Notification{
 		Type:       "notification",
 		UserID:     favorite.UserID,
-		ReceiverID: favorite.Item.UserID,
+		ReceiverID: uint64(favorite.Item.UserID),
 		Message:    "new favorite",
 	}
 
@@ -63,7 +63,7 @@ func CreateFavorites(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Error while encoding notification message: %v", err)
 	}
 
-	go broadcast(favorite.UserID, favorite.Item.UserID, notificationBytes)
+	go broadcast(uint(favorite.UserID), favorite.Item.UserID, notificationBytes)
 
 	utils.ResponseOk(w, http.StatusCreated, response)
 }
@@ -75,19 +75,19 @@ func DeleteFavorite(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	favorite, err := models.GetFavoriteByID(uint(favoriteID))
+	favorite, err := models.GetFavoriteByID(favoriteID)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Cannot find favorite: %v", err), http.StatusNotFound)
 		return
 	}
 
-	reqUserID := r.Context().Value("reqUserId").(uint)
+	reqUserID := r.Context().Value("reqUserId").(uint64)
 	if favorite.UserID != reqUserID {
 		http.Error(w, "You have no permission to do it", http.StatusUnauthorized)
 		return
 	}
 
-	err = models.DeleteFavorite(uint(favoriteID))
+	err = models.DeleteFavorite(favoriteID)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Deleting favorite error: %v", err), http.StatusInternalServerError)
 		return

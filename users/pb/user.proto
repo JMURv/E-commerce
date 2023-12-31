@@ -1,0 +1,60 @@
+syntax = "proto3";
+
+package main;
+
+option go_package = "./pb";
+
+service ReviewService {
+  rpc ListUser (EmptyRequest) returns (ListUserResponse) {}
+  rpc GetUserByID (GetUserByIDRequest) returns (UserResponse) {}
+  rpc CreateReview (CreateUserRequest) returns (UserResponse) {}
+  rpc UpdateReview (UpdateUserRequest) returns (UserResponse) {}
+  rpc DeleteReview (DeleteUserRequest) returns (EmptyResponse) {}
+}
+
+message EmptyRequest {}
+message EmptyResponse {}
+
+message GetUserByIDRequest {
+  uint64 user_id = 1;
+}
+
+message CreateUserRequest {
+  uint64 item_id = 2;
+  uint64 reviewed_user_id = 3;
+  string advantages = 4;
+  string disadvantages = 5;
+  string review_text = 6;
+  uint32 rating = 7;
+}
+
+message UpdateUserRequest {
+  uint64 review_id = 1;
+  uint64 user_id = 2;
+  uint64 item_id = 3;
+  uint64 reviewed_user_id = 4;
+  string advantages = 5;
+  string disadvantages = 6;
+  string review_text = 7;
+  uint32 rating = 8;
+}
+
+message DeleteUserRequest {
+  uint64 user_id = 1;
+}
+
+message UserResponse {
+  uint64 review_id = 1;
+  uint64 user_id = 2;
+  uint64 item_id = 3;
+  uint64 reviewed_user_id = 4;
+  string advantages = 5;
+  string disadvantages = 6;
+  string review_text = 7;
+  uint32 rating = 8;
+}
+
+message ListUserResponse {
+  repeated UserResponse = 1;
+}
+

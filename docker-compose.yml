@@ -11,6 +11,14 @@ services:
     volumes:
       - pg_data:/var/lib/postgresql/data
 
+#  nats:
+#    container_name: nats
+#    image: nats:latest
+#    restart: always
+#    ports:
+#      - "4222:4222"
+#      - "6222:6222"
+#      - "8222:8222"
 #  pgadmin:
 #    container_name: pgadmin
 #    image: dpage/pgadmin4
@@ -39,7 +47,22 @@ services:
       - "8000"
     depends_on:
       - postgres
-    command: sh -c "cd ./cmd && go run main.go"
+    command: sh -c "cd ./cmd && go run ."
+
+  review:
+    container_name: review
+    image: "ecom_backend:latest"
+    env_file:
+      - ./.env
+    volumes:
+      - ./:/app
+    ports:
+      - "500:500"
+    expose:
+      - "500"
+    depends_on:
+      - postgres
+    command: sh -c "cd ./reviews && go run main.go"
 
 volumes:
   pg_data:

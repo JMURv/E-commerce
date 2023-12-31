@@ -10,6 +10,7 @@ import (
 
 var db *gorm.DB
 var JWTsecretKey string
+var ReviewServiceURL string
 
 func Connect() {
 	var err error
@@ -18,10 +19,12 @@ func Connect() {
 		log.Fatal("Error loading .env file")
 		return
 	}
-	log.Println(".env file has been loaded")
+	log.Println("Env file has been loaded")
 
 	jwt := os.Getenv("JWTSECRET")
 	dsn := os.Getenv("DSN")
+	ReviewServiceURL = os.Getenv("REVIEW_SVC")
+
 	database, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatal(err)
