@@ -1,3 +1,5 @@
+github.com/JMURv/protos/ecom v0.0.0-20240104131943-ac9985eff9de h1:NUmKg5xiXaz3FN8cpEs21UfLET0+OelrqKHt6sMRxZE=
+github.com/JMURv/protos/ecom v0.0.0-20240104131943-ac9985eff9de/go.mod h1:zo3MR7j/hxtxhNyiz3U99HmQiM9gGo4h1kENaq9foOI=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=

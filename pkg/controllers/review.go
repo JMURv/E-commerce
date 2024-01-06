@@ -5,9 +5,9 @@ import (
 	"e-commerce/pkg/config"
 	"e-commerce/pkg/models"
 	"e-commerce/pkg/utils"
-	pb "e-commerce/reviews/proto"
 	"encoding/json"
 	"fmt"
+	pb "github.com/JMURv/protos/ecom/review"
 	"github.com/gorilla/mux"
 	"google.golang.org/grpc"
 	"log"
@@ -54,7 +54,7 @@ func CreateReview(w http.ResponseWriter, r *http.Request) {
 	client := pb.NewReviewServiceClient(reviewConn)
 	review, err := client.CreateReview(context.Background(), newReviewRequest)
 	if err != nil {
-		log.Printf("Error getting review: %v", err)
+		log.Printf("Error creating review: %v", err)
 	}
 
 	response, err := json.Marshal(review)

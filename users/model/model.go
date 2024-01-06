@@ -45,27 +45,26 @@ type UserWithToken struct {
 
 type User struct {
 	gorm.Model
-	ID        uint64     `gorm:"primaryKey"`
-	Username  string     `json:"username"`
-	Email     string     `json:"email"`
-	IsAdmin   bool       `json:"isAdmin"`
-	Items     []Item     `json:"items"`
-	Favorites []Favorite `json:"favorites"`
-	Reviews   []Review   `json:"reviews"`
+	ID       uint64 `gorm:"primaryKey"`
+	Username string `json:"username"`
+	Email    string `json:"email"`
+	IsAdmin  bool   `json:"isAdmin"`
 }
 
 func GetUserByID(id uint64) (*User, error) {
 	var user User
-	if err := db.Preload("Items").Preload("Reviews").Preload("Favorites").Where("ID=?", id).First(&user).Error; err != nil {
+	if err := db.Where("ID=?", id).First(&user).Error; err != nil {
 		return nil, err
 	}
 	return &user, nil
 }
 
-func GetUserByEmail(email string) *User {
+func GetUserByEmail(email string) (*User, error) {
 	var user User
-	db.Where("Email=?", email).First(&user)
-	return &user
+	if err := db.Where("Email=?", email).First(&user).Error; err != nil {
+		return nil, err
+	}
+	return &user, nil
 }
 
 func GetAllUsers() []User {

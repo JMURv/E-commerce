@@ -9,23 +9,24 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 
-	pb "e-commerce/reviews/proto"
+	common "github.com/JMURv/protos/ecom/common"
+	pb "github.com/JMURv/protos/ecom/review"
 )
 
 type reviewServer struct {
 	pb.ReviewServiceServer
 }
 
-func (s *reviewServer) GetReviewByID(ctx context.Context, req *pb.GetReviewByIDRequest) (*pb.ReviewResponse, error) {
+func (s *reviewServer) GetReviewByID(ctx context.Context, req *pb.GetReviewByIDRequest) (*common.Review, error) {
 	reviewID := req.GetReviewId()
 
 	review, err := model.GetReviewByID(reviewID)
 	if err != nil {
 		log.Printf("Error getting review by ID: %v", err)
-		return &pb.ReviewResponse{}, err
+		return &common.Review{}, err
 	}
 
-	response := &pb.ReviewResponse{
+	response := &common.Review{
 		ReviewId:       review.ID,
 		UserId:         review.UserID,
 		ItemId:         review.ItemID,
@@ -39,7 +40,7 @@ func (s *reviewServer) GetReviewByID(ctx context.Context, req *pb.GetReviewByIDR
 	return response, nil
 }
 
-func (s *reviewServer) CreateReview(ctx context.Context, req *pb.CreateReviewRequest) (*pb.ReviewResponse, error) {
+func (s *reviewServer) CreateReview(ctx context.Context, req *pb.CreateReviewRequest) (*common.Review, error) {
 	newReview := &model.Review{
 		UserID:         req.GetUserId(),
 		ItemID:         req.GetItemId(),
@@ -56,7 +57,7 @@ func (s *reviewServer) CreateReview(ctx context.Context, req *pb.CreateReviewReq
 		return nil, err
 	}
 
-	response := &pb.ReviewResponse{
+	response := &common.Review{
 		ReviewId:       review.ID,
 		UserId:         review.UserID,
 		ItemId:         review.ItemID,
@@ -70,7 +71,7 @@ func (s *reviewServer) CreateReview(ctx context.Context, req *pb.CreateReviewReq
 	return response, nil
 }
 
-func (s *reviewServer) UpdateReview(ctx context.Context, req *pb.UpdateReviewRequest) (*pb.ReviewResponse, error) {
+func (s *reviewServer) UpdateReview(ctx context.Context, req *pb.UpdateReviewRequest) (*common.Review, error) {
 	reviewID := req.GetReviewId()
 
 	newData := &model.Review{
@@ -88,7 +89,7 @@ func (s *reviewServer) UpdateReview(ctx context.Context, req *pb.UpdateReviewReq
 		return nil, err
 	}
 
-	response := &pb.ReviewResponse{
+	response := &common.Review{
 		ReviewId:       updatedReview.ID,
 		UserId:         updatedReview.UserID,
 		ItemId:         updatedReview.ItemID,

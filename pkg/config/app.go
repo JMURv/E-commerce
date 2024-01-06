@@ -11,6 +11,7 @@ import (
 var db *gorm.DB
 var JWTsecretKey string
 var ReviewServiceURL string
+var UserSVC string
 
 func Connect() {
 	var err error
@@ -24,6 +25,7 @@ func Connect() {
 	jwt := os.Getenv("JWTSECRET")
 	dsn := os.Getenv("DSN")
 	ReviewServiceURL = os.Getenv("REVIEW_SVC")
+	UserSVC = os.Getenv("USER_SVC")
 
 	database, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {

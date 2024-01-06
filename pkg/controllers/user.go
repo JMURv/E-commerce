@@ -1,14 +1,29 @@
 package controllers
 
 import (
+	"e-commerce/pkg/config"
 	"e-commerce/pkg/models"
 	"e-commerce/pkg/utils"
 	"encoding/json"
 	"fmt"
+	pb "github.com/JMURv/protos/ecom/user"
 	"github.com/gorilla/mux"
+	"golang.org/x/net/context"
+	"google.golang.org/grpc"
+	"log"
 	"net/http"
 	"strconv"
 )
+
+var userConn *grpc.ClientConn
+
+func init() {
+	var err error
+	userConn, err = grpc.Dial(config.UserSVC, grpc.WithInsecure())
+	if err != nil {
+		log.Printf("Failed to connect to user service: %v", err)
+	}
+}
 
 func ListCreateUser(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
@@ -23,24 +38,19 @@ func ListCreateUser(w http.ResponseWriter, r *http.Request) {
 		utils.ResponseOk(w, http.StatusOK, response)
 
 	case http.MethodPost:
-		var userData = &models.User{}
+		var userData = &pb.CreateUserRequest{}
 		utils.ParseBody(r, userData)
 
-		user, accessToken, err := userData.CreateUser()
+		client := pb.NewUserServiceClient(userConn)
+		u, err := client.CreateUser(context.Background(), userData)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("Creating user error: %v", err), http.StatusBadRequest)
-			return
+			log.Printf("Error creating user: %v", err)
 		}
 
-		userWithToken := struct {
-			User  *models.User `json:"user"`
-			Token string       `json:"token"`
-		}{
-			User:  user,
-			Token: accessToken,
-		}
-
-		response, err := json.Marshal(userWithToken)
+		response, err := json.Marshal(&pb.CreateUserResponse{
+			User:  u.User,
+			Token: u.Token,
+		})
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Encoding error: %v", err), http.StatusInternalServerError)
 			return
@@ -57,19 +67,19 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userDetails, err := models.GetUserByID(uint(userID))
+	client := pb.NewUserServiceClient(userConn)
+	response, err := client.GetUserByID(context.Background(), &pb.GetUserByIDRequest{UserId: userID})
 	if err != nil {
-		http.Error(w, fmt.Sprintf("User does not exist: %v", err), http.StatusNotFound)
-		return
+		log.Printf("Error getting user: %v", err)
 	}
 
-	response, err := json.Marshal(userDetails)
+	jsonResponse, err := json.Marshal(response)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Encoding error: %v", err), http.StatusBadRequest)
 		return
 	}
 
-	utils.ResponseOk(w, http.StatusOK, response)
+	utils.ResponseOk(w, http.StatusOK, jsonResponse)
 }
 
 func UpdateUser(w http.ResponseWriter, r *http.Request) {
@@ -79,22 +89,26 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	reqUserID := r.Context().Value("reqUserId")
-	if reqUserID != uint(userID) {
+	reqUserID := r.Context().Value("reqUserId").(uint64)
+	if reqUserID != userID {
 		http.Error(w, "you have no permissions", http.StatusForbidden)
 		return
 	}
 
-	var updatedUser = &models.User{}
-	utils.ParseBody(r, updatedUser)
+	newData := &pb.UpdateUserRequest{
+		UserId: userID,
+	}
+	utils.ParseBody(r, newData)
 
-	newUserData, err := models.UpdateUser(uint(userID), updatedUser)
+	client := pb.NewUserServiceClient(userConn)
+	updatedUser, err := client.UpdateUser(context.Background(), newData)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Updating user error: %v", err), http.StatusBadRequest)
+		log.Printf("Error updating review: %v", err)
+		http.Error(w, fmt.Sprintf("Error updating review: %v", err), http.StatusInternalServerError)
 		return
 	}
 
-	response, err := json.Marshal(newUserData)
+	response, err := json.Marshal(updatedUser.User)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Encoding error: %v", err), http.StatusInternalServerError)
 		return
@@ -110,15 +124,19 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	reqUserID := r.Context().Value("reqUserId")
-	if reqUserID != uint(userID) {
+	reqUserID := r.Context().Value("reqUserId").(uint64)
+	if reqUserID != userID {
 		http.Error(w, "you have no permissions", http.StatusForbidden)
 		return
 	}
 
-	err = models.DeleteUser(uint(userID))
+	client := pb.NewUserServiceClient(userConn)
+	_, err = client.DeleteUser(context.Background(), &pb.DeleteUserRequest{
+		UserId: reqUserID,
+	})
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Deleting user error: %v", err), http.StatusInternalServerError)
+		log.Printf("Error deleting user: %v", err)
+		http.Error(w, fmt.Sprintf("Cannot delete user: %v", err), http.StatusInternalServerError)
 		return
 	}
 

@@ -14,11 +14,11 @@ func init() {
 	db = config.GetDB()
 
 	err = db.AutoMigrate(
-		&Category{},
-		&Tag{},
-		&User{},
-		&Item{},
-		&Review{},
+		//&Category{},
+		//&Tag{},
+		//&User{},
+		//&Item{},
+		//&Review{},
 		&Favorite{},
 		&Room{},
 		&Message{},
