@@ -2,13 +2,13 @@ package model
 
 import (
 	"errors"
-	"time"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type Tag struct {
-	Name      string    `json:"name" gorm:"primaryKey"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	Name      string                `json:"name" gorm:"primaryKey"`
+	CreatedAt timestamppb.Timestamp `json:"created_at"`
+	UpdatedAt timestamppb.Timestamp `json:"updated_at"`
 }
 
 func GetAllTags() ([]Tag, error) {

@@ -1,8 +1,8 @@
 package routes
 
 import (
-	"e-commerce/pkg/auth"
-	"e-commerce/pkg/controllers"
+	"github.com/JMURv/market/gateway/pkg/auth"
+	"github.com/JMURv/market/gateway/pkg/controllers"
 	"github.com/gorilla/mux"
 	"net/http"
 )

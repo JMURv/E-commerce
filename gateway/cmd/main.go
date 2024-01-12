@@ -1,7 +1,7 @@
 package main
 
 import (
-	"e-commerce/pkg/routes"
+	"github.com/JMURv/market/gateway/pkg/routes"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"

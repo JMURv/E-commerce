@@ -1,9 +1,9 @@
 package models
 
 import (
-	"e-commerce/pkg/auth"
 	"errors"
 	"fmt"
+	"github.com/JMURv/market/gateway/pkg/auth"
 	"gorm.io/gorm"
 )
 

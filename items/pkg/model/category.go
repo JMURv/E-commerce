@@ -2,17 +2,17 @@ package model
 
 import (
 	"errors"
-	"time"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type Category struct {
-	ID               uint64    `gorm:"primaryKey"`
-	Name             string    `json:"name"`
-	Description      string    `json:"description"`
-	ParentCategoryID *uint64   `json:"parent_category_id"`
-	ParentCategory   *Category `json:"parent_category" gorm:"foreignKey:ParentCategoryID"`
-	CreatedAt        time.Time `json:"created_at"`
-	UpdatedAt        time.Time `json:"updated_at"`
+	ID               uint64                `gorm:"primaryKey"`
+	Name             string                `json:"name"`
+	Description      string                `json:"description"`
+	ParentCategoryID uint64                `json:"parent_category_id"`
+	ParentCategory   *Category             `json:"parent_category" gorm:"foreignKey:ParentCategoryID"`
+	CreatedAt        timestamppb.Timestamp `json:"created_at"`
+	UpdatedAt        timestamppb.Timestamp `json:"updated_at"`
 }
 
 func GetAllCategories() ([]Category, error) {
