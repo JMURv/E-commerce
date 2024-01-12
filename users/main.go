@@ -1,7 +1,7 @@
 package main
 
 import (
-	"e-commerce/users/model"
+	"github.com/JMURv/e-commerce/users/model"
 	common "github.com/JMURv/protos/ecom/common"
 	pb "github.com/JMURv/protos/ecom/user"
 	"golang.org/x/net/context"

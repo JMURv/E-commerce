@@ -5,7 +5,6 @@ import (
 	handler "github.com/JMURv/e-commerce/items/internal/handler/grpc"
 	"github.com/JMURv/e-commerce/items/internal/repository/memory"
 	pb "github.com/JMURv/protos/ecom/item"
-	//"google.golang.org/protobuf/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"log"
