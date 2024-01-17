@@ -2,7 +2,10 @@ module github.com/JMURv/market
 
 go 1.21.4
 
-require github.com/hashicorp/consul/api v1.26.1
+require (
+	github.com/hashicorp/consul/api v1.26.1
+	github.com/pkg/errors v0.9.1
+)
 
 require (
 	github.com/armon/go-metrics v0.4.1 // indirect

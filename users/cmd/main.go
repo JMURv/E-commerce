@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/JMURv/e-commerce/users/model"
+	"github.com/JMURv/e-commerce/users/pkg/model"
 	common "github.com/JMURv/protos/ecom/common"
 	pb "github.com/JMURv/protos/ecom/user"
 	"golang.org/x/net/context"
@@ -117,18 +117,20 @@ func (s *userServer) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest) 
 }
 
 func main() {
+	repo := memory.New()
+	svc := controller.New(repo)
+	h := handler.New(svc)
+
 	lis, err := net.Listen("tcp", ":50075")
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	server := grpc.NewServer()
-	pb.RegisterUserServiceServer(server, &userServer{})
+	srv := grpc.NewServer()
+	pb.RegisterUserServiceServer(srv, h)
 
-	reflection.Register(server)
+	reflection.Register(srv)
 
 	log.Println("User service is listening")
-	if err := server.Serve(lis); err != nil {
-		log.Fatalf("failed to serve: %v", err)
-	}
+	srv.Serve(lis)
 }

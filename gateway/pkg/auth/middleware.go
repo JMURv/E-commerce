@@ -9,14 +9,24 @@ import (
 
 func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		tokenString := extractTokenFromHeader(r)
+		authHeader := r.Header.Get("Authorization")
+		if authHeader == "" {
+			http.Error(w, "Unauthorized: Auth header not provided", http.StatusUnauthorized)
+			return
+		}
 
-		if tokenString == "" {
+		if !strings.HasPrefix(authHeader, "Bearer ") {
+			http.Error(w, "Unauthorized: Bearer header not provided", http.StatusUnauthorized)
+			return
+		}
+
+		token := strings.TrimPrefix(authHeader, "Bearer ")
+		if token == "" {
 			http.Error(w, "Unauthorized: Token not provided", http.StatusUnauthorized)
 			return
 		}
 
-		claims, err := ParseToken(tokenString)
+		claims, err := ParseToken(token)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Unauthorized: %v", err), http.StatusUnauthorized)
 			return
@@ -27,19 +37,4 @@ func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 		r = r.WithContext(ctx)
 		next.ServeHTTP(w, r)
 	}
-}
-
-func extractTokenFromHeader(r *http.Request) string {
-	authHeader := r.Header.Get("Authorization")
-
-	if authHeader == "" {
-		return ""
-	}
-
-	if !strings.HasPrefix(authHeader, "Bearer ") {
-		return ""
-	}
-
-	token := strings.TrimPrefix(authHeader, "Bearer ")
-	return token
 }
