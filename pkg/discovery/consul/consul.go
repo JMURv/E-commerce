@@ -3,7 +3,7 @@ package consul
 import (
 	"context"
 	"fmt"
-	"github.com/JMURv/market/discovery"
+	"github.com/JMURv/market/pkg/discovery"
 	consul "github.com/hashicorp/consul/api"
 	"github.com/pkg/errors"
 	"strconv"

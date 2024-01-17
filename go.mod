@@ -1,4 +1,4 @@
-module github.com/JMURv/market
+module github.com/JMURv/e-commerce
 
 go 1.21.4
 

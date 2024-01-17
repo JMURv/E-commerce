@@ -2,7 +2,7 @@ package memory
 
 import (
 	"context"
-	"github.com/JMURv/market/discovery"
+	"github.com/JMURv/market/pkg/discovery"
 	"sync"
 	"time"
 )
