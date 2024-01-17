@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	controller "github.com/JMURv/e-commerce/items/internal/controller/item"
+	usrgate "github.com/JMURv/e-commerce/items/internal/gateway/users"
 	handler "github.com/JMURv/e-commerce/items/internal/handler/grpc"
 	"github.com/JMURv/e-commerce/items/internal/repository/memory"
 	"github.com/JMURv/e-commerce/pkg/discovery"
@@ -39,15 +40,19 @@ func main() {
 	go func() {
 		for {
 			if err := registry.ReportHealthyState(instanceID, serviceName); err != nil {
-				log.Println("Failed to report healthy state: " + err)
+				log.Println("Failed to report healthy state: " + err.Error())
 			}
 			time.Sleep(1 * time.Second)
 		}
 	}()
 	defer registry.Deregister(ctx, instanceID, serviceName)
 
+	// Setting up other services
+	usrGateway := usrgate.New(registry)
+
+	// Setting up main app
 	repo := memory.New()
-	svc := controller.New(repo)
+	svc := controller.New(repo, *usrGateway)
 	h := handler.New(svc)
 
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))

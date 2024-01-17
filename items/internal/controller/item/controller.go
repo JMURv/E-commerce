@@ -3,6 +3,7 @@ package item
 import (
 	"context"
 	"errors"
+	usrgate "github.com/JMURv/e-commerce/items/internal/gateway/users"
 	"github.com/JMURv/e-commerce/items/internal/repository"
 	"github.com/JMURv/e-commerce/items/pkg/model"
 	"github.com/JMURv/protos/ecom/common"
@@ -18,11 +19,15 @@ type itemRepository interface {
 }
 
 type Controller struct {
-	repo itemRepository
+	repo       itemRepository
+	usrGateway usrgate.Gateway
 }
 
-func New(repo itemRepository) *Controller {
-	return &Controller{repo}
+func New(repo itemRepository, usrGateway usrgate.Gateway) *Controller {
+	return &Controller{
+		repo:       repo,
+		usrGateway: usrGateway,
+	}
 }
 
 func (c *Controller) GetItemByID(ctx context.Context, id uint64) (*model.Item, error) {
