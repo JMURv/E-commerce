@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"github.com/JMURv/e-commerce/gateway/pkg/models"
+	"github.com/JMURv/e-commerce/items/internal/grpcutil"
 	"github.com/JMURv/e-commerce/pkg/discovery"
+	pb "github.com/JMURv/protos/ecom/user"
 )
 
 type Gateway struct {
@@ -15,13 +17,19 @@ func New(registry discovery.Registry) *Gateway {
 	return &Gateway{registry}
 }
 
-func (g *Gateway) GetUserByID(ctx context.Context, userID string) (*models.User, error) {
-	addrs, err := g.registry.ServiceAddresses(ctx, "users")
-	fmt.Println(addrs)
+func (g *Gateway) GetUserByID(ctx context.Context, userID uint64) (*models.User, error) {
+	conn, err := grpcutil.ServiceConnection(ctx, "users", g.registry)
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
 
+	client := pb.NewUserServiceClient(conn)
+	resp, err := client.GetUserByID(ctx, &pb.GetUserByIDRequest{UserId: userID})
 	if err != nil {
 		return nil, err
 	}
 
+	fmt.Println(resp)
 	return &models.User{}, nil
 }
