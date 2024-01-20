@@ -1,10 +1,10 @@
 package controllers
 
 import (
-	"e-commerce/pkg/auth"
-	"e-commerce/pkg/models"
-	"e-commerce/pkg/utils"
 	"fmt"
+	"github.com/JMURv/e-commerce/gateway/pkg/auth"
+	"github.com/JMURv/e-commerce/gateway/pkg/models"
+	"github.com/JMURv/e-commerce/gateway/pkg/utils"
 	"net/http"
 )
 

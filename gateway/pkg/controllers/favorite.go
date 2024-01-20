@@ -1,10 +1,10 @@
 package controllers
 
 import (
-	"e-commerce/pkg/models"
-	"e-commerce/pkg/utils"
 	"encoding/json"
 	"fmt"
+	"github.com/JMURv/e-commerce/gateway/pkg/models"
+	"github.com/JMURv/e-commerce/gateway/pkg/utils"
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"

@@ -1,7 +1,7 @@
 package models
 
 import (
-	"e-commerce/pkg/config"
+	"github.com/JMURv/e-commerce/gateway/pkg/config"
 	"gorm.io/gorm"
 	"log"
 )

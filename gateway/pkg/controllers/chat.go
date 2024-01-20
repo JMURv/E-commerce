@@ -1,8 +1,8 @@
 package controllers
 
 import (
-	"e-commerce/pkg/models"
 	"encoding/json"
+	"github.com/JMURv/e-commerce/gateway/pkg/models"
 	"github.com/gorilla/websocket"
 	"log"
 	"net/http"

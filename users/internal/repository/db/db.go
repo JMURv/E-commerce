@@ -2,10 +2,8 @@ package db
 
 import (
 	"context"
-	"fmt"
 	repo "github.com/JMURv/e-commerce/users/internal/repository"
 	"github.com/JMURv/e-commerce/users/pkg/model"
-	"github.com/JMURv/market/gateway/pkg/auth"
 	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -62,25 +60,20 @@ func (r *Repository) GetByEmail(_ context.Context, email string) (*model.User, e
 	return &user, nil
 }
 
-func (r *Repository) Create(_ context.Context, u *model.User) (*model.User, string, error) {
+func (r *Repository) Create(_ context.Context, u *model.User) (*model.User, error) {
 	if u.Username == "" {
-		return u, "", repo.ErrUsernameIsRequired
+		return u, repo.ErrUsernameIsRequired
 	}
 
 	if u.Email == "" {
-		return u, "", repo.ErrEmailIsRequired
+		return u, repo.ErrEmailIsRequired
 	}
 
 	if err := r.conn.Create(&u).Error; err != nil {
-		return nil, "", err
+		return nil, err
 	}
 
-	token, err := auth.GenerateToken(u.ID)
-	if err != nil {
-		return nil, "", fmt.Errorf("failed to generate token: %w", err)
-	}
-
-	return u, token, nil
+	return u, nil
 }
 
 func (r *Repository) Update(ctx context.Context, userID uint64, newData *model.User) (*model.User, error) {
@@ -100,7 +93,7 @@ func (r *Repository) Update(ctx context.Context, userID uint64, newData *model.U
 	return user, nil
 }
 
-func (r *Repository) Delete(userID uint64) error {
+func (r *Repository) Delete(_ context.Context, userID uint64) error {
 	var user model.User
 	if err := r.conn.Delete(&user, userID).Error; err != nil {
 		return err

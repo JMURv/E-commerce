@@ -1,9 +1,9 @@
 package auth
 
 import (
-	"e-commerce/pkg/config"
 	"errors"
 	"fmt"
+	"github.com/JMURv/e-commerce/gateway/pkg/config"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"

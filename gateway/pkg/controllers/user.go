@@ -1,11 +1,12 @@
 package controllers
 
 import (
-	"e-commerce/pkg/config"
-	"e-commerce/pkg/models"
-	"e-commerce/pkg/utils"
 	"encoding/json"
 	"fmt"
+	"github.com/JMURv/e-commerce/gateway/pkg/auth"
+	"github.com/JMURv/e-commerce/gateway/pkg/config"
+	"github.com/JMURv/e-commerce/gateway/pkg/models"
+	"github.com/JMURv/e-commerce/gateway/pkg/utils"
 	pb "github.com/JMURv/protos/ecom/user"
 	"github.com/gorilla/mux"
 	"golang.org/x/net/context"
@@ -45,11 +46,18 @@ func ListCreateUser(w http.ResponseWriter, r *http.Request) {
 		u, err := client.CreateUser(context.Background(), userData)
 		if err != nil {
 			log.Printf("Error creating user: %v", err)
+			return
+		}
+
+		token, err := auth.GenerateToken(u.User.Id)
+		if err != nil {
+			log.Printf("Error generating token: %v", err)
+			return
 		}
 
 		response, err := json.Marshal(&pb.CreateUserResponse{
 			User:  u.User,
-			Token: u.Token,
+			Token: token,
 		})
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Encoding error: %v", err), http.StatusInternalServerError)

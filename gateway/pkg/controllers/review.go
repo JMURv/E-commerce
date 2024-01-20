@@ -2,11 +2,11 @@ package controllers
 
 import (
 	"context"
-	"e-commerce/pkg/config"
-	"e-commerce/pkg/models"
-	"e-commerce/pkg/utils"
 	"encoding/json"
 	"fmt"
+	"github.com/JMURv/e-commerce/gateway/pkg/config"
+	"github.com/JMURv/e-commerce/gateway/pkg/models"
+	"github.com/JMURv/e-commerce/gateway/pkg/utils"
 	pb "github.com/JMURv/protos/ecom/review"
 	"github.com/gorilla/mux"
 	"google.golang.org/grpc"

@@ -3,56 +3,74 @@ package user
 import (
 	"context"
 	"errors"
-	repo "github.com/JMURv/e-commerce/reviews/internal/repository"
-	"github.com/JMURv/e-commerce/reviews/pkg/model"
-	"github.com/JMURv/protos/ecom/common"
+	itmgate "github.com/JMURv/e-commerce/users/internal/gateway/items"
+	repo "github.com/JMURv/e-commerce/users/internal/repository"
+	"github.com/JMURv/e-commerce/users/pkg/model"
 )
 
-var ErrNotFound = errors.New("not found")
+var ErrNotFound = errors.New("user not found")
 
-type reviewRepository interface {
-	GetByID(ctx context.Context, reviewID uint64) (*model.Review, error)
-	Create(ctx context.Context, review *model.Review) (*model.Review, error)
-	Update(ctx context.Context, reviewID uint64, newData *model.Review) (*model.Review, error)
-	Delete(ctx context.Context, reviewID uint64) error
+type userRepository interface {
+	GetByID(ctx context.Context, userID uint64) (*model.User, error)
+	GetByEmail(ctx context.Context, email string) (*model.User, error)
+	Create(ctx context.Context, userData *model.User) (*model.User, error)
+	Update(ctx context.Context, userID uint64, newData *model.User) (*model.User, error)
+	Delete(ctx context.Context, userID uint64) error
 }
 
 type Controller struct {
-	repo reviewRepository
+	repo       userRepository
+	itmGateway itmgate.Gateway
 }
 
-func New(repo reviewRepository) *Controller {
-	return &Controller{repo}
-}
-
-func (c *Controller) GetReviewByID(ctx context.Context, reviewID uint64) (*model.Review, error) {
-	res, err := c.repo.GetByID(ctx, reviewID)
-	if err != nil && errors.Is(err, repo.ErrNotFound) {
-		return nil, ErrNotFound
+func New(repo userRepository, itmGateway itmgate.Gateway) *Controller {
+	return &Controller{
+		repo:       repo,
+		itmGateway: itmGateway,
 	}
+}
+
+func (c *Controller) GetUserByID(ctx context.Context, userID uint64) (*model.User, error) {
+	res, err := c.repo.GetByID(ctx, userID)
+	if err != nil && errors.Is(err, repo.ErrNotFound) {
+		return nil, repo.ErrNotFound
+	}
+
 	return res, err
 }
 
-func (c *Controller) CreateReview(ctx context.Context, review *common.Review) (*common.Review, error) {
-	res, err := c.repo.Create(ctx, model.ReviewFromProto(review))
+func (c *Controller) GetUserByEmail(ctx context.Context, email string) (*model.User, error) {
+	res, err := c.repo.GetByEmail(ctx, email)
 	if err != nil && errors.Is(err, repo.ErrNotFound) {
-		return nil, ErrNotFound
+		return nil, repo.ErrNotFound
 	}
-	return model.ReviewToProto(res), err
+
+	return res, err
 }
 
-func (c *Controller) UpdateReview(ctx context.Context, reviewID uint64, newData *common.Review) (*common.Review, error) {
-	res, err := c.repo.Update(ctx, reviewID, model.ReviewFromProto(newData))
+func (c *Controller) CreateUser(ctx context.Context, userData *model.User) (*model.User, error) {
+	res, err := c.repo.Create(ctx, userData)
 	if err != nil && errors.Is(err, repo.ErrNotFound) {
-		return nil, ErrNotFound
+		return nil, repo.ErrNotFound
 	}
-	return model.ReviewToProto(res), err
+
+	return res, err
 }
 
-func (c *Controller) DeleteReview(ctx context.Context, reviewID uint64) error {
-	err := c.repo.Delete(ctx, reviewID)
+func (c *Controller) UpdateUser(ctx context.Context, userID uint64, newData *model.User) (*model.User, error) {
+	res, err := c.repo.Update(ctx, userID, newData)
+	if err != nil && errors.Is(err, repo.ErrNotFound) {
+		return nil, repo.ErrNotFound
+	}
+
+	return res, err
+}
+
+func (c *Controller) DeleteUser(ctx context.Context, userID uint64) error {
+	err := c.repo.Delete(ctx, userID)
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
