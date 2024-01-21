@@ -3,10 +3,10 @@ package items
 import (
 	"context"
 	"fmt"
+	pb "github.com/JMURv/e-commerce/api/pb/item"
 	"github.com/JMURv/e-commerce/gateway/pkg/models"
 	"github.com/JMURv/e-commerce/pkg/discovery"
 	"github.com/JMURv/e-commerce/users/internal/grpcutil"
-	pb "github.com/JMURv/protos/ecom/item"
 )
 
 type Gateway struct {
@@ -25,7 +25,7 @@ func (g *Gateway) ListUserItemsByID(ctx context.Context, userID uint64) ([]*mode
 	defer conn.Close()
 
 	client := pb.NewItemServiceClient(conn)
-	resp, err := client.ListUserItemsByID(ctx, &pb.GetUserByIDRequest{UserId: userID})
+	resp, err := client.ListUserItemsByID(ctx, &pb.ListUserItemsByIDRequest{UserId: userID})
 	if err != nil {
 		return nil, err
 	}

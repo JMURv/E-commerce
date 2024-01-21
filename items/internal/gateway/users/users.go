@@ -3,10 +3,10 @@ package users
 import (
 	"context"
 	"fmt"
+	pb "github.com/JMURv/e-commerce/api/pb/user"
 	"github.com/JMURv/e-commerce/gateway/pkg/models"
 	"github.com/JMURv/e-commerce/items/internal/grpcutil"
 	"github.com/JMURv/e-commerce/pkg/discovery"
-	pb "github.com/JMURv/protos/ecom/user"
 )
 
 type Gateway struct {

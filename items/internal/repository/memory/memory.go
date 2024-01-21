@@ -27,6 +27,10 @@ func (r *Repository) GetByID(_ context.Context, id uint64) (*model.Item, error) 
 	return i, nil
 }
 
+func (r *Repository) ListUserItemsByID(ctx context.Context, userID uint64) (*[]model.Item, error) {
+	return nil, nil
+}
+
 func (r *Repository) Create(_ context.Context, i *model.Item) (*model.Item, error) {
 	r.Lock()
 	defer r.Unlock()

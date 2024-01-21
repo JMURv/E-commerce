@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+package favorite;
+
+option go_package = "github.com/JMURv/e-commerce/favorite";
+
+import "common/common.proto";
+
+message EmptyResponse {}
+
+service FavoriteService {
+  rpc GetAllUserFavorites (GetAllUserFavoritesRequest) returns (GetAllUserFavoritesResponse) {}
+  rpc GetFavoriteByID (GetFavoriteByIDRequest) returns (GetFavoriteByIDResponse) {}
+  rpc CreateFavorite (CreateFavoriteRequest) returns (CreateFavoriteResponse) {}
+  rpc DeleteFavorite (DeleteFavoriteRequest) returns (EmptyResponse) {}
+}
+
+message GetAllUserFavoritesRequest {
+  uint64 user_id = 1;
+}
+
+message GetAllUserFavoritesResponse {
+  repeated common.Favorite favorites = 1;
+  string error_message = 2;
+}
+
+message GetFavoriteByIDRequest {
+  uint64 favorite_id = 1;
+}
+
+message GetFavoriteByIDResponse {
+  common.Favorite favorite = 1;
+  string error_message = 2;
+}
+
+message CreateFavoriteRequest {
+  uint64 user_id = 1;
+  uint64 item_id = 2;
+}
+
+message CreateFavoriteResponse {
+  common.Favorite favorite = 1;
+  string error_message = 2;
+}
+
+message DeleteFavoriteRequest {
+  uint64 favorite_id = 1;
+}
+
+message DeleteFavoriteResponse {
+  string error_message = 1;
+}

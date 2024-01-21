@@ -10,7 +10,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 
-	pb "github.com/JMURv/protos/ecom/review"
+	pb "github.com/JMURv/e-commerce/api/pb/review"
 )
 
 func main() {

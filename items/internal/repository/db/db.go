@@ -49,6 +49,14 @@ func (r *Repository) GetByID(_ context.Context, id uint64) (*model.Item, error) 
 
 }
 
+func (r *Repository) ListUserItemsByID(_ context.Context, userID uint64) (*[]model.Item, error) {
+	var items []model.Item
+	if err := r.conn.Preload("Category").Preload("Tags").Where("UserID=?", userID).Find(&items).Error; err != nil {
+		return nil, repo.ErrNotFound
+	}
+	return &items, nil
+}
+
 func (r *Repository) Create(_ context.Context, i *model.Item) (*model.Item, error) {
 	if i.UserID == 0 {
 		return i, repo.ErrUserIDRequired

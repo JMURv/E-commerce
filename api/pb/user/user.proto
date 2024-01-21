@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package user;
+
+option go_package = "github.com/JMURv/e-commerce/user";
+
+import "common/common.proto";
+
+message EmptyRequest {}
+message EmptyResponse {}
+
+service UserService {
+  rpc ListUser (EmptyRequest) returns (ListUserResponse) {}
+  rpc GetUserByID (GetUserByIDRequest) returns (common.User) {}
+  rpc GetUserByEmail (GetUserByEmailRequest) returns (common.User) {}
+  rpc CreateUser (CreateUserRequest) returns (common.User) {}
+  rpc UpdateUser (UpdateUserRequest) returns (common.User) {}
+  rpc DeleteUser (DeleteUserRequest) returns (EmptyResponse) {}
+}
+
+message ListUserResponse {
+  repeated common.User users = 1;
+}
+
+message GetUserByIDRequest {
+  uint64 user_id = 1;
+}
+
+message GetUserByEmailRequest {
+  string email = 1;
+}
+
+message CreateUserRequest {
+  string username = 1;
+  string email = 2;
+}
+
+
+message UpdateUserRequest {
+  uint64 user_id = 1;
+  string username = 2;
+  string email = 3;
+}
+
+message DeleteUserRequest {
+  uint64 user_id = 1;
+}

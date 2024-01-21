@@ -3,10 +3,10 @@ package grpc
 import (
 	"context"
 	"errors"
+	"github.com/JMURv/e-commerce/api/pb/common"
+	pb "github.com/JMURv/e-commerce/api/pb/item"
 	controller "github.com/JMURv/e-commerce/items/internal/controller/item"
 	"github.com/JMURv/e-commerce/items/pkg/model"
-	"github.com/JMURv/protos/ecom/common"
-	pb "github.com/JMURv/protos/ecom/item"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
@@ -19,6 +19,22 @@ type Handler struct {
 
 func New(ctrl *controller.Controller) *Handler {
 	return &Handler{ctrl: ctrl}
+}
+
+func (h *Handler) ListUserItemsByID(ctx context.Context, req *pb.ListUserItemsByIDRequest) (*pb.ListItemResponse, error) {
+	userID := req.UserId
+	if req == nil || userID == 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "nil req or empty id")
+	}
+
+	items, err := h.ctrl.ListUserItemsByID(ctx, userID)
+	if err != nil && errors.Is(err, controller.ErrNotFound) {
+		return nil, status.Errorf(codes.NotFound, err.Error())
+	} else if err != nil {
+		return nil, status.Errorf(codes.Internal, err.Error())
+	}
+
+	return &pb.ListItemResponse{Items: model.ItemsToProto(*items)}, nil
 }
 
 func (h *Handler) ListItem(ctx context.Context, req *pb.EmptyRequest) (*pb.ListItemResponse, error) {

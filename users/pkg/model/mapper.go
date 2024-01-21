@@ -1,6 +1,6 @@
 package model
 
-import "github.com/JMURv/protos/ecom/common"
+import "github.com/JMURv/e-commerce/api/pb/common"
 
 func UserFromProto(r *common.User) *User {
 	return &User{

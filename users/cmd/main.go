@@ -4,13 +4,13 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	pb "github.com/JMURv/e-commerce/api/pb/user"
 	"github.com/JMURv/e-commerce/pkg/discovery"
 	"github.com/JMURv/e-commerce/pkg/discovery/consul"
 	controller "github.com/JMURv/e-commerce/users/internal/controller/user"
 	itmgate "github.com/JMURv/e-commerce/users/internal/gateway/items"
 	handler "github.com/JMURv/e-commerce/users/internal/handler/grpc"
 	"github.com/JMURv/e-commerce/users/internal/repository/memory"
-	pb "github.com/JMURv/protos/ecom/user"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"log"
@@ -50,6 +50,7 @@ func main() {
 	// Setting up other services
 	itemGateway := itmgate.New(registry)
 
+	// Setting up main app
 	repo := memory.New()
 	svc := controller.New(repo, *itemGateway)
 	h := handler.New(svc)

@@ -3,10 +3,10 @@ package grpc
 import (
 	"context"
 	"errors"
+	"github.com/JMURv/e-commerce/api/pb/common"
+	pb "github.com/JMURv/e-commerce/api/pb/review"
 	controller "github.com/JMURv/e-commerce/reviews/internal/controller/review"
 	"github.com/JMURv/e-commerce/reviews/pkg/model"
-	"github.com/JMURv/protos/ecom/common"
-	pb "github.com/JMURv/protos/ecom/review"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
@@ -19,6 +19,22 @@ type Handler struct {
 
 func New(ctrl *controller.Controller) *Handler {
 	return &Handler{ctrl: ctrl}
+}
+
+func (h *Handler) GetReviewsByUserID(ctx context.Context, req *pb.GetReviewByIDRequest) (*common.Review, error) {
+	reviewID := req.ReviewId
+	if req == nil || reviewID == 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "nil req or empty id")
+	}
+
+	r, err := h.ctrl.GetReviewByID(ctx, reviewID)
+	if err != nil && errors.Is(err, controller.ErrNotFound) {
+		return nil, status.Errorf(codes.NotFound, err.Error())
+	} else if err != nil {
+		return nil, status.Errorf(codes.Internal, err.Error())
+	}
+
+	return model.ReviewToProto(r), nil
 }
 
 func (h *Handler) GetReviewByID(ctx context.Context, req *pb.GetReviewByIDRequest) (*common.Review, error) {

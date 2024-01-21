@@ -1,6 +1,6 @@
 package model
 
-import "github.com/JMURv/protos/ecom/common"
+import "github.com/JMURv/e-commerce/api/pb/common"
 
 func ReviewFromProto(r *common.Review) *Review {
 	return &Review{

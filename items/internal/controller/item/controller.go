@@ -3,16 +3,17 @@ package item
 import (
 	"context"
 	"errors"
+	"github.com/JMURv/e-commerce/api/pb/common"
 	usrgate "github.com/JMURv/e-commerce/items/internal/gateway/users"
 	"github.com/JMURv/e-commerce/items/internal/repository"
 	"github.com/JMURv/e-commerce/items/pkg/model"
-	"github.com/JMURv/protos/ecom/common"
 )
 
 var ErrNotFound = errors.New("not found")
 
 type itemRepository interface {
 	GetByID(ctx context.Context, id uint64) (*model.Item, error)
+	ListUserItemsByID(ctx context.Context, userID uint64) (*[]model.Item, error)
 	Create(ctx context.Context, i *model.Item) (*model.Item, error)
 	Update(ctx context.Context, itemID uint64, newData *model.Item) (*model.Item, error)
 	Delete(ctx context.Context, itemID uint64) error
@@ -32,6 +33,14 @@ func New(repo itemRepository, usrGateway usrgate.Gateway) *Controller {
 
 func (c *Controller) GetItemByID(ctx context.Context, id uint64) (*model.Item, error) {
 	res, err := c.repo.GetByID(ctx, id)
+	if err != nil && errors.Is(err, repository.ErrNotFound) {
+		return nil, ErrNotFound
+	}
+	return res, err
+}
+
+func (c *Controller) ListUserItemsByID(ctx context.Context, userID uint64) (*[]model.Item, error) {
+	res, err := c.repo.ListUserItemsByID(ctx, userID)
 	if err != nil && errors.Is(err, repository.ErrNotFound) {
 		return nil, ErrNotFound
 	}

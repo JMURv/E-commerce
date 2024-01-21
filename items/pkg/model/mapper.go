@@ -1,7 +1,7 @@
 package model
 
 import (
-	"github.com/JMURv/protos/ecom/common"
+	"github.com/JMURv/e-commerce/api/pb/common"
 )
 
 func tagsToProto(tags []Tag) []*common.Tag {
@@ -73,4 +73,14 @@ func ItemToProto(i *Item) *common.Item {
 		CreatedAt: &i.CreatedAt,
 		UpdatedAt: &i.UpdatedAt,
 	}
+}
+
+func ItemsToProto(items []Item) []*common.Item {
+	var protoItems []*common.Item
+
+	for i := range items {
+		protoItems = append(protoItems, ItemToProto(&items[i]))
+	}
+
+	return protoItems
 }

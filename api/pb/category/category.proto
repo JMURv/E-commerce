@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+package category;
+
+option go_package = "github.com/JMURv/e-commerce/category";
+
+import "common/common.proto";
+
+message EmptyRequest {}
+message EmptyResponse {}
+
+service CategoryService {
+  rpc GetAllCategories (EmptyRequest) returns (GetAllCategoriesResponse) {}
+  rpc GetCategoryByID (GetCategoryByIDRequest) returns (GetCategoryByIDResponse) {}
+  rpc CreateCategory (CreateCategoryRequest) returns (CreateCategoryResponse) {}
+  rpc UpdateCategory (UpdateCategoryRequest) returns (UpdateCategoryResponse) {}
+  rpc DeleteCategory (DeleteCategoryRequest) returns (EmptyResponse) {}
+}
+
+message GetAllCategoriesResponse {
+  repeated common.Category categories = 1;
+  string error_message = 2;
+}
+
+message GetCategoryByIDRequest {
+  uint64 category_id = 1;
+}
+
+message GetCategoryByIDResponse {
+  common.Category category = 1;
+  string error_message = 2;
+}
+
+message CreateCategoryRequest {
+  string name = 1;
+  string description = 2;
+  uint64 parent_category_id = 3;
+}
+
+message CreateCategoryResponse {
+  common.Category category = 1;
+  string error_message = 2;
+}
+
+message UpdateCategoryRequest {
+  uint64 category_id = 1;
+  common.Category new_data = 2;
+}
+
+message UpdateCategoryResponse {
+  common.Category category = 1;
+  string error_message = 2;
+}
+
+message DeleteCategoryRequest {
+  uint64 category_id = 1;
+}

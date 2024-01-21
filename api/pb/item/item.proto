@@ -1,0 +1,56 @@
+syntax = "proto3";
+
+package item;
+
+option go_package = "github.com/JMURv/e-commerce/item";
+
+import "common/common.proto";
+
+message EmptyRequest {}
+message EmptyResponse {}
+
+service ItemService {
+  rpc ListItem (EmptyRequest) returns (ListItemResponse) {}
+  rpc ListUserItemsByID(ListUserItemsByIDRequest) returns (ListItemResponse) {}
+  rpc GetItemByID (GetItemByIDRequest) returns (common.Item) {}
+  rpc CreateItem (CreateItemRequest) returns (common.Item) {}
+  rpc UpdateItem (UpdateItemRequest) returns (common.Item) {}
+  rpc DeleteItem (DeleteItemRequest) returns (EmptyResponse) {}
+}
+
+message ListUserItemsByIDRequest {
+  uint64 user_id = 1;
+}
+
+message ListItemResponse {
+  repeated common.Item items = 1;
+}
+
+message GetItemByIDRequest {
+  uint64 item_id = 1;
+}
+
+message CreateItemRequest {
+  string name = 1;
+  string description = 2;
+  double price = 3;
+  uint64 category_id = 4;
+  uint64 user_id = 5;
+  repeated common.Tag tags = 6;
+  int32 quantity = 7;
+}
+
+message UpdateItemRequest {
+  uint64 item_id = 1;
+  string name = 2;
+  string description = 3;
+  double price = 4;
+  uint64 category_id = 5;
+  uint64 user_id = 6;
+  repeated common.Tag tags = 7;
+  int32 quantity = 8;
+}
+
+message DeleteItemRequest {
+  uint64 item_id = 1;
+}

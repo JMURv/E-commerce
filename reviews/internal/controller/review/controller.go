@@ -3,9 +3,9 @@ package review
 import (
 	"context"
 	"errors"
+	"github.com/JMURv/e-commerce/api/pb/common"
 	repo "github.com/JMURv/e-commerce/reviews/internal/repository"
 	"github.com/JMURv/e-commerce/reviews/pkg/model"
-	"github.com/JMURv/protos/ecom/common"
 )
 
 var ErrNotFound = errors.New("not found")

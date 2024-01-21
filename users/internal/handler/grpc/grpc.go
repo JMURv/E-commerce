@@ -3,10 +3,10 @@ package grpc
 import (
 	"context"
 	"errors"
+	"github.com/JMURv/e-commerce/api/pb/common"
+	pb "github.com/JMURv/e-commerce/api/pb/user"
 	controller "github.com/JMURv/e-commerce/users/internal/controller/user"
 	"github.com/JMURv/e-commerce/users/pkg/model"
-	"github.com/JMURv/protos/ecom/common"
-	pb "github.com/JMURv/protos/ecom/user"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"

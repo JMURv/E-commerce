@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+package review;
+
+option go_package = "github.com/JMURv/e-commerce/review";
+
+import "common/common.proto";
+
+message EmptyResponse {}
+
+service ReviewService {
+  rpc GetReviewByID (GetReviewByIDRequest) returns (common.Review) {}
+  rpc CreateReview (CreateReviewRequest) returns (common.Review) {}
+  rpc UpdateReview (UpdateReviewRequest) returns (common.Review) {}
+  rpc DeleteReview (DeleteReviewRequest) returns (EmptyResponse) {}
+}
+
+message GetReviewByIDRequest {
+  uint64 review_id = 1;
+}
+
+message CreateReviewRequest {
+  uint64 user_id = 1;
+  uint64 item_id = 2;
+  uint64 reviewed_user_id = 3;
+  string advantages = 4;
+  string disadvantages = 5;
+  string review_text = 6;
+  uint32 rating = 7;
+}
+
+message UpdateReviewRequest {
+  uint64 review_id = 1;
+  uint64 user_id = 2;
+  uint64 item_id = 3;
+  uint64 reviewed_user_id = 4;
+  string advantages = 5;
+  string disadvantages = 6;
+  string review_text = 7;
+  uint32 rating = 8;
+}
+
+message DeleteReviewRequest {
+  uint64 review_id = 1;
+}
