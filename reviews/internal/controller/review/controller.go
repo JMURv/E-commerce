@@ -3,7 +3,6 @@ package review
 import (
 	"context"
 	"errors"
-	"github.com/JMURv/e-commerce/api/pb/common"
 	repo "github.com/JMURv/e-commerce/reviews/internal/repository"
 	"github.com/JMURv/e-commerce/reviews/pkg/model"
 )
@@ -33,20 +32,20 @@ func (c *Controller) GetReviewByID(ctx context.Context, reviewID uint64) (*model
 	return res, err
 }
 
-func (c *Controller) CreateReview(ctx context.Context, review *common.Review) (*common.Review, error) {
-	res, err := c.repo.Create(ctx, model.ReviewFromProto(review))
+func (c *Controller) CreateReview(ctx context.Context, review *model.Review) (*model.Review, error) {
+	res, err := c.repo.Create(ctx, review)
 	if err != nil && errors.Is(err, repo.ErrNotFound) {
 		return nil, ErrNotFound
 	}
-	return model.ReviewToProto(res), err
+	return res, err
 }
 
-func (c *Controller) UpdateReview(ctx context.Context, reviewID uint64, newData *common.Review) (*common.Review, error) {
-	res, err := c.repo.Update(ctx, reviewID, model.ReviewFromProto(newData))
+func (c *Controller) UpdateReview(ctx context.Context, reviewID uint64, newData *model.Review) (*model.Review, error) {
+	res, err := c.repo.Update(ctx, reviewID, newData)
 	if err != nil && errors.Is(err, repo.ErrNotFound) {
 		return nil, ErrNotFound
 	}
-	return model.ReviewToProto(res), err
+	return res, err
 }
 
 func (c *Controller) DeleteReview(ctx context.Context, reviewID uint64) error {

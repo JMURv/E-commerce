@@ -22,6 +22,7 @@ func New(ctrl *controller.Controller) *Handler {
 }
 
 func (h *Handler) GetReviewsByUserID(ctx context.Context, req *pb.GetReviewByIDRequest) (*common.Review, error) {
+	// TODO: Implement me
 	reviewID := req.ReviewId
 	if req == nil || reviewID == 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "nil req or empty id")
@@ -68,7 +69,12 @@ func (h *Handler) CreateReview(ctx context.Context, req *pb.CreateReviewRequest)
 		return nil, status.Errorf(codes.Internal, "failed to unmarshal request: %v", err)
 	}
 
-	return h.ctrl.CreateReview(ctx, newReview)
+	r, err := h.ctrl.CreateReview(ctx, model.ReviewFromProto(newReview))
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to create review: %v", err)
+	}
+
+	return model.ReviewToProto(r), nil
 }
 
 func (h *Handler) UpdateReview(ctx context.Context, req *pb.UpdateReviewRequest) (*common.Review, error) {
@@ -87,7 +93,12 @@ func (h *Handler) UpdateReview(ctx context.Context, req *pb.UpdateReviewRequest)
 		return nil, status.Errorf(codes.Internal, "failed to unmarshal request: %v", err)
 	}
 
-	return h.ctrl.UpdateReview(ctx, reviewID, updateReviewData)
+	r, err := h.ctrl.CreateReview(ctx, model.ReviewFromProto(updateReviewData))
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to update review: %v", err)
+	}
+
+	return model.ReviewToProto(r), nil
 }
 
 func (h *Handler) DeleteReview(ctx context.Context, req *pb.DeleteReviewRequest) (*pb.EmptyResponse, error) {

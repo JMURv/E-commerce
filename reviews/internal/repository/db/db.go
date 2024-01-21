@@ -112,7 +112,7 @@ func (r *Repository) Update(ctx context.Context, reviewID uint64, newData *model
 	return review, nil
 }
 
-func (r *Repository) Delete(reviewID uint64) error {
+func (r *Repository) Delete(_ context.Context, reviewID uint64) error {
 	if err := r.conn.Delete(&model.Review{}, reviewID).Error; err != nil {
 		return err
 	}
