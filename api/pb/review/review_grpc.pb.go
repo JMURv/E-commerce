@@ -20,10 +20,12 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	ReviewService_GetReviewByID_FullMethodName = "/review.ReviewService/GetReviewByID"
-	ReviewService_CreateReview_FullMethodName  = "/review.ReviewService/CreateReview"
-	ReviewService_UpdateReview_FullMethodName  = "/review.ReviewService/UpdateReview"
-	ReviewService_DeleteReview_FullMethodName  = "/review.ReviewService/DeleteReview"
+	ReviewService_GetReviewByID_FullMethodName           = "/review.ReviewService/GetReviewByID"
+	ReviewService_GetReviewsByUserID_FullMethodName      = "/review.ReviewService/GetReviewsByUserID"
+	ReviewService_AggregateUserRatingByID_FullMethodName = "/review.ReviewService/AggregateUserRatingByID"
+	ReviewService_CreateReview_FullMethodName            = "/review.ReviewService/CreateReview"
+	ReviewService_UpdateReview_FullMethodName            = "/review.ReviewService/UpdateReview"
+	ReviewService_DeleteReview_FullMethodName            = "/review.ReviewService/DeleteReview"
 )
 
 // ReviewServiceClient is the client API for ReviewService service.
@@ -31,6 +33,8 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ReviewServiceClient interface {
 	GetReviewByID(ctx context.Context, in *GetReviewByIDRequest, opts ...grpc.CallOption) (*common.Review, error)
+	GetReviewsByUserID(ctx context.Context, in *ByUserIDRequest, opts ...grpc.CallOption) (*ListReviewResponse, error)
+	AggregateUserRatingByID(ctx context.Context, in *ByUserIDRequest, opts ...grpc.CallOption) (*ListReviewResponse, error)
 	CreateReview(ctx context.Context, in *CreateReviewRequest, opts ...grpc.CallOption) (*common.Review, error)
 	UpdateReview(ctx context.Context, in *UpdateReviewRequest, opts ...grpc.CallOption) (*common.Review, error)
 	DeleteReview(ctx context.Context, in *DeleteReviewRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
@@ -47,6 +51,24 @@ func NewReviewServiceClient(cc grpc.ClientConnInterface) ReviewServiceClient {
 func (c *reviewServiceClient) GetReviewByID(ctx context.Context, in *GetReviewByIDRequest, opts ...grpc.CallOption) (*common.Review, error) {
 	out := new(common.Review)
 	err := c.cc.Invoke(ctx, ReviewService_GetReviewByID_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *reviewServiceClient) GetReviewsByUserID(ctx context.Context, in *ByUserIDRequest, opts ...grpc.CallOption) (*ListReviewResponse, error) {
+	out := new(ListReviewResponse)
+	err := c.cc.Invoke(ctx, ReviewService_GetReviewsByUserID_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *reviewServiceClient) AggregateUserRatingByID(ctx context.Context, in *ByUserIDRequest, opts ...grpc.CallOption) (*ListReviewResponse, error) {
+	out := new(ListReviewResponse)
+	err := c.cc.Invoke(ctx, ReviewService_AggregateUserRatingByID_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -85,6 +107,8 @@ func (c *reviewServiceClient) DeleteReview(ctx context.Context, in *DeleteReview
 // for forward compatibility
 type ReviewServiceServer interface {
 	GetReviewByID(context.Context, *GetReviewByIDRequest) (*common.Review, error)
+	GetReviewsByUserID(context.Context, *ByUserIDRequest) (*ListReviewResponse, error)
+	AggregateUserRatingByID(context.Context, *ByUserIDRequest) (*ListReviewResponse, error)
 	CreateReview(context.Context, *CreateReviewRequest) (*common.Review, error)
 	UpdateReview(context.Context, *UpdateReviewRequest) (*common.Review, error)
 	DeleteReview(context.Context, *DeleteReviewRequest) (*EmptyResponse, error)
@@ -97,6 +121,12 @@ type UnimplementedReviewServiceServer struct {
 
 func (UnimplementedReviewServiceServer) GetReviewByID(context.Context, *GetReviewByIDRequest) (*common.Review, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetReviewByID not implemented")
+}
+func (UnimplementedReviewServiceServer) GetReviewsByUserID(context.Context, *ByUserIDRequest) (*ListReviewResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetReviewsByUserID not implemented")
+}
+func (UnimplementedReviewServiceServer) AggregateUserRatingByID(context.Context, *ByUserIDRequest) (*ListReviewResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AggregateUserRatingByID not implemented")
 }
 func (UnimplementedReviewServiceServer) CreateReview(context.Context, *CreateReviewRequest) (*common.Review, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateReview not implemented")
@@ -134,6 +164,42 @@ func _ReviewService_GetReviewByID_Handler(srv interface{}, ctx context.Context, 
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ReviewServiceServer).GetReviewByID(ctx, req.(*GetReviewByIDRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ReviewService_GetReviewsByUserID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ByUserIDRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReviewServiceServer).GetReviewsByUserID(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ReviewService_GetReviewsByUserID_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReviewServiceServer).GetReviewsByUserID(ctx, req.(*ByUserIDRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ReviewService_AggregateUserRatingByID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ByUserIDRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReviewServiceServer).AggregateUserRatingByID(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ReviewService_AggregateUserRatingByID_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReviewServiceServer).AggregateUserRatingByID(ctx, req.(*ByUserIDRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -202,6 +268,14 @@ var ReviewService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetReviewByID",
 			Handler:    _ReviewService_GetReviewByID_Handler,
+		},
+		{
+			MethodName: "GetReviewsByUserID",
+			Handler:    _ReviewService_GetReviewsByUserID_Handler,
+		},
+		{
+			MethodName: "AggregateUserRatingByID",
+			Handler:    _ReviewService_AggregateUserRatingByID_Handler,
 		},
 		{
 			MethodName: "CreateReview",

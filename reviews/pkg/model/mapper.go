@@ -27,3 +27,13 @@ func ReviewToProto(r *Review) *common.Review {
 		Rating:         r.Rating,
 	}
 }
+
+func ReviewsToProto(reviews []Review) []*common.Review {
+	var protoReviews []*common.Review
+
+	for i := range reviews {
+		protoReviews = append(protoReviews, ReviewToProto(&reviews[i]))
+	}
+
+	return protoReviews
+}

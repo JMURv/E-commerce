@@ -21,21 +21,36 @@ func New(ctrl *controller.Controller) *Handler {
 	return &Handler{ctrl: ctrl}
 }
 
-func (h *Handler) GetReviewsByUserID(ctx context.Context, req *pb.GetReviewByIDRequest) (*common.Review, error) {
-	// TODO: Implement me
-	reviewID := req.ReviewId
-	if req == nil || reviewID == 0 {
+func (h *Handler) AggregateUserRatingByID(ctx context.Context, req *pb.ByUserIDRequest) (*pb.AggregateUserRatingByIDResponse, error) {
+	userID := req.UserId
+	if req == nil || userID == 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "nil req or empty id")
 	}
 
-	r, err := h.ctrl.GetReviewByID(ctx, reviewID)
+	r, err := h.ctrl.AggregateUserRatingByID(ctx, userID)
 	if err != nil && errors.Is(err, controller.ErrNotFound) {
 		return nil, status.Errorf(codes.NotFound, err.Error())
 	} else if err != nil {
 		return nil, status.Errorf(codes.Internal, err.Error())
 	}
 
-	return model.ReviewToProto(r), nil
+	return &pb.AggregateUserRatingByIDResponse{Rating: r}, nil
+}
+
+func (h *Handler) GetReviewsByUserID(ctx context.Context, req *pb.ByUserIDRequest) (*pb.ListReviewResponse, error) {
+	userID := req.UserId
+	if req == nil || userID == 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "nil req or empty id")
+	}
+
+	r, err := h.ctrl.GetReviewsByUserID(ctx, userID)
+	if err != nil && errors.Is(err, controller.ErrNotFound) {
+		return nil, status.Errorf(codes.NotFound, err.Error())
+	} else if err != nil {
+		return nil, status.Errorf(codes.Internal, err.Error())
+	}
+
+	return &pb.ListReviewResponse{Reviews: model.ReviewsToProto(*r)}, nil
 }
 
 func (h *Handler) GetReviewByID(ctx context.Context, req *pb.GetReviewByIDRequest) (*common.Review, error) {

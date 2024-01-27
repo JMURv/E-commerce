@@ -10,6 +10,8 @@ message EmptyResponse {}
 
 service ReviewService {
   rpc GetReviewByID (GetReviewByIDRequest) returns (common.Review) {}
+  rpc GetReviewsByUserID(ByUserIDRequest) returns (ListReviewResponse) {}
+  rpc AggregateUserRatingByID(ByUserIDRequest) returns (ListReviewResponse) {}
   rpc CreateReview (CreateReviewRequest) returns (common.Review) {}
   rpc UpdateReview (UpdateReviewRequest) returns (common.Review) {}
   rpc DeleteReview (DeleteReviewRequest) returns (EmptyResponse) {}
@@ -17,6 +19,18 @@ service ReviewService {
 
 message GetReviewByIDRequest {
   uint64 review_id = 1;
+}
+
+message AggregateUserRatingByIDResponse {
+  float rating = 1;
+}
+
+message ListReviewResponse {
+  repeated common.Review reviews = 1;
+}
+
+message ByUserIDRequest {
+  uint64 user_id = 1;
 }
 
 message CreateReviewRequest {

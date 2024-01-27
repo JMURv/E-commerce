@@ -52,6 +52,34 @@ func (r *Repository) GetByID(_ context.Context, reviewID uint64) (*model.Review,
 	return &review, nil
 }
 
+func (r *Repository) GetReviewsByUserID(_ context.Context, userID uint64) (*[]model.Review, error) {
+	var reviews []model.Review
+	if err := r.conn.Where("UserID=?", userID).Find(&reviews).Error; err != nil {
+		return nil, err
+	}
+	return &reviews, nil
+}
+
+func (r *Repository) AggregateUserRatingByID(_ context.Context, userID uint64) (float32, error) {
+	var rating float32
+	var reviews []model.Review
+
+	if err := r.conn.Where("UserID=?", userID).Find(&reviews).Error; err != nil {
+		return rating, err
+	}
+
+	var ratingSum int
+	revCount := len(reviews)
+	for i := range reviews {
+		ratingSum += int(reviews[i].Rating)
+	}
+
+	if revCount > 0 {
+		rating = float32(ratingSum / revCount)
+	}
+	return rating, nil
+}
+
 func (r *Repository) Create(_ context.Context, review *model.Review) (*model.Review, error) {
 	if review.UserID == 0 {
 		return nil, repo.ErrUserIDRequired

@@ -27,6 +27,14 @@ func (r *Repository) GetByID(_ context.Context, id uint64) (*model.Review, error
 	return i, nil
 }
 
+func (r *Repository) GetReviewsByUserID(_ context.Context, userID uint64) (*[]model.Review, error) {
+	return nil, nil
+}
+
+func (r *Repository) AggregateUserRatingByID(_ context.Context, userID uint64) (float32, error) {
+	return 0.0, nil
+}
+
 func (r *Repository) Create(_ context.Context, i *model.Review) (*model.Review, error) {
 	r.Lock()
 	defer r.Unlock()
