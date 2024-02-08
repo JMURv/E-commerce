@@ -33,7 +33,7 @@ func GetCategory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	category, err := models.GetCategoryByID(uint(categoryID))
+	category, err := models.GetCategoryByID(categoryID)
 	if err != nil {
 		http.Error(w, "Invalid categoryID", http.StatusInternalServerError)
 		return
@@ -77,7 +77,7 @@ func UpdateCategory(w http.ResponseWriter, r *http.Request) {
 	newData := &models.Category{}
 	utils.ParseBody(r, newData)
 
-	newCategoryData, err := models.UpdateCategory(uint(categoryID), newData)
+	newCategoryData, err := models.UpdateCategory(categoryID, newData)
 	if err != nil {
 		http.Error(w, "Cannot update category", http.StatusInternalServerError)
 		return
@@ -99,7 +99,7 @@ func DeleteCategory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = models.DeleteCategory(uint(categoryID))
+	err = models.DeleteCategory(categoryID)
 	if err != nil {
 		http.Error(w, "Cannot delete category", http.StatusInternalServerError)
 		return

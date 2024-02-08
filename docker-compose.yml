@@ -11,6 +11,17 @@ services:
     volumes:
       - pg_data:/var/lib/postgresql/data
 
+  users_postgres:
+    container_name: users_postgres
+    image: postgres:15.0-alpine
+    restart: always
+    ports:
+      - "5433:5433"
+    env_file:
+      - ./.env
+    volumes:
+      - users_pg_data:/var/lib/postgresql/data
+
 #  nats:
 #    container_name: nats
 #    image: nats:latest
@@ -31,9 +42,9 @@ services:
 #    depends_on:
 #      - postgres
 
-  backend:
-    container_name: backend
-    image: "ecom_backend:latest"
+  gateway:
+    container_name: gateway
+    image: "ecom_gateway:latest"
     build:
       context: .
       dockerfile: Dockerfile
@@ -47,7 +58,37 @@ services:
       - "8000"
     depends_on:
       - postgres
-    command: sh -c "cd ./cmd && go run ."
+    command: sh -c "cd ./gateway/cmd && go run ."
+
+  users:
+    container_name: users
+    image: "ecom_users:latest"
+    env_file:
+      - ./.env
+    volumes:
+      - ./:/app
+    ports:
+      - "50075:50075"
+    expose:
+      - "50075"
+    depends_on:
+      - postgres
+    command: sh -c "cd ./users/cmd && go run ."
+
+  items:
+    container_name: items
+    image: "ecom_items:latest"
+    env_file:
+      - ./.env
+    volumes:
+      - ./:/app
+    ports:
+      - "50080:50080"
+    expose:
+      - "50080"
+    depends_on:
+      - postgres
+    command: sh -c "cd ./items/cmd && go run ."
 
   review:
     container_name: review
@@ -62,8 +103,9 @@ services:
       - "50070"
     depends_on:
       - postgres
-    command: sh -c "cd ./reviews && go run main.go"
+    command: sh -c "cd ./reviews/cmd && go run ."
 
 volumes:
   pg_data:
+  users_pg_data:
 #  pgadmin:

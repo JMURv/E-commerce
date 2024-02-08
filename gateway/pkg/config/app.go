@@ -16,8 +16,8 @@ var UserSVC string
 func Connect() {
 	var err error
 
-	if err := godotenv.Load("../.env"); err != nil {
-		log.Fatal("Error loading .env file")
+	if err := godotenv.Load("../../.env"); err != nil {
+		log.Fatal("Error loading .env file for gateway srv")
 		return
 	}
 	log.Println("Env file has been loaded")

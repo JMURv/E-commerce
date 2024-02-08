@@ -2,8 +2,10 @@ package memory
 
 import (
 	"context"
+	repo "github.com/JMURv/e-commerce/users/internal/repository"
 	"github.com/JMURv/e-commerce/users/pkg/model"
 	"sync"
+	"time"
 )
 
 type Repository struct {
@@ -15,22 +17,50 @@ func New() *Repository {
 	return &Repository{data: map[uint64]*model.User{}}
 }
 
-func (r *Repository) GetByID(ctx context.Context, userID uint64) (*model.User, error) {
-	panic("implement me")
+func (r *Repository) GetByID(_ context.Context, userID uint64) (*model.User, error) {
+	r.RLock()
+	defer r.RUnlock()
+	for _, v := range r.data {
+		if v.ID == userID {
+			return v, nil
+		}
+	}
+	return nil, repo.ErrNotFound
 }
 
-func (r *Repository) GetByEmail(ctx context.Context, email string) (*model.User, error) {
-	panic("implement me")
+func (r *Repository) GetByEmail(_ context.Context, email string) (*model.User, error) {
+	r.RLock()
+	defer r.RUnlock()
+	for _, v := range r.data {
+		if v.Email == email {
+			return v, nil
+		}
+	}
+	return nil, repo.ErrNotFound
 }
 
-func (r *Repository) Create(ctx context.Context, userData *model.User) (*model.User, error) {
-	panic("implement me")
+func (r *Repository) Create(_ context.Context, userData *model.User) (*model.User, error) {
+	userData.ID = uint64(time.Now().Unix())
+
+	r.Lock()
+	r.data[userData.ID] = userData
+	r.Unlock()
+	return userData, nil
 }
 
-func (r *Repository) Update(ctx context.Context, userID uint64, newData *model.User) (*model.User, error) {
-	panic("implement me")
+func (r *Repository) Update(_ context.Context, userID uint64, newData *model.User) (*model.User, error) {
+	r.Lock()
+	defer r.Unlock()
+	if _, ok := r.data[userID]; ok {
+		r.data[userID] = newData
+		return newData, nil
+	}
+	return nil, repo.ErrNotFound
 }
 
-func (r *Repository) Delete(ctx context.Context, userID uint64) error {
-	panic("implement me")
+func (r *Repository) Delete(_ context.Context, userID uint64) error {
+	r.Lock()
+	delete(r.data, userID)
+	r.Unlock()
+	return nil
 }

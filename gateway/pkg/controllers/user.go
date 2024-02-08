@@ -3,11 +3,11 @@ package controllers
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/JMURv/e-commerce/api/pb/common"
+	pb "github.com/JMURv/e-commerce/api/pb/user"
 	"github.com/JMURv/e-commerce/gateway/pkg/auth"
-	"github.com/JMURv/e-commerce/gateway/pkg/config"
 	"github.com/JMURv/e-commerce/gateway/pkg/models"
 	"github.com/JMURv/e-commerce/gateway/pkg/utils"
-	pb "github.com/JMURv/protos/ecom/user"
 	"github.com/gorilla/mux"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -20,7 +20,7 @@ var userConn *grpc.ClientConn
 
 func init() {
 	var err error
-	userConn, err = grpc.Dial(config.UserSVC, grpc.WithInsecure())
+	userConn, err = grpc.Dial("localhost:50075", grpc.WithInsecure())
 	if err != nil {
 		log.Printf("Failed to connect to user service: %v", err)
 	}
@@ -43,20 +43,24 @@ func ListCreateUser(w http.ResponseWriter, r *http.Request) {
 		utils.ParseBody(r, userData)
 
 		client := pb.NewUserServiceClient(userConn)
+
 		u, err := client.CreateUser(context.Background(), userData)
 		if err != nil {
-			log.Printf("Error creating user: %v", err)
+			http.Error(w, fmt.Sprintf("Error creating user: %v", err), http.StatusInternalServerError)
 			return
 		}
 
-		token, err := auth.GenerateToken(u.User.Id)
+		token, err := auth.GenerateToken(u.Id)
 		if err != nil {
 			log.Printf("Error generating token: %v", err)
 			return
 		}
 
-		response, err := json.Marshal(&pb.CreateUserResponse{
-			User:  u.User,
+		response, err := json.Marshal(struct {
+			User  *common.User
+			Token string
+		}{
+			User:  u,
 			Token: token,
 		})
 		if err != nil {
@@ -109,14 +113,14 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	utils.ParseBody(r, newData)
 
 	client := pb.NewUserServiceClient(userConn)
-	updatedUser, err := client.UpdateUser(context.Background(), newData)
+	u, err := client.UpdateUser(context.Background(), newData)
 	if err != nil {
 		log.Printf("Error updating review: %v", err)
 		http.Error(w, fmt.Sprintf("Error updating review: %v", err), http.StatusInternalServerError)
 		return
 	}
 
-	response, err := json.Marshal(updatedUser.User)
+	response, err := json.Marshal(u)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Encoding error: %v", err), http.StatusInternalServerError)
 		return

@@ -14,7 +14,7 @@ import (
 var DSN string
 
 func init() {
-	if err := godotenv.Load("../.env"); err != nil {
+	if err := godotenv.Load("../../.env"); err != nil {
 		log.Fatal("Error loading .env file")
 		return
 	}
@@ -45,19 +45,19 @@ func New() *Repository {
 }
 
 func (r *Repository) GetByID(_ context.Context, userID uint64) (*model.User, error) {
-	var user model.User
-	if err := r.conn.Where("ID=?", userID).First(&user).Error; err != nil {
+	var u model.User
+	if err := r.conn.Where("ID=?", userID).First(&u).Error; err != nil {
 		return nil, err
 	}
-	return &user, nil
+	return &u, nil
 }
 
 func (r *Repository) GetByEmail(_ context.Context, email string) (*model.User, error) {
-	var user model.User
-	if err := r.conn.Where("Email=?", email).First(&user).Error; err != nil {
+	var u model.User
+	if err := r.conn.Where("Email=?", email).First(&u).Error; err != nil {
 		return nil, err
 	}
-	return &user, nil
+	return &u, nil
 }
 
 func (r *Repository) Create(_ context.Context, u *model.User) (*model.User, error) {
@@ -77,25 +77,25 @@ func (r *Repository) Create(_ context.Context, u *model.User) (*model.User, erro
 }
 
 func (r *Repository) Update(ctx context.Context, userID uint64, newData *model.User) (*model.User, error) {
-	user, err := r.GetByID(ctx, userID)
+	u, err := r.GetByID(ctx, userID)
 	if err != nil {
-		return user, err
+		return u, err
 	}
 
 	if newData.Username != "" {
-		user.Username = newData.Username
+		u.Username = newData.Username
 	}
 
 	if newData.Email != "" {
-		user.Email = newData.Email
+		u.Email = newData.Email
 	}
-	r.conn.Save(&user)
-	return user, nil
+	r.conn.Save(&u)
+	return u, nil
 }
 
 func (r *Repository) Delete(_ context.Context, userID uint64) error {
-	var user model.User
-	if err := r.conn.Delete(&user, userID).Error; err != nil {
+	var u model.User
+	if err := r.conn.Delete(&u, userID).Error; err != nil {
 		return err
 	}
 	return nil

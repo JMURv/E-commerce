@@ -3,7 +3,6 @@ module github.com/JMURv/e-commerce
 go 1.21.4
 
 require (
-	github.com/JMURv/protos/ecom v0.0.0-20240106213940-2864b58b6140
 	github.com/golang-jwt/jwt/v5 v5.2.0
 	github.com/gorilla/handlers v1.5.2
 	github.com/gorilla/mux v1.8.1

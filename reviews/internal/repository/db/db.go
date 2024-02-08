@@ -52,6 +52,8 @@ func (r *Repository) GetByID(_ context.Context, reviewID uint64) (*model.Review,
 	return &review, nil
 }
 
+// TODO: reviewed user id
+
 func (r *Repository) GetReviewsByUserID(_ context.Context, userID uint64) (*[]model.Review, error) {
 	var reviews []model.Review
 	if err := r.conn.Where("UserID=?", userID).Find(&reviews).Error; err != nil {

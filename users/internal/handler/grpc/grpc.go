@@ -62,14 +62,9 @@ func (h *Handler) CreateUser(ctx context.Context, req *pb.CreateUserRequest) (*c
 		return nil, status.Errorf(codes.InvalidArgument, "nil req")
 	}
 
-	reqData, err := proto.Marshal(req)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to marshal request: %v", err)
-	}
-
-	newUser := &common.User{}
-	if err = proto.Unmarshal(reqData, newUser); err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to unmarshal request: %v", err)
+	newUser := &common.User{
+		Username: req.GetUsername(),
+		Email:    req.GetEmail(),
 	}
 
 	u, err := h.ctrl.CreateUser(ctx, model.UserFromProto(newUser))

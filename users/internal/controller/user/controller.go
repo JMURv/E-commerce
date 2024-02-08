@@ -33,7 +33,7 @@ func New(repo userRepository, itmGateway itmgate.Gateway) *Controller {
 func (c *Controller) GetUserByID(ctx context.Context, userID uint64) (*model.User, error) {
 	res, err := c.repo.GetByID(ctx, userID)
 	if err != nil && errors.Is(err, repo.ErrNotFound) {
-		return nil, repo.ErrNotFound
+		return nil, ErrNotFound
 	}
 
 	return res, err

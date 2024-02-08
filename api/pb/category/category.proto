@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package category;
 
-option go_package = "github.com/JMURv/e-commerce/category";
+option go_package = "github.com/JMURv/e-commerce/api/pb/category";
 
 import "common/common.proto";
 

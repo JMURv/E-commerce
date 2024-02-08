@@ -8,7 +8,7 @@ package item
 
 import (
 	context "context"
-	common "github.com/JMURv/e-commerce/common"
+	common "github.com/JMURv/e-commerce/api/pb/common"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
