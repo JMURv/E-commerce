@@ -21,8 +21,16 @@ func New(ctrl *controller.Controller) *Handler {
 	return &Handler{ctrl: ctrl}
 }
 
-func GetUsersList(ctx context.Context, req *pb.EmptyRequest) (*pb.ListUserResponse, error) {
-	return nil, nil
+func (h *Handler) ListUser(ctx context.Context, req *pb.EmptyRequest) (*pb.ListUserResponse, error) {
+	if req == nil {
+		return nil, status.Errorf(codes.InvalidArgument, "nil req")
+	}
+
+	if u, err := h.ctrl.GetUsersList(ctx); err != nil {
+		return nil, status.Errorf(codes.Internal, err.Error())
+	} else {
+		return &pb.ListUserResponse{Users: model.UsersToProto(*u)}, nil
+	}
 }
 
 func (h *Handler) GetUserByID(ctx context.Context, req *pb.GetUserByIDRequest) (*common.User, error) {

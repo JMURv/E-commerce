@@ -44,6 +44,14 @@ func New() *Repository {
 	return &Repository{conn: db}
 }
 
+func (r *Repository) GetUsersList(_ context.Context) (*[]model.User, error) {
+	var u []model.User
+	if err := r.conn.Find(&u).Error; err != nil {
+		return nil, err
+	}
+	return &u, nil
+}
+
 func (r *Repository) GetByID(_ context.Context, userID uint64) (*model.User, error) {
 	var u model.User
 	if err := r.conn.Where("ID=?", userID).First(&u).Error; err != nil {

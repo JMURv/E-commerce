@@ -11,6 +11,7 @@ import (
 var ErrNotFound = errors.New("user not found")
 
 type userRepository interface {
+	GetUsersList(ctx context.Context) (*[]model.User, error)
 	GetByID(ctx context.Context, userID uint64) (*model.User, error)
 	GetByEmail(ctx context.Context, email string) (*model.User, error)
 	Create(ctx context.Context, userData *model.User) (*model.User, error)
@@ -28,6 +29,15 @@ func New(repo userRepository, itmGateway itmgate.Gateway) *Controller {
 		repo:       repo,
 		itmGateway: itmGateway,
 	}
+}
+
+func (c *Controller) GetUsersList(ctx context.Context) (*[]model.User, error) {
+	res, err := c.repo.GetUsersList(ctx)
+	if err != nil && errors.Is(err, repo.ErrNotFound) {
+		return nil, ErrNotFound
+	}
+
+	return res, err
 }
 
 func (c *Controller) GetUserByID(ctx context.Context, userID uint64) (*model.User, error) {

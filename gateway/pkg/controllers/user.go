@@ -6,7 +6,6 @@ import (
 	"github.com/JMURv/e-commerce/api/pb/common"
 	pb "github.com/JMURv/e-commerce/api/pb/user"
 	"github.com/JMURv/e-commerce/gateway/pkg/auth"
-	"github.com/JMURv/e-commerce/gateway/pkg/models"
 	"github.com/JMURv/e-commerce/gateway/pkg/utils"
 	"github.com/gorilla/mux"
 	"golang.org/x/net/context"
@@ -29,11 +28,12 @@ func init() {
 func ListCreateUser(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
-		users := models.GetAllUsers()
+		client := pb.NewUserServiceClient(userConn)
+		u, err := client.ListUser(context.Background(), &pb.EmptyRequest{})
 
-		response, err := json.Marshal(users)
+		response, err := json.Marshal(u.Users)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("Invalid request body: %v", err), http.StatusBadRequest)
+			http.Error(w, fmt.Sprintf("Error while encoding to JSON: %v", err), http.StatusInternalServerError)
 			return
 		}
 		utils.ResponseOk(w, http.StatusOK, response)

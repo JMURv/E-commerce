@@ -17,6 +17,17 @@ func New() *Repository {
 	return &Repository{data: map[uint64]*model.User{}}
 }
 
+func (r *Repository) GetUsersList(_ context.Context) (*[]model.User, error) {
+	r.RLock()
+	defer r.RUnlock()
+
+	res := make([]model.User, 0, len(r.data))
+	for _, v := range r.data {
+		res = append(res, *v)
+	}
+	return &res, nil
+}
+
 func (r *Repository) GetByID(_ context.Context, userID uint64) (*model.User, error) {
 	r.RLock()
 	defer r.RUnlock()

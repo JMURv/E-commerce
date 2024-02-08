@@ -19,3 +19,13 @@ func UserToProto(r *User) *common.User {
 		IsAdmin:  r.IsAdmin,
 	}
 }
+
+func UsersToProto(u []User) []*common.User {
+	var users []*common.User
+
+	for i := range u {
+		users = append(users, UserToProto(&u[i]))
+	}
+
+	return users
+}
