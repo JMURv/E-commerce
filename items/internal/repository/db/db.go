@@ -59,20 +59,20 @@ func (r *Repository) ListUserItemsByID(_ context.Context, userID uint64) (*[]mod
 
 func (r *Repository) Create(_ context.Context, i *model.Item) (*model.Item, error) {
 	if i.UserID == 0 {
-		return i, repo.ErrUserIDRequired
+		return nil, repo.ErrUserIDRequired
 	}
 	if i.CategoryID == 0 {
-		return i, repo.ErrCategoryIDRequired
+		return nil, repo.ErrCategoryIDRequired
 	}
 
 	if i.Name == "" {
-		return i, repo.ErrNameRequired
+		return nil, repo.ErrNameRequired
 	}
 	if i.Description == "" {
-		return i, repo.ErrDescriptionRequired
+		return nil, repo.ErrDescriptionRequired
 	}
 	if i.Price == 0 {
-		return i, repo.ErrPriceRequired
+		return nil, repo.ErrPriceRequired
 	}
 	if i.Quantity == 0 {
 		i.Quantity = 1

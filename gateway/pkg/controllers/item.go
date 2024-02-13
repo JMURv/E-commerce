@@ -1,117 +1,131 @@
 package controllers
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/JMURv/e-commerce/gateway/pkg/models"
+	pb "github.com/JMURv/e-commerce/api/pb/item"
 	"github.com/JMURv/e-commerce/gateway/pkg/utils"
 	"github.com/gorilla/mux"
+	"google.golang.org/grpc"
+	"log"
 	"net/http"
 	"strconv"
 )
 
-func ListItem(w http.ResponseWriter, r *http.Request) {
-	itemsList := models.GetAllItems()
+var itemConn *grpc.ClientConn
 
-	response, err := json.Marshal(itemsList)
+func init() {
+	//reg, err := consul.NewRegistry("localhost:8080")
+	//addrs, err := consul.ServiceAddresses(context.Background(), "items")
+	var err error
+	itemConn, err = grpc.Dial("localhost:50080", grpc.WithInsecure())
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Invalid request body: %v", err), http.StatusBadRequest)
+		log.Printf("Failed to connect to user service: %v", err)
+	}
+}
+
+func ListItem(w http.ResponseWriter, r *http.Request) {
+	cli := pb.NewItemServiceClient(itemConn)
+	items, _ := cli.ListItem(context.Background(), &pb.EmptyRequest{})
+
+	resp, err := json.Marshal(items)
+	if err != nil {
+		utils.ErrResponse(w, http.StatusBadRequest, fmt.Sprintf(ErrWhileEncoding, err))
 		return
 	}
 
-	utils.ResponseOk(w, http.StatusOK, response)
-}
-
-func ListUserRecommendsItem(w http.ResponseWriter, r *http.Request) {
-
+	utils.OkResponse(w, http.StatusOK, resp)
 }
 
 func CreateItem(w http.ResponseWriter, r *http.Request) {
-	NewItem := &models.Item{}
+	NewItem := &pb.CreateItemRequest{}
 	utils.ParseBody(r, NewItem)
 
-	item, err := NewItem.CreateItem()
+	cli := pb.NewItemServiceClient(itemConn)
+	i, err := cli.CreateItem(context.Background(), NewItem)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Creating item error: %v", err), http.StatusBadRequest)
+		utils.ErrResponse(w, http.StatusBadRequest, fmt.Sprintf("Error creating item: %v", err))
 		return
 	}
 
-	response, err := json.Marshal(item)
+	resp, err := json.Marshal(i)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Invalid request body: %v", err), http.StatusBadRequest)
+		utils.ErrResponse(w, http.StatusInternalServerError, fmt.Sprintf(ErrWhileEncoding, err))
 		return
 	}
 
-	utils.ResponseOk(w, http.StatusCreated, response)
+	utils.OkResponse(w, http.StatusCreated, resp)
 }
 
 func GetItem(w http.ResponseWriter, r *http.Request) {
-	itemId, err := strconv.ParseUint(mux.Vars(r)["id"], 10, 64)
+	itemID, err := strconv.ParseUint(mux.Vars(r)["id"], 10, 64)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Cannot parse itemId: %v", err), http.StatusInternalServerError)
+		utils.ErrResponse(w, http.StatusBadRequest, fmt.Sprintf("Cannot parse itemID: %v", err))
 		return
 	}
 
-	itemDetails := models.GetItemByID(uint(itemId))
-	response, err := json.Marshal(itemDetails)
+	cli := pb.NewItemServiceClient(itemConn)
+	i, err := cli.GetItemByID(context.Background(), &pb.GetItemByIDRequest{ItemId: itemID})
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Invalid request body: %v", err), http.StatusBadRequest)
+		utils.ErrResponse(w, http.StatusInternalServerError, fmt.Sprintf("Error getting item: %v", err))
 		return
 	}
 
-	utils.ResponseOk(w, http.StatusOK, response)
+	resp, err := json.Marshal(i)
+	if err != nil {
+		utils.ErrResponse(w, http.StatusInternalServerError, fmt.Sprintf(ErrWhileEncoding, err))
+		return
+	}
+
+	utils.OkResponse(w, http.StatusOK, resp)
 }
 
 func UpdateItem(w http.ResponseWriter, r *http.Request) {
-	itemId, err := strconv.ParseUint(mux.Vars(r)["id"], 10, 64)
+	itemID, err := strconv.ParseUint(mux.Vars(r)["id"], 10, 64)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Cannot parse itemId: %v", err), http.StatusInternalServerError)
+		utils.ErrResponse(w, http.StatusBadRequest, fmt.Sprintf("Cannot parse itemID: %v", err))
 		return
 	}
 
-	var updateItem = &models.Item{}
-	utils.ParseBody(r, updateItem)
+	var newData = &pb.UpdateItemRequest{ItemId: itemID}
+	utils.ParseBody(r, newData)
 
-	itemToUpdate := models.GetItemByID(uint(itemId))
-
-	reqUserId := r.Context().Value("reqUserId")
-	if reqUserId != itemToUpdate.UserID {
-		http.Error(w, "you have no permissions", http.StatusForbidden)
+	reqUserId := r.Context().Value("reqUserId").(uint64)
+	if reqUserId != newData.UserId {
+		utils.ErrResponse(w, http.StatusForbidden, ErrNoPermissions)
 		return
 	}
 
-	updatedItem, err := itemToUpdate.UpdateItem(updateItem)
+	cli := pb.NewItemServiceClient(itemConn)
+	i, err := cli.UpdateItem(context.Background(), newData)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Updating item error: %v", err), http.StatusBadRequest)
+		utils.ErrResponse(w, http.StatusInternalServerError, fmt.Sprintf("Error updating item: %v", err))
 		return
 	}
 
-	response, err := json.Marshal(updatedItem)
+	resp, err := json.Marshal(i)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Encoding error: %v", err), http.StatusInternalServerError)
+		utils.ErrResponse(w, http.StatusInternalServerError, fmt.Sprintf(ErrWhileEncoding, err))
 		return
 	}
 
-	utils.ResponseOk(w, http.StatusOK, response)
+	utils.OkResponse(w, http.StatusOK, resp)
 }
 
 func DeleteItem(w http.ResponseWriter, r *http.Request) {
-	itemId, err := strconv.ParseUint(mux.Vars(r)["id"], 10, 64)
+	itemID, err := strconv.ParseUint(mux.Vars(r)["id"], 10, 64)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Cannot parse itemId: %v", err), http.StatusInternalServerError)
+		utils.ErrResponse(w, http.StatusBadRequest, fmt.Sprintf("Cannot parse itemID: %v", err))
 		return
 	}
 
-	itemToDelete := models.GetItemByID(uint(itemId))
-	reqUserId := r.Context().Value("reqUserId")
-	if reqUserId != itemToDelete.UserID {
-		http.Error(w, "you have no permissions", http.StatusForbidden)
-		return
-	}
+	reqUserId := r.Context().Value("reqUserId").(uint64)
 
-	err = models.DeleteItem(uint(itemId))
+	cli := pb.NewItemServiceClient(itemConn)
+	_, err = cli.DeleteItem(context.Background(), &pb.DeleteItemRequest{ItemId: itemID, ReqUserId: reqUserId})
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Cannot delete item error: %v", err), http.StatusInternalServerError)
+		utils.ErrResponse(w, http.StatusInternalServerError, fmt.Sprintf("Error deleting item: %v", err))
 		return
 	}
 

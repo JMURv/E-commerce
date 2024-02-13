@@ -1,9 +1,10 @@
 package controllers
 
 import (
+	"context"
 	"fmt"
+	pb "github.com/JMURv/e-commerce/api/pb/user"
 	"github.com/JMURv/e-commerce/gateway/pkg/auth"
-	"github.com/JMURv/e-commerce/gateway/pkg/models"
 	"github.com/JMURv/e-commerce/gateway/pkg/utils"
 	"net/http"
 )
@@ -16,22 +17,19 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	loginData := &Login{}
 	utils.ParseBody(r, loginData)
 
-	userDetails := models.GetUserByEmail(loginData.Email)
-	if userDetails.Username == "" {
-		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
+	client := pb.NewUserServiceClient(userConn)
+	u, err := client.GetUserByEmail(context.Background(), &pb.GetUserByEmailRequest{Email: loginData.Email})
+	if err != nil || u.Username == "" {
+		utils.ErrResponse(w, http.StatusUnauthorized, "Invalid credentials")
 		return
 	}
 
-	token, err := auth.GenerateToken(userDetails.ID)
+	token, err := auth.GenerateToken(u.Id)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Failed to generate token: %v", err), http.StatusInternalServerError)
+		utils.ErrResponse(w, http.StatusInternalServerError, fmt.Sprintf(ErrWhileGenToken, err))
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	_, err = w.Write([]byte(fmt.Sprintf(`{"token": "%s"}`, token)))
-	if err != nil {
-		http.Error(w, fmt.Sprintf("Failed to send request: %v", err), http.StatusInternalServerError)
-		return
-	}
+	w.Write([]byte(fmt.Sprintf(`{"token": "%s"}`, token)))
 }

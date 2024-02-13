@@ -43,18 +43,18 @@ func (r *Repository) Create(_ context.Context, i *model.Review) (*model.Review, 
 	return i, nil
 }
 
-func (r *Repository) Update(_ context.Context, itemID uint64, newData *model.Review) (*model.Review, error) {
+func (r *Repository) Update(_ context.Context, reviewID uint64, newData *model.Review) (*model.Review, error) {
 	r.Lock()
 	defer r.Unlock()
 
-	i, ok := r.data[itemID]
+	i, ok := r.data[reviewID]
 	if !ok {
 		return nil, repo.ErrNotFound
 	}
 	return i, nil
 }
 
-func (r *Repository) Delete(_ context.Context, itemID uint64) error {
-
+func (r *Repository) Delete(_ context.Context, reviewID uint64) error {
+	delete(r.data, reviewID)
 	return nil
 }

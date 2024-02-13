@@ -50,13 +50,21 @@ func (r *Repository) GetByEmail(_ context.Context, email string) (*model.User, e
 	return nil, repo.ErrNotFound
 }
 
-func (r *Repository) Create(_ context.Context, userData *model.User) (*model.User, error) {
-	userData.ID = uint64(time.Now().Unix())
+func (r *Repository) Create(_ context.Context, u *model.User) (*model.User, error) {
+	u.ID = uint64(time.Now().Unix())
+
+	if u.Username == "" {
+		return nil, repo.ErrUsernameIsRequired
+	}
+
+	if u.Email == "" {
+		return nil, repo.ErrEmailIsRequired
+	}
 
 	r.Lock()
-	r.data[userData.ID] = userData
+	r.data[u.ID] = u
 	r.Unlock()
-	return userData, nil
+	return u, nil
 }
 
 func (r *Repository) Update(_ context.Context, userID uint64, newData *model.User) (*model.User, error) {

@@ -28,35 +28,34 @@ func init() {
 func ListCreateUser(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
-		client := pb.NewUserServiceClient(userConn)
-		u, err := client.ListUser(context.Background(), &pb.EmptyRequest{})
+		cli := pb.NewUserServiceClient(userConn)
+		u, _ := cli.ListUser(context.Background(), &pb.EmptyRequest{})
 
-		response, err := json.Marshal(u.Users)
+		resp, err := json.Marshal(u.Users)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("Error while encoding to JSON: %v", err), http.StatusInternalServerError)
+			utils.ErrResponse(w, http.StatusBadRequest, fmt.Sprintf(ErrWhileEncoding, err))
 			return
 		}
-		utils.ResponseOk(w, http.StatusOK, response)
+		utils.OkResponse(w, http.StatusOK, resp)
 
 	case http.MethodPost:
 		var userData = &pb.CreateUserRequest{}
 		utils.ParseBody(r, userData)
 
-		client := pb.NewUserServiceClient(userConn)
-
-		u, err := client.CreateUser(context.Background(), userData)
+		cli := pb.NewUserServiceClient(userConn)
+		u, err := cli.CreateUser(context.Background(), userData)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("Error creating user: %v", err), http.StatusInternalServerError)
+			utils.ErrResponse(w, http.StatusBadRequest, fmt.Sprintf("Error creating user: %v", err))
 			return
 		}
 
 		token, err := auth.GenerateToken(u.Id)
 		if err != nil {
-			log.Printf("Error generating token: %v", err)
+			utils.ErrResponse(w, http.StatusInternalServerError, fmt.Sprintf(ErrWhileGenToken, err))
 			return
 		}
 
-		response, err := json.Marshal(struct {
+		resp, err := json.Marshal(struct {
 			User  *common.User
 			Token string
 		}{
@@ -64,46 +63,47 @@ func ListCreateUser(w http.ResponseWriter, r *http.Request) {
 			Token: token,
 		})
 		if err != nil {
-			http.Error(w, fmt.Sprintf("Encoding error: %v", err), http.StatusInternalServerError)
+			utils.ErrResponse(w, http.StatusInternalServerError, fmt.Sprintf(ErrWhileEncoding, err))
 			return
 		}
 
-		utils.ResponseOk(w, http.StatusCreated, response)
+		utils.OkResponse(w, http.StatusCreated, resp)
 	}
 }
 
 func GetUser(w http.ResponseWriter, r *http.Request) {
 	userID, err := strconv.ParseUint(mux.Vars(r)["id"], 10, 64)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Cannot parse userID: %v", err), http.StatusInternalServerError)
+		utils.ErrResponse(w, http.StatusBadRequest, fmt.Sprintf("Cannot parse userID: %v", err))
 		return
 	}
 
-	client := pb.NewUserServiceClient(userConn)
-	response, err := client.GetUserByID(context.Background(), &pb.GetUserByIDRequest{UserId: userID})
+	cli := pb.NewUserServiceClient(userConn)
+	u, err := cli.GetUserByID(context.Background(), &pb.GetUserByIDRequest{UserId: userID})
 	if err != nil {
-		log.Printf("Error getting user: %v", err)
-	}
-
-	jsonResponse, err := json.Marshal(response)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("Encoding error: %v", err), http.StatusBadRequest)
+		utils.ErrResponse(w, http.StatusInternalServerError, fmt.Sprintf("Error getting user: %v", err))
 		return
 	}
 
-	utils.ResponseOk(w, http.StatusOK, jsonResponse)
+	resp, err := json.Marshal(u)
+	if err != nil {
+		utils.ErrResponse(w, http.StatusInternalServerError, fmt.Sprintf(ErrWhileEncoding, err))
+		return
+	}
+
+	utils.OkResponse(w, http.StatusOK, resp)
 }
 
 func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	userID, err := strconv.ParseUint(mux.Vars(r)["id"], 10, 64)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Cannot parse userID: %v", err), http.StatusInternalServerError)
+		utils.ErrResponse(w, http.StatusBadRequest, fmt.Sprintf("Cannot parse userID: %v", err))
 		return
 	}
 
 	reqUserID := r.Context().Value("reqUserId").(uint64)
 	if reqUserID != userID {
-		http.Error(w, "you have no permissions", http.StatusForbidden)
+		utils.ErrResponse(w, http.StatusForbidden, ErrNoPermissions)
 		return
 	}
 
@@ -112,43 +112,41 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 	utils.ParseBody(r, newData)
 
-	client := pb.NewUserServiceClient(userConn)
-	u, err := client.UpdateUser(context.Background(), newData)
+	cli := pb.NewUserServiceClient(userConn)
+	u, err := cli.UpdateUser(context.Background(), newData)
 	if err != nil {
-		log.Printf("Error updating review: %v", err)
-		http.Error(w, fmt.Sprintf("Error updating review: %v", err), http.StatusInternalServerError)
+		utils.ErrResponse(w, http.StatusInternalServerError, fmt.Sprintf("Error updating user: %v", err))
 		return
 	}
 
-	response, err := json.Marshal(u)
+	resp, err := json.Marshal(u)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Encoding error: %v", err), http.StatusInternalServerError)
+		utils.ErrResponse(w, http.StatusInternalServerError, fmt.Sprintf(ErrWhileEncoding, err))
 		return
 	}
 
-	utils.ResponseOk(w, http.StatusOK, response)
+	utils.OkResponse(w, http.StatusOK, resp)
 }
 
 func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	userID, err := strconv.ParseUint(mux.Vars(r)["id"], 10, 64)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Cannot parse userID: %v", err), http.StatusInternalServerError)
+		utils.ErrResponse(w, http.StatusBadRequest, fmt.Sprintf("Cannot parse userID: %v", err))
 		return
 	}
 
 	reqUserID := r.Context().Value("reqUserId").(uint64)
 	if reqUserID != userID {
-		http.Error(w, "you have no permissions", http.StatusForbidden)
+		utils.ErrResponse(w, http.StatusForbidden, ErrNoPermissions)
 		return
 	}
 
-	client := pb.NewUserServiceClient(userConn)
-	_, err = client.DeleteUser(context.Background(), &pb.DeleteUserRequest{
+	cli := pb.NewUserServiceClient(userConn)
+	_, err = cli.DeleteUser(context.Background(), &pb.DeleteUserRequest{
 		UserId: reqUserID,
 	})
 	if err != nil {
-		log.Printf("Error deleting user: %v", err)
-		http.Error(w, fmt.Sprintf("Cannot delete user: %v", err), http.StatusInternalServerError)
+		utils.ErrResponse(w, http.StatusInternalServerError, fmt.Sprintf("Error deleting user: %v", err))
 		return
 	}
 

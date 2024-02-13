@@ -35,7 +35,6 @@ message CreateUserRequest {
   string email = 2;
 }
 
-
 message UpdateUserRequest {
   uint64 user_id = 1;
   string username = 2;

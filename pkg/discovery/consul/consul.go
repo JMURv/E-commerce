@@ -38,12 +38,17 @@ func (r *Registry) Register(_ context.Context, id string, name string, hostPort 
 		return err
 	}
 
-	return r.client.Agent().ServiceRegister(&consul.AgentServiceRegistration{
-		Address: parts[0],
-		ID:      id,
-		Name:    name,
-		Port:    port,
-		Check:   &consul.AgentServiceCheck{CheckID: id, TTL: "5s"}},
+	return r.client.Agent().ServiceRegister(
+		&consul.AgentServiceRegistration{
+			Address: parts[0],
+			ID:      id,
+			Name:    name,
+			Port:    port,
+			Check:   &consul.AgentServiceCheck{
+				CheckID: id,
+				TTL: "5s",
+			},
+		},
 	)
 }
 

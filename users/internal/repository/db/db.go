@@ -70,11 +70,11 @@ func (r *Repository) GetByEmail(_ context.Context, email string) (*model.User, e
 
 func (r *Repository) Create(_ context.Context, u *model.User) (*model.User, error) {
 	if u.Username == "" {
-		return u, repo.ErrUsernameIsRequired
+		return nil, repo.ErrUsernameIsRequired
 	}
 
 	if u.Email == "" {
-		return u, repo.ErrEmailIsRequired
+		return nil, repo.ErrEmailIsRequired
 	}
 
 	if err := r.conn.Create(&u).Error; err != nil {
@@ -87,7 +87,7 @@ func (r *Repository) Create(_ context.Context, u *model.User) (*model.User, erro
 func (r *Repository) Update(ctx context.Context, userID uint64, newData *model.User) (*model.User, error) {
 	u, err := r.GetByID(ctx, userID)
 	if err != nil {
-		return u, err
+		return nil, err
 	}
 
 	if newData.Username != "" {
