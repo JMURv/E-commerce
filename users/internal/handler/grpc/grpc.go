@@ -70,14 +70,12 @@ func (h *Handler) CreateUser(ctx context.Context, req *pb.CreateUserRequest) (*c
 		return nil, status.Errorf(codes.InvalidArgument, "nil req")
 	}
 
-	newUser := &common.User{
+	u, err := h.ctrl.CreateUser(ctx, model.UserFromProto(&common.User{
 		Username: req.GetUsername(),
 		Email:    req.GetEmail(),
-	}
-
-	u, err := h.ctrl.CreateUser(ctx, model.UserFromProto(newUser))
+	}))
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to create user: %v", err)
+		return nil, status.Errorf(codes.Internal, err.Error())
 	}
 
 	return model.UserToProto(u), nil
@@ -91,17 +89,17 @@ func (h *Handler) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest) (*c
 
 	reqData, err := proto.Marshal(req)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to marshal request: %v", err)
+		return nil, status.Errorf(codes.Internal, err.Error())
 	}
 
 	updateUserData := &common.User{}
 	if err = proto.Unmarshal(reqData, updateUserData); err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to unmarshal request: %v", err)
+		return nil, status.Errorf(codes.Internal, err.Error())
 	}
 
 	u, err := h.ctrl.UpdateUser(ctx, userID, model.UserFromProto(updateUserData))
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to create user: %v", err)
+		return nil, status.Errorf(codes.Internal, err.Error())
 	}
 
 	return model.UserToProto(u), nil
@@ -113,7 +111,7 @@ func (h *Handler) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest) (*p
 	}
 
 	if err := h.ctrl.DeleteUser(ctx, req.UserId); err != nil {
-		return nil, err
+		return nil, status.Errorf(codes.Internal, err.Error())
 	}
 	return &pb.EmptyResponse{}, nil
 }

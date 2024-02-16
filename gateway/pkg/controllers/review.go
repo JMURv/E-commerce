@@ -44,7 +44,7 @@ func GetReview(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	utils.ResponseOk(w, http.StatusOK, jsonResponse)
+	utils.OkResponse(w, http.StatusOK, jsonResponse)
 }
 
 func CreateReview(w http.ResponseWriter, r *http.Request) {
@@ -83,7 +83,7 @@ func CreateReview(w http.ResponseWriter, r *http.Request) {
 
 	go broadcast(uint(review.UserId), uint(review.ReviewedUserId), notificationBytes)
 
-	utils.ResponseOk(w, http.StatusCreated, response)
+	utils.OkResponse(w, http.StatusCreated, response)
 }
 
 func UpdateReview(w http.ResponseWriter, r *http.Request) {
@@ -112,7 +112,7 @@ func UpdateReview(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	utils.ResponseOk(w, http.StatusOK, response)
+	utils.OkResponse(w, http.StatusOK, response)
 }
 
 func DeleteReview(w http.ResponseWriter, r *http.Request) {

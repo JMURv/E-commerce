@@ -1,13 +1,13 @@
 package model
 
 import (
-	"github.com/JMURv/e-commerce/api/pb/common"
+	cm "github.com/JMURv/e-commerce/api/pb/common"
 )
 
-func tagsToProto(tags []Tag) []*common.Tag {
-	var pbTags []*common.Tag
+func tagsToProto(tags []Tag) []*cm.Tag {
+	var pbTags []*cm.Tag
 	for _, tag := range tags {
-		pbTag := &common.Tag{
+		pbTag := &cm.Tag{
 			Name: tag.Name,
 		}
 		pbTags = append(pbTags, pbTag)
@@ -15,43 +15,38 @@ func tagsToProto(tags []Tag) []*common.Tag {
 	return pbTags
 }
 
-func TagsFromProto(tags []*common.Tag) []Tag {
-	var modelTags []Tag
-	for _, tag := range tags {
-		modelTag := Tag{
-			Name: tag.Name,
-		}
-		modelTags = append(modelTags, modelTag)
+func TagsFromProto(tags []*cm.Tag) []Tag {
+	t := make([]Tag, 0, len(tags))
+	for i := range tags {
+		t = append(t, Tag{
+			Name: tags[i].Name,
+		})
 	}
-	return modelTags
+	return t
 }
 
-func ItemFromProto(i *common.Item) *Item {
+func ItemFromProto(i *cm.Item) *Item {
 	return &Item{
 		ID:          i.Id,
 		Name:        i.Name,
 		Description: i.Description,
 		Price:       i.Price,
 		CategoryID:  i.CategoryId,
-		Category: Category{
-			ID:               i.Category.Id,
-			Name:             i.Category.Name,
-			Description:      i.Category.Description,
-			ParentCategoryID: i.Category.ParentCategoryId,
-			CreatedAt:        *i.Category.CreatedAt,
-			UpdatedAt:        *i.Category.UpdatedAt,
-		},
-		UserID:    i.UserId,
-		Tags:      TagsFromProto(i.Tags),
-		Status:    i.Status,
-		Quantity:  i.Quantity,
-		CreatedAt: *i.CreatedAt,
-		UpdatedAt: *i.UpdatedAt,
+		//Category: Category{
+		//	ID:               i.Category.Id,
+		//	Name:             i.Category.Name,
+		//	Description:      i.Category.Description,
+		//	ParentCategoryID: i.Category.ParentCategoryId,
+		//},
+		UserID:   i.UserId,
+		Tags:     TagsFromProto(i.Tags),
+		Status:   i.Status,
+		Quantity: i.Quantity,
 	}
 }
 
-func ItemToProto(i *Item) *common.Item {
-	return &common.Item{
+func ItemToProto(i *Item) *cm.Item {
+	return &cm.Item{
 		Id:         i.ID,
 		UserId:     i.UserID,
 		CategoryId: i.CategoryID,
@@ -59,7 +54,7 @@ func ItemToProto(i *Item) *common.Item {
 		Name:        i.Name,
 		Description: i.Description,
 		Price:       i.Price,
-		Category: &common.Category{
+		Category: &cm.Category{
 			Id:               i.Category.ID,
 			Name:             i.Category.Name,
 			Description:      i.Category.Description,
@@ -75,12 +70,37 @@ func ItemToProto(i *Item) *common.Item {
 	}
 }
 
-func ItemsToProto(items []Item) []*common.Item {
-	var protoItems []*common.Item
-
+func ItemsToProto(items []*Item) []*cm.Item {
+	res := make([]*cm.Item, 0, len(items))
 	for i := range items {
-		protoItems = append(protoItems, ItemToProto(&items[i]))
+		res = append(res, ItemToProto(items[i]))
 	}
 
-	return protoItems
+	return res
+}
+
+func CategoryFromProto(c *cm.Category) *Category {
+	return &Category{
+		Name:             c.Name,
+		Description:      c.Description,
+		ParentCategoryID: c.ParentCategoryId,
+	}
+}
+
+func CategoryToProto(c *Category) *cm.Category {
+	return &cm.Category{
+		Id:               c.ID,
+		Name:             c.Name,
+		Description:      c.Description,
+		ParentCategoryId: c.ParentCategoryID,
+	}
+}
+
+func CategoriesToProto(categories []*Category) []*cm.Category {
+	res := make([]*cm.Category, 0, len(categories))
+	for i := range categories {
+		res = append(res, CategoryToProto(categories[i]))
+	}
+
+	return res
 }

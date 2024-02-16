@@ -62,6 +62,7 @@ func main() {
 
 	srv := grpc.NewServer()
 	pb.RegisterItemServiceServer(srv, h)
+	pb.RegisterCategoryServiceServer(srv, h)
 
 	reflection.Register(srv)
 

@@ -23,7 +23,7 @@ func ListRoom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	utils.ResponseOk(w, http.StatusOK, response)
+	utils.OkResponse(w, http.StatusOK, response)
 }
 
 func CreateRoom(w http.ResponseWriter, r *http.Request) {
@@ -49,7 +49,7 @@ func CreateRoom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	utils.ResponseOk(w, http.StatusCreated, response)
+	utils.OkResponse(w, http.StatusCreated, response)
 }
 
 func DeleteRoom(w http.ResponseWriter, r *http.Request) {

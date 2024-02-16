@@ -26,7 +26,7 @@ func ListFavorites(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	utils.ResponseOk(w, http.StatusOK, response)
+	utils.OkResponse(w, http.StatusOK, response)
 }
 
 func CreateFavorites(w http.ResponseWriter, r *http.Request) {
@@ -65,7 +65,7 @@ func CreateFavorites(w http.ResponseWriter, r *http.Request) {
 
 	go broadcast(uint(favorite.UserID), favorite.Item.UserID, notificationBytes)
 
-	utils.ResponseOk(w, http.StatusCreated, response)
+	utils.OkResponse(w, http.StatusCreated, response)
 }
 
 func DeleteFavorite(w http.ResponseWriter, r *http.Request) {

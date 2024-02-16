@@ -6,6 +6,8 @@ import (
 	"net/http"
 )
 
+var ErrWhileEncoding = "Error while encoding to JSON"
+
 type SuccessResponse struct {
 	Result any `json:"result"`
 }
@@ -14,7 +16,7 @@ type ErrorResponse struct {
 	Error any `json:"error"`
 }
 
-func ErrResponse(w http.ResponseWriter, status int, data any) {
+func ErrResponse(w http.ResponseWriter, status int, data string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	json.NewEncoder(w).Encode(&ErrorResponse{Error: data})
@@ -23,7 +25,12 @@ func ErrResponse(w http.ResponseWriter, status int, data any) {
 func OkResponse(w http.ResponseWriter, status int, data any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(&SuccessResponse{Result: data})
+
+	err := json.NewEncoder(w).Encode(&SuccessResponse{data})
+	if err != nil {
+		ErrResponse(w, http.StatusInternalServerError, ErrWhileEncoding)
+		return
+	}
 }
 
 func ParseBody(r *http.Request, x interface{}) {

@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/JMURv/e-commerce/api/pb/common"
 	pb "github.com/JMURv/e-commerce/api/pb/user"
@@ -14,6 +13,11 @@ import (
 	"net/http"
 	"strconv"
 )
+
+type UserTokenResponse struct {
+	User  *common.User `json:"user"`
+	Token string       `json:"token"`
+}
 
 var userConn *grpc.ClientConn
 
@@ -30,13 +34,7 @@ func ListCreateUser(w http.ResponseWriter, r *http.Request) {
 	case http.MethodGet:
 		cli := pb.NewUserServiceClient(userConn)
 		u, _ := cli.ListUser(context.Background(), &pb.EmptyRequest{})
-
-		resp, err := json.Marshal(u.Users)
-		if err != nil {
-			utils.ErrResponse(w, http.StatusBadRequest, fmt.Sprintf(ErrWhileEncoding, err))
-			return
-		}
-		utils.OkResponse(w, http.StatusOK, resp)
+		utils.OkResponse(w, http.StatusOK, u.Users)
 
 	case http.MethodPost:
 		var userData = &pb.CreateUserRequest{}
@@ -55,19 +53,10 @@ func ListCreateUser(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		resp, err := json.Marshal(struct {
-			User  *common.User
-			Token string
-		}{
+		utils.OkResponse(w, http.StatusCreated, &UserTokenResponse{
 			User:  u,
 			Token: token,
 		})
-		if err != nil {
-			utils.ErrResponse(w, http.StatusInternalServerError, fmt.Sprintf(ErrWhileEncoding, err))
-			return
-		}
-
-		utils.OkResponse(w, http.StatusCreated, resp)
 	}
 }
 
@@ -85,13 +74,7 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := json.Marshal(u)
-	if err != nil {
-		utils.ErrResponse(w, http.StatusInternalServerError, fmt.Sprintf(ErrWhileEncoding, err))
-		return
-	}
-
-	utils.OkResponse(w, http.StatusOK, resp)
+	utils.OkResponse(w, http.StatusOK, u)
 }
 
 func UpdateUser(w http.ResponseWriter, r *http.Request) {
@@ -119,13 +102,7 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := json.Marshal(u)
-	if err != nil {
-		utils.ErrResponse(w, http.StatusInternalServerError, fmt.Sprintf(ErrWhileEncoding, err))
-		return
-	}
-
-	utils.OkResponse(w, http.StatusOK, resp)
+	utils.OkResponse(w, http.StatusOK, u)
 }
 
 func DeleteUser(w http.ResponseWriter, r *http.Request) {

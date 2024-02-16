@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	pb "github.com/JMURv/e-commerce/api/pb/item"
 	"github.com/JMURv/e-commerce/gateway/pkg/utils"
@@ -25,40 +24,50 @@ func init() {
 	}
 }
 
-func ListItem(w http.ResponseWriter, r *http.Request) {
+type ItemInterface interface {
+	ListItem(w http.ResponseWriter, r *http.Request)
+	CreateItem(w http.ResponseWriter, r *http.Request)
+	GetItem(w http.ResponseWriter, r *http.Request)
+	UpdateItem(w http.ResponseWriter, r *http.Request)
+	DeleteItem(w http.ResponseWriter, r *http.Request)
+}
+
+type ItemCtrl struct {
+	ItemConn *grpc.ClientConn
+}
+
+func NewItemCtrl() *ItemCtrl {
+	itemConn, err := grpc.Dial("localhost:50080", grpc.WithInsecure())
+	if err != nil {
+		log.Printf("Failed to connect to user service: %v", err)
+	}
+	return &ItemCtrl{
+		ItemConn: itemConn,
+	}
+}
+
+func (iCtrl *ItemCtrl) ListItem(w http.ResponseWriter, r *http.Request) {
 	cli := pb.NewItemServiceClient(itemConn)
 	items, _ := cli.ListItem(context.Background(), &pb.EmptyRequest{})
 
-	resp, err := json.Marshal(items)
-	if err != nil {
-		utils.ErrResponse(w, http.StatusBadRequest, fmt.Sprintf(ErrWhileEncoding, err))
-		return
-	}
-
-	utils.OkResponse(w, http.StatusOK, resp)
+	utils.OkResponse(w, http.StatusOK, items)
 }
 
-func CreateItem(w http.ResponseWriter, r *http.Request) {
+func (iCtrl *ItemCtrl) CreateItem(w http.ResponseWriter, r *http.Request) {
 	NewItem := &pb.CreateItemRequest{}
 	utils.ParseBody(r, NewItem)
 
-	cli := pb.NewItemServiceClient(itemConn)
+	cli := pb.NewItemServiceClient(iCtrl.ItemConn)
 	i, err := cli.CreateItem(context.Background(), NewItem)
 	if err != nil {
-		utils.ErrResponse(w, http.StatusBadRequest, fmt.Sprintf("Error creating item: %v", err))
+		utils.ErrResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	resp, err := json.Marshal(i)
-	if err != nil {
-		utils.ErrResponse(w, http.StatusInternalServerError, fmt.Sprintf(ErrWhileEncoding, err))
-		return
-	}
-
-	utils.OkResponse(w, http.StatusCreated, resp)
+	utils.OkResponse(w, http.StatusCreated, i)
 }
 
-func GetItem(w http.ResponseWriter, r *http.Request) {
+func (iCtrl *ItemCtrl) GetItem(w http.ResponseWriter, r *http.Request) {
 	itemID, err := strconv.ParseUint(mux.Vars(r)["id"], 10, 64)
 	if err != nil {
 		utils.ErrResponse(w, http.StatusBadRequest, fmt.Sprintf("Cannot parse itemID: %v", err))
@@ -68,20 +77,14 @@ func GetItem(w http.ResponseWriter, r *http.Request) {
 	cli := pb.NewItemServiceClient(itemConn)
 	i, err := cli.GetItemByID(context.Background(), &pb.GetItemByIDRequest{ItemId: itemID})
 	if err != nil {
-		utils.ErrResponse(w, http.StatusInternalServerError, fmt.Sprintf("Error getting item: %v", err))
+		utils.ErrResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	resp, err := json.Marshal(i)
-	if err != nil {
-		utils.ErrResponse(w, http.StatusInternalServerError, fmt.Sprintf(ErrWhileEncoding, err))
-		return
-	}
-
-	utils.OkResponse(w, http.StatusOK, resp)
+	utils.OkResponse(w, http.StatusOK, i)
 }
 
-func UpdateItem(w http.ResponseWriter, r *http.Request) {
+func (iCtrl *ItemCtrl) UpdateItem(w http.ResponseWriter, r *http.Request) {
 	itemID, err := strconv.ParseUint(mux.Vars(r)["id"], 10, 64)
 	if err != nil {
 		utils.ErrResponse(w, http.StatusBadRequest, fmt.Sprintf("Cannot parse itemID: %v", err))
@@ -100,20 +103,14 @@ func UpdateItem(w http.ResponseWriter, r *http.Request) {
 	cli := pb.NewItemServiceClient(itemConn)
 	i, err := cli.UpdateItem(context.Background(), newData)
 	if err != nil {
-		utils.ErrResponse(w, http.StatusInternalServerError, fmt.Sprintf("Error updating item: %v", err))
+		utils.ErrResponse(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	resp, err := json.Marshal(i)
-	if err != nil {
-		utils.ErrResponse(w, http.StatusInternalServerError, fmt.Sprintf(ErrWhileEncoding, err))
-		return
-	}
-
-	utils.OkResponse(w, http.StatusOK, resp)
+	utils.OkResponse(w, http.StatusOK, i)
 }
 
-func DeleteItem(w http.ResponseWriter, r *http.Request) {
+func (iCtrl *ItemCtrl) DeleteItem(w http.ResponseWriter, r *http.Request) {
 	itemID, err := strconv.ParseUint(mux.Vars(r)["id"], 10, 64)
 	if err != nil {
 		utils.ErrResponse(w, http.StatusBadRequest, fmt.Sprintf("Cannot parse itemID: %v", err))
@@ -125,7 +122,7 @@ func DeleteItem(w http.ResponseWriter, r *http.Request) {
 	cli := pb.NewItemServiceClient(itemConn)
 	_, err = cli.DeleteItem(context.Background(), &pb.DeleteItemRequest{ItemId: itemID, ReqUserId: reqUserId})
 	if err != nil {
-		utils.ErrResponse(w, http.StatusInternalServerError, fmt.Sprintf("Error deleting item: %v", err))
+		utils.ErrResponse(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 

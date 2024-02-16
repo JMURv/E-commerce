@@ -40,7 +40,7 @@ func New() *Repository {
 	return &Repository{conn: db}
 }
 
-func (r *Repository) GetByID(_ context.Context, id uint64) (*model.Item, error) {
+func (r *Repository) GetItemByID(_ context.Context, id uint64) (*model.Item, error) {
 	var getItem model.Item
 	if err := r.conn.Preload("Category").Preload("Tags").Where("ID=?", id).First(&getItem).Error; err != nil {
 		return nil, repo.ErrNotFound
@@ -57,7 +57,7 @@ func (r *Repository) ListUserItemsByID(_ context.Context, userID uint64) (*[]mod
 	return &items, nil
 }
 
-func (r *Repository) Create(_ context.Context, i *model.Item) (*model.Item, error) {
+func (r *Repository) CreateItem(_ context.Context, i *model.Item) (*model.Item, error) {
 	if i.UserID == 0 {
 		return nil, repo.ErrUserIDRequired
 	}
@@ -106,8 +106,8 @@ func (r *Repository) Create(_ context.Context, i *model.Item) (*model.Item, erro
 	return i, nil
 }
 
-func (r *Repository) Update(ctx context.Context, itemID uint64, newData *model.Item) (*model.Item, error) {
-	i, err := r.GetByID(ctx, itemID)
+func (r *Repository) UpdateItem(ctx context.Context, itemID uint64, newData *model.Item) (*model.Item, error) {
+	i, err := r.GetItemByID(ctx, itemID)
 	if err != nil {
 		return i, err
 	}
@@ -137,7 +137,7 @@ func (r *Repository) Update(ctx context.Context, itemID uint64, newData *model.I
 	return i, nil
 }
 
-func (r *Repository) Delete(_ context.Context, itemID uint64) error {
+func (r *Repository) DeleteItem(_ context.Context, itemID uint64) error {
 	var item model.Item
 
 	if err := r.conn.Delete(&item, itemID).Error; err != nil {

@@ -3,7 +3,6 @@ package item
 import (
 	"context"
 	"errors"
-	"github.com/JMURv/e-commerce/api/pb/common"
 	usrgate "github.com/JMURv/e-commerce/items/internal/gateway/users"
 	"github.com/JMURv/e-commerce/items/internal/repository"
 	"github.com/JMURv/e-commerce/items/pkg/model"
@@ -12,11 +11,17 @@ import (
 var ErrNotFound = errors.New("not found")
 
 type itemRepository interface {
-	GetByID(ctx context.Context, id uint64) (*model.Item, error)
-	ListUserItemsByID(ctx context.Context, userID uint64) (*[]model.Item, error)
-	Create(ctx context.Context, i *model.Item) (*model.Item, error)
-	Update(ctx context.Context, itemID uint64, newData *model.Item) (*model.Item, error)
-	Delete(ctx context.Context, itemID uint64) error
+	ListItem(_ context.Context) ([]*model.Item, error)
+	GetItemByID(_ context.Context, itemID uint64) (*model.Item, error)
+	ListUserItemsByID(_ context.Context, userID uint64) ([]*model.Item, error)
+	CreateItem(_ context.Context, i *model.Item) (*model.Item, error)
+	UpdateItem(_ context.Context, itemID uint64, newData *model.Item) (*model.Item, error)
+	DeleteItem(_ context.Context, itemID uint64) error
+
+	GetAllCategories(_ context.Context) ([]*model.Category, error)
+	CreateCategory(_ context.Context, c *model.Category) (*model.Category, error)
+	UpdateCategory(_ context.Context, categoryID uint64, newData *model.Category) (*model.Category, error)
+	DeleteCategory(_ context.Context, categoryID uint64) error
 }
 
 type Controller struct {
@@ -31,41 +36,79 @@ func New(repo itemRepository, usrGateway usrgate.Gateway) *Controller {
 	}
 }
 
-func (c *Controller) GetItemByID(ctx context.Context, id uint64) (*model.Item, error) {
-	res, err := c.repo.GetByID(ctx, id)
+func (ctrl *Controller) ListItem(ctx context.Context) ([]*model.Item, error) {
+	res, err := ctrl.repo.ListItem(ctx)
 	if err != nil && errors.Is(err, repository.ErrNotFound) {
 		return nil, ErrNotFound
 	}
 	return res, err
 }
 
-func (c *Controller) ListUserItemsByID(ctx context.Context, userID uint64) (*[]model.Item, error) {
-	res, err := c.repo.ListUserItemsByID(ctx, userID)
+func (ctrl *Controller) GetItemByID(ctx context.Context, id uint64) (*model.Item, error) {
+	res, err := ctrl.repo.GetItemByID(ctx, id)
 	if err != nil && errors.Is(err, repository.ErrNotFound) {
 		return nil, ErrNotFound
 	}
 	return res, err
 }
 
-func (c *Controller) CreateItem(ctx context.Context, i *common.Item) (*common.Item, error) {
-	res, err := c.repo.Create(ctx, model.ItemFromProto(i))
+func (ctrl *Controller) ListUserItemsByID(ctx context.Context, userID uint64) ([]*model.Item, error) {
+	res, err := ctrl.repo.ListUserItemsByID(ctx, userID)
 	if err != nil && errors.Is(err, repository.ErrNotFound) {
 		return nil, ErrNotFound
 	}
-	return model.ItemToProto(res), err
+	return res, err
 }
 
-func (c *Controller) UpdateItem(ctx context.Context, itemID uint64, newData *common.Item) (*common.Item, error) {
-	res, err := c.repo.Update(ctx, itemID, model.ItemFromProto(newData))
+func (ctrl *Controller) CreateItem(ctx context.Context, i *model.Item) (*model.Item, error) {
+	res, err := ctrl.repo.CreateItem(ctx, i)
 	if err != nil && errors.Is(err, repository.ErrNotFound) {
 		return nil, ErrNotFound
 	}
-	return model.ItemToProto(res), err
+	return res, err
 }
 
-func (c *Controller) DeleteItem(ctx context.Context, itemID uint64) error {
-	err := c.repo.Delete(ctx, itemID)
-	if err != nil {
+func (ctrl *Controller) UpdateItem(ctx context.Context, itemID uint64, newData *model.Item) (*model.Item, error) {
+	res, err := ctrl.repo.UpdateItem(ctx, itemID, newData)
+	if err != nil && errors.Is(err, repository.ErrNotFound) {
+		return nil, ErrNotFound
+	}
+	return res, err
+}
+
+func (ctrl *Controller) DeleteItem(ctx context.Context, itemID uint64) error {
+	if err := ctrl.repo.DeleteItem(ctx, itemID); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (ctrl *Controller) GetAllCategories(ctx context.Context) ([]*model.Category, error) {
+	res, err := ctrl.repo.GetAllCategories(ctx)
+	if err != nil && errors.Is(err, repository.ErrNotFound) {
+		return nil, ErrNotFound
+	}
+	return res, err
+}
+
+func (ctrl *Controller) CreateCategory(ctx context.Context, c *model.Category) (*model.Category, error) {
+	res, err := ctrl.repo.CreateCategory(ctx, c)
+	if err != nil && errors.Is(err, repository.ErrNotFound) {
+		return nil, ErrNotFound
+	}
+	return res, err
+}
+
+func (ctrl *Controller) UpdateCategory(ctx context.Context, categoryID uint64, newData *model.Category) (*model.Category, error) {
+	res, err := ctrl.repo.UpdateCategory(ctx, categoryID, newData)
+	if err != nil && errors.Is(err, repository.ErrNotFound) {
+		return nil, ErrNotFound
+	}
+	return res, err
+}
+
+func (ctrl *Controller) DeleteCategory(ctx context.Context, categoryID uint64) error {
+	if err := ctrl.repo.DeleteCategory(ctx, categoryID); err != nil {
 		return err
 	}
 	return nil

@@ -1,9 +1,8 @@
 package controllers
 
 import (
-	"encoding/json"
-	"fmt"
-	"github.com/JMURv/e-commerce/gateway/pkg/models"
+	"context"
+	pb "github.com/JMURv/e-commerce/api/pb/item"
 	"github.com/JMURv/e-commerce/gateway/pkg/utils"
 	"github.com/gorilla/mux"
 	"net/http"
@@ -11,97 +10,74 @@ import (
 )
 
 func ListCategory(w http.ResponseWriter, r *http.Request) {
-	categories, err := models.GetAllCategories()
-	if err != nil {
-		http.Error(w, "Cannot get categories", http.StatusInternalServerError)
-		return
-	}
+	cli := pb.NewCategoryServiceClient(itemConn)
+	categories, _ := cli.GetAllCategories(context.Background(), &pb.EmptyRequest{})
 
-	response, err := json.Marshal(categories)
-	if err != nil {
-		http.Error(w, "Encoding error", http.StatusBadRequest)
-		return
-	}
-
-	utils.ResponseOk(w, http.StatusOK, response)
+	utils.OkResponse(w, http.StatusOK, categories)
 }
 
 func GetCategory(w http.ResponseWriter, r *http.Request) {
 	categoryID, err := strconv.ParseUint(mux.Vars(r)["id"], 10, 32)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Cannot parse categoryID: %v", err), http.StatusInternalServerError)
+		utils.ErrResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	category, err := models.GetCategoryByID(categoryID)
+	cli := pb.NewCategoryServiceClient(itemConn)
+	c, err := cli.GetCategoryByID(context.Background(), &pb.GetCategoryByIDRequest{CategoryId: categoryID})
 	if err != nil {
-		http.Error(w, "Invalid categoryID", http.StatusInternalServerError)
+		utils.ErrResponse(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	response, err := json.Marshal(category)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("Encoding error: %v", err), http.StatusBadRequest)
-		return
-	}
-
-	utils.ResponseOk(w, http.StatusOK, response)
+	utils.OkResponse(w, http.StatusOK, c)
 }
 
 func CreateCategory(w http.ResponseWriter, r *http.Request) {
-	newCategory := &models.Category{}
+	newCategory := &pb.CreateCategoryRequest{}
 	utils.ParseBody(r, newCategory)
 
-	category, err := newCategory.CreateCategory()
+	cli := pb.NewCategoryServiceClient(itemConn)
+	c, err := cli.CreateCategory(context.Background(), newCategory)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Creating category error: %v", err), http.StatusBadRequest)
+		utils.ErrResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	response, err := json.Marshal(category)
-	if err != nil {
-		http.Error(w, "Encoding error", http.StatusBadRequest)
-		return
-	}
-
-	utils.ResponseOk(w, http.StatusCreated, response)
+	utils.OkResponse(w, http.StatusCreated, c)
 }
 
 func UpdateCategory(w http.ResponseWriter, r *http.Request) {
 	categoryID, err := strconv.ParseUint(mux.Vars(r)["id"], 10, 32)
 	if err != nil {
-		http.Error(w, "Cannot parse categoryID", http.StatusInternalServerError)
+		utils.ErrResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	newData := &models.Category{}
+	newData := &pb.UpdateCategoryRequest{CategoryId: categoryID}
 	utils.ParseBody(r, newData)
 
-	newCategoryData, err := models.UpdateCategory(categoryID, newData)
+	cli := pb.NewCategoryServiceClient(itemConn)
+	c, err := cli.UpdateCategory(context.Background(), newData)
 	if err != nil {
-		http.Error(w, "Cannot update category", http.StatusInternalServerError)
+		utils.ErrResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	response, err := json.Marshal(newCategoryData)
-	if err != nil {
-		http.Error(w, "Encoding error", http.StatusBadRequest)
-		return
-	}
-
-	utils.ResponseOk(w, http.StatusOK, response)
+	utils.OkResponse(w, http.StatusOK, c)
 }
 
 func DeleteCategory(w http.ResponseWriter, r *http.Request) {
 	categoryID, err := strconv.ParseUint(mux.Vars(r)["id"], 10, 32)
 	if err != nil {
-		http.Error(w, "Cannot parse categoryID", http.StatusInternalServerError)
+		utils.ErrResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	err = models.DeleteCategory(categoryID)
+	cli := pb.NewCategoryServiceClient(itemConn)
+	_, err = cli.DeleteCategory(context.Background(), &pb.DeleteCategoryRequest{CategoryId: categoryID})
 	if err != nil {
-		http.Error(w, "Cannot delete category", http.StatusInternalServerError)
+		utils.ErrResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 

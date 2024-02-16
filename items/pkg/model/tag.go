@@ -1,13 +1,7 @@
 package model
 
-import (
-	"google.golang.org/protobuf/types/known/timestamppb"
-)
-
 type Tag struct {
-	Name      string                `json:"name" gorm:"primaryKey"`
-	CreatedAt timestamppb.Timestamp `json:"created_at"`
-	UpdatedAt timestamppb.Timestamp `json:"updated_at"`
+	Name string `json:"name" gorm:"primaryKey"`
 }
 
 //

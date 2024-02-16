@@ -3,17 +3,17 @@ package grpc
 import (
 	"context"
 	"errors"
-	"github.com/JMURv/e-commerce/api/pb/common"
+	cm "github.com/JMURv/e-commerce/api/pb/common"
 	pb "github.com/JMURv/e-commerce/api/pb/item"
 	controller "github.com/JMURv/e-commerce/items/internal/controller/item"
 	"github.com/JMURv/e-commerce/items/pkg/model"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/proto"
 )
 
 type Handler struct {
 	pb.ItemServiceServer
+	pb.CategoryServiceServer
 	ctrl *controller.Controller
 }
 
@@ -27,21 +27,29 @@ func (h *Handler) ListUserItemsByID(ctx context.Context, req *pb.ListUserItemsBy
 		return nil, status.Errorf(codes.InvalidArgument, "nil req or empty id")
 	}
 
-	items, err := h.ctrl.ListUserItemsByID(ctx, userID)
+	i, err := h.ctrl.ListUserItemsByID(ctx, userID)
 	if err != nil && errors.Is(err, controller.ErrNotFound) {
 		return nil, status.Errorf(codes.NotFound, err.Error())
 	} else if err != nil {
 		return nil, status.Errorf(codes.Internal, err.Error())
 	}
 
-	return &pb.ListItemResponse{Items: model.ItemsToProto(*items)}, nil
+	return &pb.ListItemResponse{Items: model.ItemsToProto(i)}, nil
 }
 
 func (h *Handler) ListItem(ctx context.Context, req *pb.EmptyRequest) (*pb.ListItemResponse, error) {
-	return &pb.ListItemResponse{}, nil
+	if req == nil {
+		return nil, status.Errorf(codes.InvalidArgument, "nil req")
+	}
+
+	if i, err := h.ctrl.ListItem(ctx); err != nil {
+		return nil, status.Errorf(codes.Internal, err.Error())
+	} else {
+		return &pb.ListItemResponse{Items: model.ItemsToProto(i)}, nil
+	}
 }
 
-func (h *Handler) GetItemByID(ctx context.Context, req *pb.GetItemByIDRequest) (*common.Item, error) {
+func (h *Handler) GetItemByID(ctx context.Context, req *pb.GetItemByIDRequest) (*cm.Item, error) {
 	itemID := req.ItemId
 	if req == nil || itemID == 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "nil req or empty id")
@@ -53,52 +61,53 @@ func (h *Handler) GetItemByID(ctx context.Context, req *pb.GetItemByIDRequest) (
 	} else if err != nil {
 		return nil, status.Errorf(codes.Internal, err.Error())
 	}
-
 	return model.ItemToProto(i), nil
 }
 
-func (h *Handler) CreateItem(ctx context.Context, req *pb.CreateItemRequest) (*common.Item, error) {
+func (h *Handler) CreateItem(ctx context.Context, req *pb.CreateItemRequest) (*cm.Item, error) {
 	if req == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "nil req")
 	}
 
-	reqData, err := proto.Marshal(req)
+	i, err := h.ctrl.CreateItem(ctx, model.ItemFromProto(&cm.Item{
+		Name:        req.Name,
+		Description: req.Description,
+		Price:       req.Price,
+		CategoryId:  req.CategoryId,
+		UserId:      req.UserId,
+		Tags:        req.Tags,
+		Quantity:    req.Quantity,
+	}))
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to marshal request: %v", err)
+		return nil, status.Errorf(codes.Internal, err.Error())
 	}
-
-	newItem := &common.Item{}
-	if err = proto.Unmarshal(reqData, newItem); err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to unmarshal request: %v", err)
-	}
-
-	i, err := h.ctrl.CreateItem(ctx, newItem)
-	return i, err
+	return model.ItemToProto(i), nil
 }
 
-func (h *Handler) UpdateItem(ctx context.Context, req *pb.UpdateItemRequest) (*common.Item, error) {
+func (h *Handler) UpdateItem(ctx context.Context, req *pb.UpdateItemRequest) (*cm.Item, error) {
 	itemID := req.ItemId
 	if req == nil || itemID == 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "nil req or empty id")
 	}
 
-	reqData, err := proto.Marshal(req)
+	i, err := h.ctrl.UpdateItem(ctx, itemID, model.ItemFromProto(&cm.Item{
+		Name:        req.Name,
+		Description: req.Description,
+		Price:       req.Price,
+		CategoryId:  req.CategoryId,
+		UserId:      req.UserId,
+		Tags:        req.Tags,
+		Quantity:    req.Quantity,
+	}))
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to marshal request: %v", err)
+		return nil, status.Errorf(codes.Internal, "failed to update item: %v", err)
 	}
-
-	updateItemData := &common.Item{}
-	if err = proto.Unmarshal(reqData, updateItemData); err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to unmarshal request: %v", err)
-	}
-
-	i, err := h.ctrl.UpdateItem(ctx, itemID, updateItemData)
-	return i, nil
+	return model.ItemToProto(i), nil
 }
 
 func (h *Handler) DeleteItem(ctx context.Context, req *pb.DeleteItemRequest) (*pb.EmptyResponse, error) {
 	if req == nil || req.ItemId == 0 {
-		return nil, status.Errorf(codes.InvalidArgument, "nil req or empty id")
+		return nil, status.Error(codes.InvalidArgument, "nil req or empty id")
 	}
 
 	if err := h.ctrl.DeleteItem(ctx, req.ItemId); err != nil {
