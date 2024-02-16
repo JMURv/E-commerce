@@ -22,7 +22,7 @@ type ItemHandler interface {
 }
 
 type ItemCtrl struct {
-	conn *grpc.ClientConn
+	cli pb.ItemServiceClient
 }
 
 func NewItemCtrl() *ItemCtrl {
@@ -35,13 +35,12 @@ func NewItemCtrl() *ItemCtrl {
 		log.Printf("Failed to connect to item service: %v", err)
 	}
 	return &ItemCtrl{
-		conn: conn,
+		cli: pb.NewItemServiceClient(conn),
 	}
 }
 
 func (ctrl *ItemCtrl) ListItem(w http.ResponseWriter, r *http.Request) {
-	cli := pb.NewItemServiceClient(ctrl.conn)
-	items, _ := cli.ListItem(context.Background(), &pb.EmptyRequest{})
+	items, _ := ctrl.cli.ListItem(context.Background(), &pb.EmptyRequest{})
 
 	utils.OkResponse(w, http.StatusOK, items)
 }
@@ -50,8 +49,7 @@ func (ctrl *ItemCtrl) CreateItem(w http.ResponseWriter, r *http.Request) {
 	NewItem := &pb.CreateItemRequest{}
 	utils.ParseBody(r, NewItem)
 
-	cli := pb.NewItemServiceClient(ctrl.conn)
-	i, err := cli.CreateItem(context.Background(), NewItem)
+	i, err := ctrl.cli.CreateItem(context.Background(), NewItem)
 	if err != nil {
 		log.Println(err.Error())
 		utils.ErrResponse(w, http.StatusBadRequest, err.Error())
@@ -69,8 +67,7 @@ func (ctrl *ItemCtrl) GetItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cli := pb.NewItemServiceClient(ctrl.conn)
-	i, err := cli.GetItemByID(context.Background(), &pb.GetItemByIDRequest{ItemId: itemID})
+	i, err := ctrl.cli.GetItemByID(context.Background(), &pb.GetItemByIDRequest{ItemId: itemID})
 	if err != nil {
 		log.Println(err.Error())
 		utils.ErrResponse(w, http.StatusNotFound, ErrNotFound)
@@ -97,11 +94,10 @@ func (ctrl *ItemCtrl) UpdateItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cli := pb.NewItemServiceClient(ctrl.conn)
-	i, err := cli.UpdateItem(context.Background(), newData)
+	i, err := ctrl.cli.UpdateItem(context.Background(), newData)
 	if err != nil {
 		log.Println(err.Error())
-		utils.ErrResponse(w, http.StatusInternalServerError, ErrWhileUpdatingObj)
+		utils.ErrResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -118,11 +114,10 @@ func (ctrl *ItemCtrl) DeleteItem(w http.ResponseWriter, r *http.Request) {
 
 	reqUserId := r.Context().Value("reqUserId").(uint64)
 
-	cli := pb.NewItemServiceClient(ctrl.conn)
-	_, err = cli.DeleteItem(context.Background(), &pb.DeleteItemRequest{ItemId: itemID, ReqUserId: reqUserId})
+	_, err = ctrl.cli.DeleteItem(context.Background(), &pb.DeleteItemRequest{ItemId: itemID, ReqUserId: reqUserId})
 	if err != nil {
 		log.Println(err.Error())
-		utils.ErrResponse(w, http.StatusInternalServerError, ErrWhileDeletingObj)
+		utils.ErrResponse(w, http.StatusNotFound, ErrNotFound)
 		return
 	}
 

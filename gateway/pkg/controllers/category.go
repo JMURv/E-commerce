@@ -22,7 +22,7 @@ type CategoryHandler interface {
 }
 
 type CategoryCtrl struct {
-	conn *grpc.ClientConn
+	cli pb.CategoryServiceClient
 }
 
 func NewCategoryCtrl() *CategoryCtrl {
@@ -35,13 +35,12 @@ func NewCategoryCtrl() *CategoryCtrl {
 		log.Printf("Failed to connect to category service: %v", err)
 	}
 	return &CategoryCtrl{
-		conn: conn,
+		cli: pb.NewCategoryServiceClient(conn),
 	}
 }
 
 func (ctrl *CategoryCtrl) ListCategory(w http.ResponseWriter, r *http.Request) {
-	cli := pb.NewCategoryServiceClient(ctrl.conn)
-	categories, _ := cli.GetAllCategories(context.Background(), &pb.EmptyRequest{})
+	categories, _ := ctrl.cli.GetAllCategories(context.Background(), &pb.EmptyRequest{})
 
 	utils.OkResponse(w, http.StatusOK, categories)
 }
@@ -54,8 +53,7 @@ func (ctrl *CategoryCtrl) GetCategory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cli := pb.NewCategoryServiceClient(ctrl.conn)
-	c, err := cli.GetCategoryByID(context.Background(), &pb.GetCategoryByIDRequest{CategoryId: categoryID})
+	c, err := ctrl.cli.GetCategoryByID(context.Background(), &pb.GetCategoryByIDRequest{CategoryId: categoryID})
 	if err != nil {
 		log.Println(err.Error())
 		utils.ErrResponse(w, http.StatusNotFound, ErrNotFound)
@@ -69,8 +67,7 @@ func (ctrl *CategoryCtrl) CreateCategory(w http.ResponseWriter, r *http.Request)
 	newCategory := &pb.CreateCategoryRequest{}
 	utils.ParseBody(r, newCategory)
 
-	cli := pb.NewCategoryServiceClient(ctrl.conn)
-	c, err := cli.CreateCategory(context.Background(), newCategory)
+	c, err := ctrl.cli.CreateCategory(context.Background(), newCategory)
 	if err != nil {
 		log.Println(err.Error())
 		utils.ErrResponse(w, http.StatusBadRequest, err.Error())
@@ -91,8 +88,7 @@ func (ctrl *CategoryCtrl) UpdateCategory(w http.ResponseWriter, r *http.Request)
 	newData := &pb.UpdateCategoryRequest{CategoryId: categoryID}
 	utils.ParseBody(r, newData)
 
-	cli := pb.NewCategoryServiceClient(ctrl.conn)
-	c, err := cli.UpdateCategory(context.Background(), newData)
+	c, err := ctrl.cli.UpdateCategory(context.Background(), newData)
 	if err != nil {
 		log.Println(err.Error())
 		utils.ErrResponse(w, http.StatusBadRequest, err.Error())
@@ -110,11 +106,10 @@ func (ctrl *CategoryCtrl) DeleteCategory(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	cli := pb.NewCategoryServiceClient(ctrl.conn)
-	_, err = cli.DeleteCategory(context.Background(), &pb.DeleteCategoryRequest{CategoryId: categoryID})
+	_, err = ctrl.cli.DeleteCategory(context.Background(), &pb.DeleteCategoryRequest{CategoryId: categoryID})
 	if err != nil {
 		log.Println(err.Error())
-		utils.ErrResponse(w, http.StatusBadRequest, ErrWhileDeletingObj)
+		utils.ErrResponse(w, http.StatusNotFound, ErrNotFound)
 		return
 	}
 

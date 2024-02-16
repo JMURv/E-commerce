@@ -28,7 +28,7 @@ type UserHandler interface {
 }
 
 type UserCtrl struct {
-	conn *grpc.ClientConn
+	cli pb.UserServiceClient
 }
 
 func NewUserCtrl() *UserCtrl {
@@ -41,23 +41,21 @@ func NewUserCtrl() *UserCtrl {
 		log.Printf("Failed to connect to user service: %v", err)
 	}
 	return &UserCtrl{
-		conn: conn,
+		cli: pb.NewUserServiceClient(conn),
 	}
 }
 
 func (ctrl *UserCtrl) ListCreateUser(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
-		cli := pb.NewUserServiceClient(ctrl.conn)
-		u, _ := cli.ListUser(context.Background(), &pb.EmptyRequest{})
+		u, _ := ctrl.cli.ListUser(context.Background(), &pb.EmptyRequest{})
 		utils.OkResponse(w, http.StatusOK, u.Users)
 
 	case http.MethodPost:
 		var userData = &pb.CreateUserRequest{}
 		utils.ParseBody(r, userData)
 
-		cli := pb.NewUserServiceClient(ctrl.conn)
-		u, err := cli.CreateUser(context.Background(), userData)
+		u, err := ctrl.cli.CreateUser(context.Background(), userData)
 		if err != nil {
 			log.Println(err.Error())
 			utils.ErrResponse(w, http.StatusBadRequest, err.Error())
@@ -86,8 +84,7 @@ func (ctrl *UserCtrl) GetUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cli := pb.NewUserServiceClient(ctrl.conn)
-	u, err := cli.GetUserByID(context.Background(), &pb.GetUserByIDRequest{UserId: userID})
+	u, err := ctrl.cli.GetUserByID(context.Background(), &pb.GetUserByIDRequest{UserId: userID})
 	if err != nil {
 		log.Println(err.Error())
 		utils.ErrResponse(w, http.StatusNotFound, ErrNotFound)
@@ -116,11 +113,10 @@ func (ctrl *UserCtrl) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 	utils.ParseBody(r, newData)
 
-	cli := pb.NewUserServiceClient(ctrl.conn)
-	u, err := cli.UpdateUser(context.Background(), newData)
+	u, err := ctrl.cli.UpdateUser(context.Background(), newData)
 	if err != nil {
 		log.Println(err.Error())
-		utils.ErrResponse(w, http.StatusInternalServerError, ErrWhileUpdatingObj)
+		utils.ErrResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -141,13 +137,12 @@ func (ctrl *UserCtrl) DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cli := pb.NewUserServiceClient(ctrl.conn)
-	_, err = cli.DeleteUser(context.Background(), &pb.DeleteUserRequest{
+	_, err = ctrl.cli.DeleteUser(context.Background(), &pb.DeleteUserRequest{
 		UserId: reqUserID,
 	})
 	if err != nil {
 		log.Println(err.Error())
-		utils.ErrResponse(w, http.StatusInternalServerError, ErrWhileDeletingObj)
+		utils.ErrResponse(w, http.StatusNotFound, ErrNotFound)
 		return
 	}
 
