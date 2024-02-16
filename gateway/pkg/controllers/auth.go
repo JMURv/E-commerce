@@ -26,10 +26,11 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 	token, err := auth.GenerateToken(u.Id)
 	if err != nil {
-		utils.ErrResponse(w, http.StatusInternalServerError, fmt.Sprintf(ErrWhileGenToken, err))
+		utils.ErrResponse(w, http.StatusInternalServerError, ErrWhileGenToken)
 		return
 	}
 
+	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
 	w.Write([]byte(fmt.Sprintf(`{"token": "%s"}`, token)))
 }

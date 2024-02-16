@@ -1,15 +1,16 @@
 package controllers
 
 import (
-	"fmt"
 	"github.com/JMURv/e-commerce/api/pb/common"
 	pb "github.com/JMURv/e-commerce/api/pb/user"
 	"github.com/JMURv/e-commerce/gateway/pkg/auth"
 	"github.com/JMURv/e-commerce/gateway/pkg/utils"
+	"github.com/JMURv/e-commerce/pkg/discovery/consul"
 	"github.com/gorilla/mux"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"log"
+	"math/rand"
 	"net/http"
 	"strconv"
 )
@@ -19,20 +20,35 @@ type UserTokenResponse struct {
 	Token string       `json:"token"`
 }
 
-var userConn *grpc.ClientConn
+type UserHandler interface {
+	ListCreateUser(w http.ResponseWriter, r *http.Request)
+	GetUser(w http.ResponseWriter, r *http.Request)
+	UpdateUser(w http.ResponseWriter, r *http.Request)
+	DeleteUser(w http.ResponseWriter, r *http.Request)
+}
 
-func init() {
-	var err error
-	userConn, err = grpc.Dial("localhost:50075", grpc.WithInsecure())
+type UserCtrl struct {
+	conn *grpc.ClientConn
+}
+
+func NewUserCtrl() *UserCtrl {
+	reg, err := consul.NewRegistry("localhost:8500")
+	addrs, err := reg.ServiceAddresses(context.Background(), "users")
+
+	r := rand.Intn(len(addrs) + 1)
+	conn, err := grpc.Dial(addrs[r], grpc.WithInsecure())
 	if err != nil {
 		log.Printf("Failed to connect to user service: %v", err)
 	}
+	return &UserCtrl{
+		conn: conn,
+	}
 }
 
-func ListCreateUser(w http.ResponseWriter, r *http.Request) {
+func (ctrl *UserCtrl) ListCreateUser(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
-		cli := pb.NewUserServiceClient(userConn)
+		cli := pb.NewUserServiceClient(ctrl.conn)
 		u, _ := cli.ListUser(context.Background(), &pb.EmptyRequest{})
 		utils.OkResponse(w, http.StatusOK, u.Users)
 
@@ -40,16 +56,18 @@ func ListCreateUser(w http.ResponseWriter, r *http.Request) {
 		var userData = &pb.CreateUserRequest{}
 		utils.ParseBody(r, userData)
 
-		cli := pb.NewUserServiceClient(userConn)
+		cli := pb.NewUserServiceClient(ctrl.conn)
 		u, err := cli.CreateUser(context.Background(), userData)
 		if err != nil {
-			utils.ErrResponse(w, http.StatusBadRequest, fmt.Sprintf("Error creating user: %v", err))
+			log.Println(err.Error())
+			utils.ErrResponse(w, http.StatusBadRequest, err.Error())
 			return
 		}
 
 		token, err := auth.GenerateToken(u.Id)
 		if err != nil {
-			utils.ErrResponse(w, http.StatusInternalServerError, fmt.Sprintf(ErrWhileGenToken, err))
+			log.Println(err.Error())
+			utils.ErrResponse(w, http.StatusInternalServerError, ErrWhileGenToken)
 			return
 		}
 
@@ -60,27 +78,30 @@ func ListCreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func GetUser(w http.ResponseWriter, r *http.Request) {
+func (ctrl *UserCtrl) GetUser(w http.ResponseWriter, r *http.Request) {
 	userID, err := strconv.ParseUint(mux.Vars(r)["id"], 10, 64)
 	if err != nil {
-		utils.ErrResponse(w, http.StatusBadRequest, fmt.Sprintf("Cannot parse userID: %v", err))
+		log.Println(err.Error())
+		utils.ErrResponse(w, http.StatusBadRequest, ErrParseParam)
 		return
 	}
 
-	cli := pb.NewUserServiceClient(userConn)
+	cli := pb.NewUserServiceClient(ctrl.conn)
 	u, err := cli.GetUserByID(context.Background(), &pb.GetUserByIDRequest{UserId: userID})
 	if err != nil {
-		utils.ErrResponse(w, http.StatusInternalServerError, fmt.Sprintf("Error getting user: %v", err))
+		log.Println(err.Error())
+		utils.ErrResponse(w, http.StatusNotFound, ErrNotFound)
 		return
 	}
 
 	utils.OkResponse(w, http.StatusOK, u)
 }
 
-func UpdateUser(w http.ResponseWriter, r *http.Request) {
+func (ctrl *UserCtrl) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	userID, err := strconv.ParseUint(mux.Vars(r)["id"], 10, 64)
 	if err != nil {
-		utils.ErrResponse(w, http.StatusBadRequest, fmt.Sprintf("Cannot parse userID: %v", err))
+		log.Println(err.Error())
+		utils.ErrResponse(w, http.StatusBadRequest, ErrParseParam)
 		return
 	}
 
@@ -95,20 +116,22 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 	utils.ParseBody(r, newData)
 
-	cli := pb.NewUserServiceClient(userConn)
+	cli := pb.NewUserServiceClient(ctrl.conn)
 	u, err := cli.UpdateUser(context.Background(), newData)
 	if err != nil {
-		utils.ErrResponse(w, http.StatusInternalServerError, fmt.Sprintf("Error updating user: %v", err))
+		log.Println(err.Error())
+		utils.ErrResponse(w, http.StatusInternalServerError, ErrWhileUpdatingObj)
 		return
 	}
 
 	utils.OkResponse(w, http.StatusOK, u)
 }
 
-func DeleteUser(w http.ResponseWriter, r *http.Request) {
+func (ctrl *UserCtrl) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	userID, err := strconv.ParseUint(mux.Vars(r)["id"], 10, 64)
 	if err != nil {
-		utils.ErrResponse(w, http.StatusBadRequest, fmt.Sprintf("Cannot parse userID: %v", err))
+		log.Println(err.Error())
+		utils.ErrResponse(w, http.StatusBadRequest, ErrParseParam)
 		return
 	}
 
@@ -118,12 +141,13 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cli := pb.NewUserServiceClient(userConn)
+	cli := pb.NewUserServiceClient(ctrl.conn)
 	_, err = cli.DeleteUser(context.Background(), &pb.DeleteUserRequest{
 		UserId: reqUserID,
 	})
 	if err != nil {
-		utils.ErrResponse(w, http.StatusInternalServerError, fmt.Sprintf("Error deleting user: %v", err))
+		log.Println(err.Error())
+		utils.ErrResponse(w, http.StatusInternalServerError, ErrWhileDeletingObj)
 		return
 	}
 

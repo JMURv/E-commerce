@@ -31,30 +31,32 @@ var RegisterAuthRoutes = func(router *mux.Router) {
 }
 
 var RegisterUsersRoutes = func(router *mux.Router) {
-	router.HandleFunc("/users", controllers.ListCreateUser).Methods(http.MethodGet, http.MethodPost)
+	ctrl := controllers.NewUserCtrl()
+	router.HandleFunc("/users", ctrl.ListCreateUser).Methods(http.MethodGet, http.MethodPost)
 
-	router.HandleFunc("/users/{id}", controllers.GetUser).Methods(http.MethodGet)
-	router.HandleFunc("/users/{id}", auth.AuthMiddleware(controllers.UpdateUser)).Methods(http.MethodPut)
-	router.HandleFunc("/users/{id}", auth.AuthMiddleware(controllers.DeleteUser)).Methods(http.MethodDelete)
+	router.HandleFunc("/users/{id}", ctrl.GetUser).Methods(http.MethodGet)
+	router.HandleFunc("/users/{id}", auth.AuthMiddleware(ctrl.UpdateUser)).Methods(http.MethodPut)
+	router.HandleFunc("/users/{id}", auth.AuthMiddleware(ctrl.DeleteUser)).Methods(http.MethodDelete)
 }
 
 var RegisterItemsRoutes = func(router *mux.Router) {
-	h := controllers.NewItemCtrl()
-	router.HandleFunc("/items", h.ListItem).Methods(http.MethodGet)
-	router.HandleFunc("/items", auth.AuthMiddleware(h.CreateItem)).Methods(http.MethodPost)
+	ctrl := controllers.NewItemCtrl()
+	router.HandleFunc("/items", ctrl.ListItem).Methods(http.MethodGet)
+	router.HandleFunc("/items", auth.AuthMiddleware(ctrl.CreateItem)).Methods(http.MethodPost)
 
-	router.HandleFunc("/items/{id}", h.GetItem).Methods(http.MethodGet)
-	router.HandleFunc("/items/{id}", auth.AuthMiddleware(h.UpdateItem)).Methods(http.MethodPut)
-	router.HandleFunc("/items/{id}", auth.AuthMiddleware(h.DeleteItem)).Methods(http.MethodDelete)
+	router.HandleFunc("/items/{id}", ctrl.GetItem).Methods(http.MethodGet)
+	router.HandleFunc("/items/{id}", auth.AuthMiddleware(ctrl.UpdateItem)).Methods(http.MethodPut)
+	router.HandleFunc("/items/{id}", auth.AuthMiddleware(ctrl.DeleteItem)).Methods(http.MethodDelete)
 }
 
 var RegisterCategoriesRoutes = func(router *mux.Router) {
-	router.HandleFunc("/categories", controllers.ListCategory).Methods(http.MethodGet)
-	router.HandleFunc("/categories", auth.AuthMiddleware(controllers.CreateCategory)).Methods(http.MethodPost)
+	ctrl := controllers.NewCategoryCtrl()
+	router.HandleFunc("/categories", ctrl.ListCategory).Methods(http.MethodGet)
+	router.HandleFunc("/categories", auth.AuthMiddleware(ctrl.CreateCategory)).Methods(http.MethodPost)
 
-	router.HandleFunc("/categories{id}", controllers.GetCategory).Methods(http.MethodGet)
-	router.HandleFunc("/categories{id}", auth.AuthMiddleware(controllers.UpdateCategory)).Methods(http.MethodPut)
-	router.HandleFunc("/categories{id}", auth.AuthMiddleware(controllers.DeleteCategory)).Methods(http.MethodDelete)
+	router.HandleFunc("/categories{id}", ctrl.GetCategory).Methods(http.MethodGet)
+	router.HandleFunc("/categories{id}", auth.AuthMiddleware(ctrl.UpdateCategory)).Methods(http.MethodPut)
+	router.HandleFunc("/categories{id}", auth.AuthMiddleware(ctrl.DeleteCategory)).Methods(http.MethodDelete)
 }
 
 var RegisterReviewsRoutes = func(router *mux.Router) {
