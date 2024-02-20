@@ -67,9 +67,10 @@ var RegisterReviewsRoutes = func(router *mux.Router) {
 }
 
 var RegisterFavoriteRoutes = func(router *mux.Router) {
-	//router.HandleFunc("/favorites", auth.AuthMiddleware(controllers.ListFavorites)).Methods(http.MethodGet)
-	//router.HandleFunc("/favorites", auth.AuthMiddleware(controllers.CreateFavorites)).Methods(http.MethodPost)
-	//router.HandleFunc("/favorites/{id}", auth.AuthMiddleware(controllers.DeleteFavorite)).Methods(http.MethodDelete)
+	ctrl := controllers.NewFavoriteCtrl()
+	router.HandleFunc("/favorites", auth.AuthMiddleware(ctrl.ListFavorites)).Methods(http.MethodGet)
+	router.HandleFunc("/favorites", auth.AuthMiddleware(ctrl.CreateFavorites)).Methods(http.MethodPost)
+	router.HandleFunc("/favorites/{id}", auth.AuthMiddleware(ctrl.DeleteFavorite)).Methods(http.MethodDelete)
 }
 
 var RegisterTagsRoutes = func(router *mux.Router) {

@@ -9,28 +9,18 @@ import "common/common.proto";
 message EmptyResponse {}
 
 service FavoriteService {
-  rpc GetAllUserFavorites (GetAllUserFavoritesRequest) returns (GetAllUserFavoritesResponse) {}
-  rpc GetFavoriteByID (GetFavoriteByIDRequest) returns (GetFavoriteByIDResponse) {}
-  rpc CreateFavorite (CreateFavoriteRequest) returns (CreateFavoriteResponse) {}
-  rpc DeleteFavorite (DeleteFavoriteRequest) returns (EmptyResponse) {}
+  rpc GetAllUserFavorites (GetAllUserFavoritesRequest) returns (ListFavoritesResponse) {}
+  rpc GetFavoriteByID (FavoriteIDRequest) returns (common.Favorite) {}
+  rpc CreateFavorite (CreateFavoriteRequest) returns (common.Favorite) {}
+  rpc DeleteFavorite (DeleteFavoriteIDRequest) returns (EmptyResponse) {}
 }
 
 message GetAllUserFavoritesRequest {
   uint64 user_id = 1;
 }
 
-message GetAllUserFavoritesResponse {
+message ListFavoritesResponse {
   repeated common.Favorite favorites = 1;
-  string error_message = 2;
-}
-
-message GetFavoriteByIDRequest {
-  uint64 favorite_id = 1;
-}
-
-message GetFavoriteByIDResponse {
-  common.Favorite favorite = 1;
-  string error_message = 2;
 }
 
 message CreateFavoriteRequest {
@@ -38,15 +28,11 @@ message CreateFavoriteRequest {
   uint64 item_id = 2;
 }
 
-message CreateFavoriteResponse {
-  common.Favorite favorite = 1;
-  string error_message = 2;
-}
-
-message DeleteFavoriteRequest {
+message FavoriteIDRequest {
   uint64 favorite_id = 1;
 }
 
-message DeleteFavoriteResponse {
-  string error_message = 1;
+message DeleteFavoriteIDRequest {
+  uint64 user_id = 1;
+  uint64 favorite_id = 2;
 }

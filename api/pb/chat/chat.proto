@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package chat;
+option go_package = "github.com/JMURv/e-commerce/api/pb/chat";
+
+import "common/common.proto";
+
+message Message {
+  string id = 1;
+  string content = 2;
+}
+
+message Connect {
+  common.User user = 1;
+  bool active = 2;
+}
+
+message Close {}
+
+service Broadcast {
+  rpc CreateStream(Connect) returns (stream Message);
+  rpc BroadcastMessage(Message) returns (Close);
+}

@@ -8,6 +8,7 @@ package favorite
 
 import (
 	context "context"
+	common "github.com/JMURv/e-commerce/api/pb/common"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -29,10 +30,10 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type FavoriteServiceClient interface {
-	GetAllUserFavorites(ctx context.Context, in *GetAllUserFavoritesRequest, opts ...grpc.CallOption) (*GetAllUserFavoritesResponse, error)
-	GetFavoriteByID(ctx context.Context, in *GetFavoriteByIDRequest, opts ...grpc.CallOption) (*GetFavoriteByIDResponse, error)
-	CreateFavorite(ctx context.Context, in *CreateFavoriteRequest, opts ...grpc.CallOption) (*CreateFavoriteResponse, error)
-	DeleteFavorite(ctx context.Context, in *DeleteFavoriteRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	GetAllUserFavorites(ctx context.Context, in *GetAllUserFavoritesRequest, opts ...grpc.CallOption) (*ListFavoritesResponse, error)
+	GetFavoriteByID(ctx context.Context, in *FavoriteIDRequest, opts ...grpc.CallOption) (*common.Favorite, error)
+	CreateFavorite(ctx context.Context, in *CreateFavoriteRequest, opts ...grpc.CallOption) (*common.Favorite, error)
+	DeleteFavorite(ctx context.Context, in *DeleteFavoriteIDRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 }
 
 type favoriteServiceClient struct {
@@ -43,8 +44,8 @@ func NewFavoriteServiceClient(cc grpc.ClientConnInterface) FavoriteServiceClient
 	return &favoriteServiceClient{cc}
 }
 
-func (c *favoriteServiceClient) GetAllUserFavorites(ctx context.Context, in *GetAllUserFavoritesRequest, opts ...grpc.CallOption) (*GetAllUserFavoritesResponse, error) {
-	out := new(GetAllUserFavoritesResponse)
+func (c *favoriteServiceClient) GetAllUserFavorites(ctx context.Context, in *GetAllUserFavoritesRequest, opts ...grpc.CallOption) (*ListFavoritesResponse, error) {
+	out := new(ListFavoritesResponse)
 	err := c.cc.Invoke(ctx, FavoriteService_GetAllUserFavorites_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -52,8 +53,8 @@ func (c *favoriteServiceClient) GetAllUserFavorites(ctx context.Context, in *Get
 	return out, nil
 }
 
-func (c *favoriteServiceClient) GetFavoriteByID(ctx context.Context, in *GetFavoriteByIDRequest, opts ...grpc.CallOption) (*GetFavoriteByIDResponse, error) {
-	out := new(GetFavoriteByIDResponse)
+func (c *favoriteServiceClient) GetFavoriteByID(ctx context.Context, in *FavoriteIDRequest, opts ...grpc.CallOption) (*common.Favorite, error) {
+	out := new(common.Favorite)
 	err := c.cc.Invoke(ctx, FavoriteService_GetFavoriteByID_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -61,8 +62,8 @@ func (c *favoriteServiceClient) GetFavoriteByID(ctx context.Context, in *GetFavo
 	return out, nil
 }
 
-func (c *favoriteServiceClient) CreateFavorite(ctx context.Context, in *CreateFavoriteRequest, opts ...grpc.CallOption) (*CreateFavoriteResponse, error) {
-	out := new(CreateFavoriteResponse)
+func (c *favoriteServiceClient) CreateFavorite(ctx context.Context, in *CreateFavoriteRequest, opts ...grpc.CallOption) (*common.Favorite, error) {
+	out := new(common.Favorite)
 	err := c.cc.Invoke(ctx, FavoriteService_CreateFavorite_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -70,7 +71,7 @@ func (c *favoriteServiceClient) CreateFavorite(ctx context.Context, in *CreateFa
 	return out, nil
 }
 
-func (c *favoriteServiceClient) DeleteFavorite(ctx context.Context, in *DeleteFavoriteRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+func (c *favoriteServiceClient) DeleteFavorite(ctx context.Context, in *DeleteFavoriteIDRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
 	out := new(EmptyResponse)
 	err := c.cc.Invoke(ctx, FavoriteService_DeleteFavorite_FullMethodName, in, out, opts...)
 	if err != nil {
@@ -83,10 +84,10 @@ func (c *favoriteServiceClient) DeleteFavorite(ctx context.Context, in *DeleteFa
 // All implementations must embed UnimplementedFavoriteServiceServer
 // for forward compatibility
 type FavoriteServiceServer interface {
-	GetAllUserFavorites(context.Context, *GetAllUserFavoritesRequest) (*GetAllUserFavoritesResponse, error)
-	GetFavoriteByID(context.Context, *GetFavoriteByIDRequest) (*GetFavoriteByIDResponse, error)
-	CreateFavorite(context.Context, *CreateFavoriteRequest) (*CreateFavoriteResponse, error)
-	DeleteFavorite(context.Context, *DeleteFavoriteRequest) (*EmptyResponse, error)
+	GetAllUserFavorites(context.Context, *GetAllUserFavoritesRequest) (*ListFavoritesResponse, error)
+	GetFavoriteByID(context.Context, *FavoriteIDRequest) (*common.Favorite, error)
+	CreateFavorite(context.Context, *CreateFavoriteRequest) (*common.Favorite, error)
+	DeleteFavorite(context.Context, *DeleteFavoriteIDRequest) (*EmptyResponse, error)
 	mustEmbedUnimplementedFavoriteServiceServer()
 }
 
@@ -94,16 +95,16 @@ type FavoriteServiceServer interface {
 type UnimplementedFavoriteServiceServer struct {
 }
 
-func (UnimplementedFavoriteServiceServer) GetAllUserFavorites(context.Context, *GetAllUserFavoritesRequest) (*GetAllUserFavoritesResponse, error) {
+func (UnimplementedFavoriteServiceServer) GetAllUserFavorites(context.Context, *GetAllUserFavoritesRequest) (*ListFavoritesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAllUserFavorites not implemented")
 }
-func (UnimplementedFavoriteServiceServer) GetFavoriteByID(context.Context, *GetFavoriteByIDRequest) (*GetFavoriteByIDResponse, error) {
+func (UnimplementedFavoriteServiceServer) GetFavoriteByID(context.Context, *FavoriteIDRequest) (*common.Favorite, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetFavoriteByID not implemented")
 }
-func (UnimplementedFavoriteServiceServer) CreateFavorite(context.Context, *CreateFavoriteRequest) (*CreateFavoriteResponse, error) {
+func (UnimplementedFavoriteServiceServer) CreateFavorite(context.Context, *CreateFavoriteRequest) (*common.Favorite, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateFavorite not implemented")
 }
-func (UnimplementedFavoriteServiceServer) DeleteFavorite(context.Context, *DeleteFavoriteRequest) (*EmptyResponse, error) {
+func (UnimplementedFavoriteServiceServer) DeleteFavorite(context.Context, *DeleteFavoriteIDRequest) (*EmptyResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteFavorite not implemented")
 }
 func (UnimplementedFavoriteServiceServer) mustEmbedUnimplementedFavoriteServiceServer() {}
@@ -138,7 +139,7 @@ func _FavoriteService_GetAllUserFavorites_Handler(srv interface{}, ctx context.C
 }
 
 func _FavoriteService_GetFavoriteByID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetFavoriteByIDRequest)
+	in := new(FavoriteIDRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -150,7 +151,7 @@ func _FavoriteService_GetFavoriteByID_Handler(srv interface{}, ctx context.Conte
 		FullMethod: FavoriteService_GetFavoriteByID_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FavoriteServiceServer).GetFavoriteByID(ctx, req.(*GetFavoriteByIDRequest))
+		return srv.(FavoriteServiceServer).GetFavoriteByID(ctx, req.(*FavoriteIDRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -174,7 +175,7 @@ func _FavoriteService_CreateFavorite_Handler(srv interface{}, ctx context.Contex
 }
 
 func _FavoriteService_DeleteFavorite_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DeleteFavoriteRequest)
+	in := new(DeleteFavoriteIDRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -186,7 +187,7 @@ func _FavoriteService_DeleteFavorite_Handler(srv interface{}, ctx context.Contex
 		FullMethod: FavoriteService_DeleteFavorite_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FavoriteServiceServer).DeleteFavorite(ctx, req.(*DeleteFavoriteRequest))
+		return srv.(FavoriteServiceServer).DeleteFavorite(ctx, req.(*DeleteFavoriteIDRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

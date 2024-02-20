@@ -21,11 +21,11 @@ func (r *Repository) GetByID(_ context.Context, id uint64) (*model.Review, error
 	r.RLock()
 	defer r.RUnlock()
 
-	i, ok := r.data[id]
+	rev, ok := r.data[id]
 	if !ok {
 		return nil, repo.ErrNotFound
 	}
-	return i, nil
+	return rev, nil
 }
 
 func (r *Repository) GetReviewsByUserID(_ context.Context, userID uint64) ([]*model.Review, error) {
@@ -56,6 +56,8 @@ func (r *Repository) Update(_ context.Context, reviewID uint64, newData *model.R
 }
 
 func (r *Repository) Delete(_ context.Context, reviewID uint64) error {
+	r.Lock()
 	delete(r.data, reviewID)
+	r.Unlock()
 	return nil
 }

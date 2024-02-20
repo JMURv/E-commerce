@@ -60,8 +60,7 @@ message Review {
 message Favorite {
   uint64 id = 1;
   uint64 user_id = 2;
-  uint64 item_id = 4;
+  uint64 item_id = 3;
+  User user = 4;
   Item item = 5;
-  google.protobuf.Timestamp created_at = 6;
-  google.protobuf.Timestamp updated_at = 7;
 }

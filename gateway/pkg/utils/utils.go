@@ -3,6 +3,7 @@ package utils
 import (
 	"encoding/json"
 	"io"
+	"log"
 	"net/http"
 )
 
@@ -19,25 +20,30 @@ type ErrorResponse struct {
 func ErrResponse(w http.ResponseWriter, status int, data string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(&ErrorResponse{Error: data})
+	err := json.NewEncoder(w).Encode(&ErrorResponse{Error: data})
+	if err != nil {
+		log.Println(err.Error())
+		return
+	}
 }
 
 func OkResponse(w http.ResponseWriter, status int, data any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 
-	err := json.NewEncoder(w).Encode(&SuccessResponse{data})
+	err := json.NewEncoder(w).Encode(&SuccessResponse{Result: data})
 	if err != nil {
+		log.Println(err.Error())
 		ErrResponse(w, http.StatusInternalServerError, ErrWhileEncoding)
 		return
 	}
 }
 
 func ParseBody(r *http.Request, x interface{}) {
-	reqBody, _ := io.ReadAll(r.Body)
+	rBody, _ := io.ReadAll(r.Body)
 	r.Body.Close()
 
-	err := json.Unmarshal(reqBody, x)
+	err := json.Unmarshal(rBody, x)
 	if err != nil {
 		return
 	}
