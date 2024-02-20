@@ -14,6 +14,7 @@ import (
 type Handler struct {
 	pb.ItemServiceServer
 	pb.CategoryServiceServer
+	pb.TagServiceServer
 	ctrl *controller.Controller
 }
 
@@ -100,7 +101,7 @@ func (h *Handler) UpdateItem(ctx context.Context, req *pb.UpdateItemRequest) (*c
 		Quantity:    req.Quantity,
 	}))
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to update item: %v", err)
+		return nil, status.Errorf(codes.Internal, err.Error())
 	}
 	return model.ItemToProto(i), nil
 }

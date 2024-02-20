@@ -15,6 +15,9 @@ import (
 	"google.golang.org/grpc/reflection"
 	"log"
 	"net"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 )
 
@@ -63,8 +66,18 @@ func main() {
 	srv := grpc.NewServer()
 	pb.RegisterItemServiceServer(srv, h)
 	pb.RegisterCategoryServiceServer(srv, h)
+	pb.RegisterTagServiceServer(srv, h)
 
 	reflection.Register(srv)
+
+	go func() {
+		c := make(chan os.Signal, 1)
+		signal.Notify(c, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+		<-c
+		log.Println("Shutting down gracefully...")
+		registry.Deregister(ctx, instanceID, serviceName)
+		os.Exit(0)
+	}()
 
 	log.Println("Item service is listening")
 	srv.Serve(lis)

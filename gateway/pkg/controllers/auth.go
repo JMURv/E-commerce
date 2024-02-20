@@ -13,12 +13,12 @@ type Login struct {
 	Email string `json:"email"`
 }
 
-func LoginHandler(w http.ResponseWriter, r *http.Request) {
+// LoginHandler handles the login request and generates a token for the user.
+func (ctrl *UserCtrl) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	loginData := &Login{}
 	utils.ParseBody(r, loginData)
 
-	client := pb.NewUserServiceClient(userConn)
-	u, err := client.GetUserByEmail(context.Background(), &pb.GetUserByEmailRequest{Email: loginData.Email})
+	u, err := ctrl.cli.GetUserByEmail(context.Background(), &pb.GetUserByEmailRequest{Email: loginData.Email})
 	if err != nil || u.Username == "" {
 		utils.ErrResponse(w, http.StatusUnauthorized, "Invalid credentials")
 		return

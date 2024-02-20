@@ -29,7 +29,7 @@ func NewCategoryCtrl() *CategoryCtrl {
 	reg, err := consul.NewRegistry("localhost:8500")
 	addrs, err := reg.ServiceAddresses(context.Background(), "items")
 
-	r := rand.Intn(len(addrs) + 1)
+	r := rand.Intn(len(addrs))
 	conn, err := grpc.Dial(addrs[r], grpc.WithInsecure())
 	if err != nil {
 		log.Printf("Failed to connect to category service: %v", err)

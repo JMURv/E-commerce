@@ -1,60 +1,74 @@
 package controllers
 
 import (
-	"encoding/json"
-	"fmt"
-	"github.com/JMURv/e-commerce/gateway/pkg/models"
+	"context"
+	pb "github.com/JMURv/e-commerce/api/pb/item"
 	"github.com/JMURv/e-commerce/gateway/pkg/utils"
+	"github.com/JMURv/e-commerce/pkg/discovery/consul"
 	"github.com/gorilla/mux"
+	"google.golang.org/grpc"
+	"log"
+	"math/rand"
 	"net/http"
-	"strconv"
 )
 
-func ListTags(w http.ResponseWriter, r *http.Request) {
-	tags, err := models.GetAllTags()
-	if err != nil {
-		http.Error(w, fmt.Sprintf("Cannot get tags: %v", err), http.StatusNotFound)
-		return
-	}
-
-	response, err := json.Marshal(tags)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("Invalid request body: %v", err), http.StatusBadRequest)
-		return
-	}
-
-	utils.OkResponse(w, http.StatusOK, response)
+type TagHandler interface {
+	ListTags(w http.ResponseWriter, r *http.Request)
+	CreateTag(w http.ResponseWriter, r *http.Request)
+	DeleteTag(w http.ResponseWriter, r *http.Request)
 }
 
-func CreateTag(w http.ResponseWriter, r *http.Request) {
-	newTag := &models.Tag{}
+type TagCtrl struct {
+	cli pb.TagServiceClient
+}
+
+func NewTagCtrl() *TagCtrl {
+	reg, err := consul.NewRegistry("localhost:8500")
+	addrs, err := reg.ServiceAddresses(context.Background(), "items")
+
+	r := rand.Intn(len(addrs))
+	conn, err := grpc.Dial(addrs[r], grpc.WithInsecure())
+	if err != nil {
+		log.Printf("Failed to connect to items service: %v", err)
+	}
+	return &TagCtrl{
+		cli: pb.NewTagServiceClient(conn),
+	}
+}
+
+func (ctrl *TagCtrl) ListTags(w http.ResponseWriter, r *http.Request) {
+	tags, _ := ctrl.cli.ListTags(context.Background(), &pb.EmptyRequest{})
+
+	utils.OkResponse(w, http.StatusOK, tags)
+}
+
+func (ctrl *TagCtrl) CreateTag(w http.ResponseWriter, r *http.Request) {
+	newTag := &pb.TagRequest{}
 	utils.ParseBody(r, newTag)
 
-	tag, err := newTag.CreateTag()
+	tag, err := ctrl.cli.CreateTag(context.Background(), newTag)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Creating tag error: %v", err), http.StatusBadRequest)
+		log.Println(err.Error())
+		utils.ErrResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	response, err := json.Marshal(tag)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("Encoding error: %v", err), http.StatusBadRequest)
-		return
-	}
-
-	utils.OkResponse(w, http.StatusCreated, response)
+	utils.OkResponse(w, http.StatusCreated, tag)
 }
 
-func DeleteTag(w http.ResponseWriter, r *http.Request) {
-	tagID, err := strconv.ParseUint(mux.Vars(r)["id"], 10, 64)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("Cannot parse tagID: %v", err), http.StatusInternalServerError)
+func (ctrl *TagCtrl) DeleteTag(w http.ResponseWriter, r *http.Request) {
+	tagName := mux.Vars(r)["name"]
+	if tagName == "" {
+		utils.ErrResponse(w, http.StatusBadRequest, ErrParseParam)
 		return
 	}
 
-	err = models.DeleteTag(uint(tagID))
+	_, err := ctrl.cli.DeleteTag(context.Background(), &pb.TagRequest{
+		Name: tagName,
+	})
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Deleting favorite error: %v", err), http.StatusInternalServerError)
+		log.Println(err.Error())
+		utils.ErrResponse(w, http.StatusNotFound, ErrNotFound)
 		return
 	}
 

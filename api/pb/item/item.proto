@@ -88,3 +88,17 @@ message DeleteItemRequest {
   uint64 item_id = 1;
   uint64 req_user_id = 2;
 }
+
+service TagService {
+  rpc ListTags (EmptyRequest) returns (ListTagsResponse) {}
+  rpc CreateTag (TagRequest) returns (common.Tag) {}
+  rpc DeleteTag (TagRequest) returns (EmptyResponse) {}
+}
+
+message TagRequest {
+  string name = 1;
+}
+
+message ListTagsResponse {
+  repeated common.Tag tags = 1;
+}

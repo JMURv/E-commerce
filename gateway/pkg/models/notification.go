@@ -8,9 +8,9 @@ import (
 type Notification struct {
 	Type       string    `json:"type"`
 	UserID     uint64    `json:"userID"`
-	User       User      `json:"user" gorm:"foreignKey:UserID"`
+	User       string    `json:"user" gorm:"foreignKey:UserID"`
 	ReceiverID uint64    `json:"receiverID"`
-	Receiver   User      `json:"receiver" gorm:"foreignKey:ReceiverID"`
+	Receiver   string    `json:"receiver" gorm:"foreignKey:ReceiverID"`
 	Message    string    `json:"message"`
 	CreatedAt  time.Time `json:"createdAt"`
 }

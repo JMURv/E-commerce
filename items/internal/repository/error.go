@@ -13,3 +13,5 @@ var ErrPriceRequired = errors.New("price is required")
 
 var ErrCategoryNameIsRequired = errors.New("category name is required")
 var ErrCategoryDescriptionIsRequired = errors.New("category description is required")
+
+var ErrTagNameIsRequired = errors.New("tag name is required")

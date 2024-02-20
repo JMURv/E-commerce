@@ -3,8 +3,8 @@ package users
 import (
 	"context"
 	"fmt"
+	cm "github.com/JMURv/e-commerce/api/pb/common"
 	pb "github.com/JMURv/e-commerce/api/pb/user"
-	"github.com/JMURv/e-commerce/gateway/pkg/models"
 	"github.com/JMURv/e-commerce/items/internal/grpcutil"
 	"github.com/JMURv/e-commerce/pkg/discovery"
 )
@@ -17,7 +17,7 @@ func New(registry discovery.Registry) *Gateway {
 	return &Gateway{registry}
 }
 
-func (g *Gateway) GetUserByID(ctx context.Context, userID uint64) (*models.User, error) {
+func (g *Gateway) GetUserByID(ctx context.Context, userID uint64) (*cm.User, error) {
 	conn, err := grpcutil.ServiceConnection(ctx, "users", g.registry)
 	if err != nil {
 		return nil, err
@@ -31,5 +31,5 @@ func (g *Gateway) GetUserByID(ctx context.Context, userID uint64) (*models.User,
 	}
 
 	fmt.Println(resp)
-	return &models.User{}, nil
+	return &cm.User{}, nil
 }

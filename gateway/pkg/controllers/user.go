@@ -25,6 +25,7 @@ type UserHandler interface {
 	GetUser(w http.ResponseWriter, r *http.Request)
 	UpdateUser(w http.ResponseWriter, r *http.Request)
 	DeleteUser(w http.ResponseWriter, r *http.Request)
+	LoginHandler(w http.ResponseWriter, r *http.Request)
 }
 
 type UserCtrl struct {
@@ -35,7 +36,7 @@ func NewUserCtrl() *UserCtrl {
 	reg, err := consul.NewRegistry("localhost:8500")
 	addrs, err := reg.ServiceAddresses(context.Background(), "users")
 
-	r := rand.Intn(len(addrs) + 1)
+	r := rand.Intn(len(addrs))
 	conn, err := grpc.Dial(addrs[r], grpc.WithInsecure())
 	if err != nil {
 		log.Printf("Failed to connect to user service: %v", err)

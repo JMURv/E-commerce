@@ -22,6 +22,10 @@ type itemRepository interface {
 	CreateCategory(_ context.Context, c *model.Category) (*model.Category, error)
 	UpdateCategory(_ context.Context, categoryID uint64, newData *model.Category) (*model.Category, error)
 	DeleteCategory(_ context.Context, categoryID uint64) error
+
+	ListTags(_ context.Context) ([]*model.Tag, error)
+	CreateTag(_ context.Context, t *model.Tag) (*model.Tag, error)
+	DeleteTag(_ context.Context, tagName string) error
 }
 
 type Controller struct {
@@ -109,6 +113,29 @@ func (ctrl *Controller) UpdateCategory(ctx context.Context, categoryID uint64, n
 
 func (ctrl *Controller) DeleteCategory(ctx context.Context, categoryID uint64) error {
 	if err := ctrl.repo.DeleteCategory(ctx, categoryID); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (ctrl *Controller) ListTags(ctx context.Context) ([]*model.Tag, error) {
+	res, err := ctrl.repo.ListTags(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return res, err
+}
+
+func (ctrl *Controller) CreateTag(ctx context.Context, t *model.Tag) (*model.Tag, error) {
+	res, err := ctrl.repo.CreateTag(ctx, t)
+	if err != nil {
+		return nil, err
+	}
+	return res, err
+}
+
+func (ctrl *Controller) DeleteTag(ctx context.Context, tagName string) error {
+	if err := ctrl.repo.DeleteTag(ctx, tagName); err != nil {
 		return err
 	}
 	return nil

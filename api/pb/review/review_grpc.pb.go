@@ -34,7 +34,7 @@ const (
 type ReviewServiceClient interface {
 	GetReviewByID(ctx context.Context, in *GetReviewByIDRequest, opts ...grpc.CallOption) (*common.Review, error)
 	GetReviewsByUserID(ctx context.Context, in *ByUserIDRequest, opts ...grpc.CallOption) (*ListReviewResponse, error)
-	AggregateUserRatingByID(ctx context.Context, in *ByUserIDRequest, opts ...grpc.CallOption) (*ListReviewResponse, error)
+	AggregateUserRatingByID(ctx context.Context, in *ByUserIDRequest, opts ...grpc.CallOption) (*AggregateUserRatingByIDResponse, error)
 	CreateReview(ctx context.Context, in *CreateReviewRequest, opts ...grpc.CallOption) (*common.Review, error)
 	UpdateReview(ctx context.Context, in *UpdateReviewRequest, opts ...grpc.CallOption) (*common.Review, error)
 	DeleteReview(ctx context.Context, in *DeleteReviewRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
@@ -66,8 +66,8 @@ func (c *reviewServiceClient) GetReviewsByUserID(ctx context.Context, in *ByUser
 	return out, nil
 }
 
-func (c *reviewServiceClient) AggregateUserRatingByID(ctx context.Context, in *ByUserIDRequest, opts ...grpc.CallOption) (*ListReviewResponse, error) {
-	out := new(ListReviewResponse)
+func (c *reviewServiceClient) AggregateUserRatingByID(ctx context.Context, in *ByUserIDRequest, opts ...grpc.CallOption) (*AggregateUserRatingByIDResponse, error) {
+	out := new(AggregateUserRatingByIDResponse)
 	err := c.cc.Invoke(ctx, ReviewService_AggregateUserRatingByID_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -108,7 +108,7 @@ func (c *reviewServiceClient) DeleteReview(ctx context.Context, in *DeleteReview
 type ReviewServiceServer interface {
 	GetReviewByID(context.Context, *GetReviewByIDRequest) (*common.Review, error)
 	GetReviewsByUserID(context.Context, *ByUserIDRequest) (*ListReviewResponse, error)
-	AggregateUserRatingByID(context.Context, *ByUserIDRequest) (*ListReviewResponse, error)
+	AggregateUserRatingByID(context.Context, *ByUserIDRequest) (*AggregateUserRatingByIDResponse, error)
 	CreateReview(context.Context, *CreateReviewRequest) (*common.Review, error)
 	UpdateReview(context.Context, *UpdateReviewRequest) (*common.Review, error)
 	DeleteReview(context.Context, *DeleteReviewRequest) (*EmptyResponse, error)
@@ -125,7 +125,7 @@ func (UnimplementedReviewServiceServer) GetReviewByID(context.Context, *GetRevie
 func (UnimplementedReviewServiceServer) GetReviewsByUserID(context.Context, *ByUserIDRequest) (*ListReviewResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetReviewsByUserID not implemented")
 }
-func (UnimplementedReviewServiceServer) AggregateUserRatingByID(context.Context, *ByUserIDRequest) (*ListReviewResponse, error) {
+func (UnimplementedReviewServiceServer) AggregateUserRatingByID(context.Context, *ByUserIDRequest) (*AggregateUserRatingByIDResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AggregateUserRatingByID not implemented")
 }
 func (UnimplementedReviewServiceServer) CreateReview(context.Context, *CreateReviewRequest) (*common.Review, error) {

@@ -26,14 +26,11 @@ var RegisterMessageRoutes = func(router *mux.Router) {
 	router.HandleFunc("/messages/{id}", auth.AuthMiddleware(controllers.DeleteMessage)).Methods(http.MethodDelete)
 }
 
-var RegisterAuthRoutes = func(router *mux.Router) {
-	router.HandleFunc("/login", controllers.LoginHandler).Methods(http.MethodPost)
-}
-
 var RegisterUsersRoutes = func(router *mux.Router) {
 	ctrl := controllers.NewUserCtrl()
-	router.HandleFunc("/users", ctrl.ListCreateUser).Methods(http.MethodGet, http.MethodPost)
+	router.HandleFunc("/login", ctrl.LoginHandler).Methods(http.MethodPost)
 
+	router.HandleFunc("/users", ctrl.ListCreateUser).Methods(http.MethodGet, http.MethodPost)
 	router.HandleFunc("/users/{id}", ctrl.GetUser).Methods(http.MethodGet)
 	router.HandleFunc("/users/{id}", auth.AuthMiddleware(ctrl.UpdateUser)).Methods(http.MethodPut)
 	router.HandleFunc("/users/{id}", auth.AuthMiddleware(ctrl.DeleteUser)).Methods(http.MethodDelete)
@@ -60,22 +57,24 @@ var RegisterCategoriesRoutes = func(router *mux.Router) {
 }
 
 var RegisterReviewsRoutes = func(router *mux.Router) {
-	router.HandleFunc("/reviews", auth.AuthMiddleware(controllers.CreateReview)).Methods(http.MethodPost)
+	ctrl := controllers.NewReviewCtrl()
+	router.HandleFunc("/reviews", auth.AuthMiddleware(ctrl.CreateReview)).Methods(http.MethodPost)
 
-	router.HandleFunc("/reviews/{id}", controllers.GetReview).Methods(http.MethodGet)
-	router.HandleFunc("/reviews/{id}", auth.AuthMiddleware(controllers.UpdateReview)).Methods(http.MethodPut)
-	router.HandleFunc("/reviews/{id}", auth.AuthMiddleware(controllers.DeleteReview)).Methods(http.MethodDelete)
+	router.HandleFunc("/reviews/{id}", ctrl.GetReview).Methods(http.MethodGet)
+	router.HandleFunc("/reviews/{id}", auth.AuthMiddleware(ctrl.UpdateReview)).Methods(http.MethodPut)
+	router.HandleFunc("/reviews/{id}", auth.AuthMiddleware(ctrl.DeleteReview)).Methods(http.MethodDelete)
 	// TODO: рассчитать общий рейтинг для юзера основываясь на его проданных товарах
 }
 
 var RegisterFavoriteRoutes = func(router *mux.Router) {
-	router.HandleFunc("/favorites", auth.AuthMiddleware(controllers.ListFavorites)).Methods(http.MethodGet)
-	router.HandleFunc("/favorites", auth.AuthMiddleware(controllers.CreateFavorites)).Methods(http.MethodPost)
-	router.HandleFunc("/favorites/{id}", auth.AuthMiddleware(controllers.DeleteFavorite)).Methods(http.MethodDelete)
+	//router.HandleFunc("/favorites", auth.AuthMiddleware(controllers.ListFavorites)).Methods(http.MethodGet)
+	//router.HandleFunc("/favorites", auth.AuthMiddleware(controllers.CreateFavorites)).Methods(http.MethodPost)
+	//router.HandleFunc("/favorites/{id}", auth.AuthMiddleware(controllers.DeleteFavorite)).Methods(http.MethodDelete)
 }
 
 var RegisterTagsRoutes = func(router *mux.Router) {
-	router.HandleFunc("/tags", controllers.ListTags).Methods(http.MethodGet)
-	router.HandleFunc("/tags", auth.AuthMiddleware(controllers.CreateTag)).Methods(http.MethodPost)
-	router.HandleFunc("/tags/{id}", auth.AuthMiddleware(controllers.DeleteTag)).Methods(http.MethodDelete)
+	ctrl := controllers.NewTagCtrl()
+	router.HandleFunc("/tags", ctrl.ListTags).Methods(http.MethodGet)
+	router.HandleFunc("/tags", auth.AuthMiddleware(ctrl.CreateTag)).Methods(http.MethodPost)
+	router.HandleFunc("/tags/{name}", auth.AuthMiddleware(ctrl.DeleteTag)).Methods(http.MethodDelete)
 }

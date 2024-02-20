@@ -4,21 +4,29 @@ import (
 	cm "github.com/JMURv/e-commerce/api/pb/common"
 )
 
-func tagsToProto(tags []Tag) []*cm.Tag {
-	var pbTags []*cm.Tag
+func TagToProto(tag *Tag) *cm.Tag {
+	return &cm.Tag{Name: tag.Name}
+}
+
+func TagFromProto(tag *cm.Tag) *Tag {
+	return &Tag{Name: tag.Name}
+}
+
+func TagsToProto(tags []*Tag) []*cm.Tag {
+	res := make([]*cm.Tag, 0, len(tags))
 	for _, tag := range tags {
 		pbTag := &cm.Tag{
 			Name: tag.Name,
 		}
-		pbTags = append(pbTags, pbTag)
+		res = append(res, pbTag)
 	}
-	return pbTags
+	return res
 }
 
-func TagsFromProto(tags []*cm.Tag) []Tag {
-	t := make([]Tag, 0, len(tags))
+func TagsFromProto(tags []*cm.Tag) []*Tag {
+	t := make([]*Tag, 0, len(tags))
 	for i := range tags {
-		t = append(t, Tag{
+		t = append(t, &Tag{
 			Name: tags[i].Name,
 		})
 	}
@@ -62,7 +70,7 @@ func ItemToProto(i *Item) *cm.Item {
 			CreatedAt:        &i.Category.CreatedAt,
 			UpdatedAt:        &i.Category.UpdatedAt,
 		},
-		Tags:      tagsToProto(i.Tags),
+		Tags:      TagsToProto(i.Tags),
 		Status:    i.Status,
 		Quantity:  i.Quantity,
 		CreatedAt: &i.CreatedAt,

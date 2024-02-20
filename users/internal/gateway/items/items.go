@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	pb "github.com/JMURv/e-commerce/api/pb/item"
-	"github.com/JMURv/e-commerce/gateway/pkg/models"
+	"github.com/JMURv/e-commerce/items/pkg/model"
 	"github.com/JMURv/e-commerce/pkg/discovery"
 	"github.com/JMURv/e-commerce/users/internal/grpcutil"
 )
@@ -17,7 +17,7 @@ func New(registry discovery.Registry) *Gateway {
 	return &Gateway{registry}
 }
 
-func (g *Gateway) ListUserItemsByID(ctx context.Context, userID uint64) ([]*models.Item, error) {
+func (g *Gateway) ListUserItemsByID(ctx context.Context, userID uint64) ([]*model.Item, error) {
 	conn, err := grpcutil.ServiceConnection(ctx, "items", g.registry)
 	if err != nil {
 		return nil, err
@@ -31,5 +31,5 @@ func (g *Gateway) ListUserItemsByID(ctx context.Context, userID uint64) ([]*mode
 	}
 
 	fmt.Println(resp)
-	return []*models.Item{}, nil
+	return []*model.Item{}, nil
 }

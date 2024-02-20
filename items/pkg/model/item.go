@@ -12,7 +12,7 @@ type Item struct {
 	CategoryID  uint64                `json:"categoryID"`
 	Category    Category              `json:"category" gorm:"foreignKey:CategoryID"`
 	UserID      uint64                `json:"userID"`
-	Tags        []Tag                 `json:"tags" gorm:"many2many:item_tags;"`
+	Tags        []*Tag                `json:"tags" gorm:"many2many:item_tags;"`
 	Status      string                `json:"status"`
 	Quantity    int32                 `json:"quantity"`
 	CreatedAt   timestamppb.Timestamp `json:"createdAt"`

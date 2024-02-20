@@ -8,7 +8,7 @@ import (
 type Message struct {
 	ID        uint      `gorm:"primaryKey"`
 	UserID    uint      `json:"userID"`
-	User      User      `json:"user" gorm:"foreignKey:UserID"`
+	User      string    `json:"user" gorm:"foreignKey:UserID"`
 	RoomID    uint      `json:"roomID"`
 	Room      Room      `json:"room" gorm:"foreignKey:RoomID"`
 	Text      string    `json:"text"`

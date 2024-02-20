@@ -11,7 +11,7 @@ message EmptyResponse {}
 service ReviewService {
   rpc GetReviewByID (GetReviewByIDRequest) returns (common.Review) {}
   rpc GetReviewsByUserID(ByUserIDRequest) returns (ListReviewResponse) {}
-  rpc AggregateUserRatingByID(ByUserIDRequest) returns (ListReviewResponse) {}
+  rpc AggregateUserRatingByID(ByUserIDRequest) returns (AggregateUserRatingByIDResponse) {}
   rpc CreateReview (CreateReviewRequest) returns (common.Review) {}
   rpc UpdateReview (UpdateReviewRequest) returns (common.Review) {}
   rpc DeleteReview (DeleteReviewRequest) returns (EmptyResponse) {}

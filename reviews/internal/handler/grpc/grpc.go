@@ -3,13 +3,12 @@ package grpc
 import (
 	"context"
 	"errors"
-	"github.com/JMURv/e-commerce/api/pb/common"
+	cm "github.com/JMURv/e-commerce/api/pb/common"
 	pb "github.com/JMURv/e-commerce/api/pb/review"
 	controller "github.com/JMURv/e-commerce/reviews/internal/controller/review"
 	"github.com/JMURv/e-commerce/reviews/pkg/model"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/proto"
 )
 
 type Handler struct {
@@ -50,10 +49,10 @@ func (h *Handler) GetReviewsByUserID(ctx context.Context, req *pb.ByUserIDReques
 		return nil, status.Errorf(codes.Internal, err.Error())
 	}
 
-	return &pb.ListReviewResponse{Reviews: model.ReviewsToProto(*r)}, nil
+	return &pb.ListReviewResponse{Reviews: model.ReviewsToProto(r)}, nil
 }
 
-func (h *Handler) GetReviewByID(ctx context.Context, req *pb.GetReviewByIDRequest) (*common.Review, error) {
+func (h *Handler) GetReviewByID(ctx context.Context, req *pb.GetReviewByIDRequest) (*cm.Review, error) {
 	reviewID := req.ReviewId
 	if req == nil || reviewID == 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "nil req or empty id")
@@ -69,50 +68,46 @@ func (h *Handler) GetReviewByID(ctx context.Context, req *pb.GetReviewByIDReques
 	return model.ReviewToProto(r), nil
 }
 
-func (h *Handler) CreateReview(ctx context.Context, req *pb.CreateReviewRequest) (*common.Review, error) {
+func (h *Handler) CreateReview(ctx context.Context, req *pb.CreateReviewRequest) (*cm.Review, error) {
 	if req == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "nil req")
 	}
 
-	reqData, err := proto.Marshal(req)
+	r, err := h.ctrl.CreateReview(ctx, model.ReviewFromProto(&cm.Review{
+		UserId:         req.UserId,
+		ItemId:         req.ItemId,
+		ReviewedUserId: req.ReviewedUserId,
+		Advantages:     req.Advantages,
+		Disadvantages:  req.Disadvantages,
+		ReviewText:     req.ReviewText,
+		Rating:         req.Rating,
+	}))
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to marshal request: %v", err)
-	}
-
-	newReview := &common.Review{}
-	if err = proto.Unmarshal(reqData, newReview); err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to unmarshal request: %v", err)
-	}
-
-	r, err := h.ctrl.CreateReview(ctx, model.ReviewFromProto(newReview))
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to create review: %v", err)
+		return nil, status.Errorf(codes.Internal, err.Error())
 	}
 
 	return model.ReviewToProto(r), nil
 }
 
-func (h *Handler) UpdateReview(ctx context.Context, req *pb.UpdateReviewRequest) (*common.Review, error) {
+func (h *Handler) UpdateReview(ctx context.Context, req *pb.UpdateReviewRequest) (*cm.Review, error) {
 	reviewID := req.ReviewId
 	if req == nil || reviewID == 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "nil req or empty id")
 	}
 
-	reqData, err := proto.Marshal(req)
+	r, err := h.ctrl.UpdateReview(ctx, req.ReviewId, model.ReviewFromProto(&cm.Review{
+		ReviewId:       req.ReviewId,
+		UserId:         req.UserId,
+		ItemId:         req.ItemId,
+		ReviewedUserId: req.ReviewedUserId,
+		Advantages:     req.Advantages,
+		Disadvantages:  req.Disadvantages,
+		ReviewText:     req.ReviewText,
+		Rating:         req.Rating,
+	}))
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to marshal request: %v", err)
+		return nil, status.Errorf(codes.Internal, err.Error())
 	}
-
-	updateReviewData := &common.Review{}
-	if err = proto.Unmarshal(reqData, updateReviewData); err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to unmarshal request: %v", err)
-	}
-
-	r, err := h.ctrl.CreateReview(ctx, model.ReviewFromProto(updateReviewData))
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to update review: %v", err)
-	}
-
 	return model.ReviewToProto(r), nil
 }
 

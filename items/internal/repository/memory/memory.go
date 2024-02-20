@@ -79,7 +79,7 @@ func (r *Repository) CreateItem(_ context.Context, i *model.Item) (*model.Item, 
 		if _, ok := r.tagsData[currTagName]; !ok {
 			newTag := &model.Tag{Name: currTagName}
 			r.tagsData[currTagName] = newTag
-			i.Tags[idx] = *newTag
+			i.Tags[idx] = newTag
 		}
 	}
 
@@ -152,6 +152,37 @@ func (r *Repository) UpdateCategory(_ context.Context, categoryID uint64, newDat
 func (r *Repository) DeleteCategory(_ context.Context, categoryID uint64) error {
 	r.Lock()
 	delete(r.categoryData, categoryID)
+	r.Unlock()
+	return nil
+}
+
+func (r *Repository) ListTags(_ context.Context) ([]*model.Tag, error) {
+	r.RLock()
+	defer r.RUnlock()
+
+	res := make([]*model.Tag, 0, len(r.tagsData))
+	for i := range r.tagsData {
+		if v, ok := r.tagsData[i]; ok {
+			res = append(res, v)
+		}
+	}
+	return res, nil
+}
+
+func (r *Repository) CreateTag(_ context.Context, t *model.Tag) (*model.Tag, error) {
+	if t.Name == "" {
+		return nil, repo.ErrTagNameIsRequired
+	}
+
+	r.Lock()
+	r.tagsData[t.Name] = t
+	r.Unlock()
+	return t, nil
+}
+
+func (r *Repository) DeleteTag(_ context.Context, tagName string) error {
+	r.Lock()
+	delete(r.tagsData, tagName)
 	r.Unlock()
 	return nil
 }

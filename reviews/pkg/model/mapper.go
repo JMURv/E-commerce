@@ -6,7 +6,7 @@ func ReviewFromProto(r *common.Review) *Review {
 	return &Review{
 		ID:             r.ReviewId,
 		UserID:         r.UserId,
-		ItemID:         r.UserId,
+		ItemID:         r.ItemId,
 		ReviewedUserID: r.ReviewedUserId,
 		Advantages:     r.Advantages,
 		Disadvantages:  r.Disadvantages,
@@ -28,11 +28,11 @@ func ReviewToProto(r *Review) *common.Review {
 	}
 }
 
-func ReviewsToProto(reviews []Review) []*common.Review {
+func ReviewsToProto(reviews []*Review) []*common.Review {
 	var protoReviews []*common.Review
 
 	for i := range reviews {
-		protoReviews = append(protoReviews, ReviewToProto(&reviews[i]))
+		protoReviews = append(protoReviews, ReviewToProto(reviews[i]))
 	}
 
 	return protoReviews
