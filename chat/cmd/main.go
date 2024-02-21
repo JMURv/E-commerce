@@ -24,7 +24,7 @@ const serviceName = "chat"
 
 func main() {
 	var port int
-	flag.IntVar(&port, "port", 50095, "gRPC handler port")
+	flag.IntVar(&port, "port", 8080, "gRPC handler port")
 	flag.Parse()
 
 	// Setting up registry

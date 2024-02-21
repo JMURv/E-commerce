@@ -65,7 +65,7 @@ func (h *Handler) BroadcastMessage(ctx context.Context, msg *pb.Message) (*pb.Cl
 
 			if conn.active {
 				err := conn.stream.Send(msg)
-				fmt.Printf("Sending message to: %v from %v\n", conn.id, msg.Id)
+				fmt.Printf("Sending message to: %v from %v\n", conn.id, msg.UserId)
 				if err != nil {
 					fmt.Printf("Error with Stream: %v - Error: %v\n", conn.stream, err)
 					conn.active = false
