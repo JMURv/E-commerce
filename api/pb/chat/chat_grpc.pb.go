@@ -172,3 +172,331 @@ var Broadcast_ServiceDesc = grpc.ServiceDesc{
 	},
 	Metadata: "chat/chat.proto",
 }
+
+const (
+	Rooms_CreateRoom_FullMethodName   = "/chat.Rooms/CreateRoom"
+	Rooms_GetUserRooms_FullMethodName = "/chat.Rooms/GetUserRooms"
+)
+
+// RoomsClient is the client API for Rooms service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type RoomsClient interface {
+	CreateRoom(ctx context.Context, in *CreateRoomRequest, opts ...grpc.CallOption) (*Room, error)
+	GetUserRooms(ctx context.Context, in *ListRoomRequest, opts ...grpc.CallOption) (*ListRoomResponse, error)
+}
+
+type roomsClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewRoomsClient(cc grpc.ClientConnInterface) RoomsClient {
+	return &roomsClient{cc}
+}
+
+func (c *roomsClient) CreateRoom(ctx context.Context, in *CreateRoomRequest, opts ...grpc.CallOption) (*Room, error) {
+	out := new(Room)
+	err := c.cc.Invoke(ctx, Rooms_CreateRoom_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *roomsClient) GetUserRooms(ctx context.Context, in *ListRoomRequest, opts ...grpc.CallOption) (*ListRoomResponse, error) {
+	out := new(ListRoomResponse)
+	err := c.cc.Invoke(ctx, Rooms_GetUserRooms_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// RoomsServer is the server API for Rooms service.
+// All implementations must embed UnimplementedRoomsServer
+// for forward compatibility
+type RoomsServer interface {
+	CreateRoom(context.Context, *CreateRoomRequest) (*Room, error)
+	GetUserRooms(context.Context, *ListRoomRequest) (*ListRoomResponse, error)
+	mustEmbedUnimplementedRoomsServer()
+}
+
+// UnimplementedRoomsServer must be embedded to have forward compatible implementations.
+type UnimplementedRoomsServer struct {
+}
+
+func (UnimplementedRoomsServer) CreateRoom(context.Context, *CreateRoomRequest) (*Room, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateRoom not implemented")
+}
+func (UnimplementedRoomsServer) GetUserRooms(context.Context, *ListRoomRequest) (*ListRoomResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetUserRooms not implemented")
+}
+func (UnimplementedRoomsServer) mustEmbedUnimplementedRoomsServer() {}
+
+// UnsafeRoomsServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to RoomsServer will
+// result in compilation errors.
+type UnsafeRoomsServer interface {
+	mustEmbedUnimplementedRoomsServer()
+}
+
+func RegisterRoomsServer(s grpc.ServiceRegistrar, srv RoomsServer) {
+	s.RegisterService(&Rooms_ServiceDesc, srv)
+}
+
+func _Rooms_CreateRoom_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateRoomRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RoomsServer).CreateRoom(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Rooms_CreateRoom_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RoomsServer).CreateRoom(ctx, req.(*CreateRoomRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Rooms_GetUserRooms_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListRoomRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RoomsServer).GetUserRooms(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Rooms_GetUserRooms_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RoomsServer).GetUserRooms(ctx, req.(*ListRoomRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// Rooms_ServiceDesc is the grpc.ServiceDesc for Rooms service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var Rooms_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "chat.Rooms",
+	HandlerType: (*RoomsServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "CreateRoom",
+			Handler:    _Rooms_CreateRoom_Handler,
+		},
+		{
+			MethodName: "GetUserRooms",
+			Handler:    _Rooms_GetUserRooms_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "chat/chat.proto",
+}
+
+const (
+	Messages_GetMessageByID_FullMethodName = "/chat.Messages/GetMessageByID"
+	Messages_CreateMessage_FullMethodName  = "/chat.Messages/CreateMessage"
+	Messages_UpdateMessage_FullMethodName  = "/chat.Messages/UpdateMessage"
+	Messages_DeleteMessage_FullMethodName  = "/chat.Messages/DeleteMessage"
+)
+
+// MessagesClient is the client API for Messages service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type MessagesClient interface {
+	GetMessageByID(ctx context.Context, in *GetMessageByIDRequest, opts ...grpc.CallOption) (*Message, error)
+	CreateMessage(ctx context.Context, in *CreateMessageRequest, opts ...grpc.CallOption) (*Message, error)
+	UpdateMessage(ctx context.Context, in *UpdateMessageRequest, opts ...grpc.CallOption) (*Message, error)
+	DeleteMessage(ctx context.Context, in *DeleteMessageRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+}
+
+type messagesClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewMessagesClient(cc grpc.ClientConnInterface) MessagesClient {
+	return &messagesClient{cc}
+}
+
+func (c *messagesClient) GetMessageByID(ctx context.Context, in *GetMessageByIDRequest, opts ...grpc.CallOption) (*Message, error) {
+	out := new(Message)
+	err := c.cc.Invoke(ctx, Messages_GetMessageByID_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *messagesClient) CreateMessage(ctx context.Context, in *CreateMessageRequest, opts ...grpc.CallOption) (*Message, error) {
+	out := new(Message)
+	err := c.cc.Invoke(ctx, Messages_CreateMessage_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *messagesClient) UpdateMessage(ctx context.Context, in *UpdateMessageRequest, opts ...grpc.CallOption) (*Message, error) {
+	out := new(Message)
+	err := c.cc.Invoke(ctx, Messages_UpdateMessage_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *messagesClient) DeleteMessage(ctx context.Context, in *DeleteMessageRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+	out := new(EmptyResponse)
+	err := c.cc.Invoke(ctx, Messages_DeleteMessage_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// MessagesServer is the server API for Messages service.
+// All implementations must embed UnimplementedMessagesServer
+// for forward compatibility
+type MessagesServer interface {
+	GetMessageByID(context.Context, *GetMessageByIDRequest) (*Message, error)
+	CreateMessage(context.Context, *CreateMessageRequest) (*Message, error)
+	UpdateMessage(context.Context, *UpdateMessageRequest) (*Message, error)
+	DeleteMessage(context.Context, *DeleteMessageRequest) (*EmptyResponse, error)
+	mustEmbedUnimplementedMessagesServer()
+}
+
+// UnimplementedMessagesServer must be embedded to have forward compatible implementations.
+type UnimplementedMessagesServer struct {
+}
+
+func (UnimplementedMessagesServer) GetMessageByID(context.Context, *GetMessageByIDRequest) (*Message, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetMessageByID not implemented")
+}
+func (UnimplementedMessagesServer) CreateMessage(context.Context, *CreateMessageRequest) (*Message, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateMessage not implemented")
+}
+func (UnimplementedMessagesServer) UpdateMessage(context.Context, *UpdateMessageRequest) (*Message, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateMessage not implemented")
+}
+func (UnimplementedMessagesServer) DeleteMessage(context.Context, *DeleteMessageRequest) (*EmptyResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteMessage not implemented")
+}
+func (UnimplementedMessagesServer) mustEmbedUnimplementedMessagesServer() {}
+
+// UnsafeMessagesServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to MessagesServer will
+// result in compilation errors.
+type UnsafeMessagesServer interface {
+	mustEmbedUnimplementedMessagesServer()
+}
+
+func RegisterMessagesServer(s grpc.ServiceRegistrar, srv MessagesServer) {
+	s.RegisterService(&Messages_ServiceDesc, srv)
+}
+
+func _Messages_GetMessageByID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetMessageByIDRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MessagesServer).GetMessageByID(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Messages_GetMessageByID_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MessagesServer).GetMessageByID(ctx, req.(*GetMessageByIDRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Messages_CreateMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateMessageRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MessagesServer).CreateMessage(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Messages_CreateMessage_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MessagesServer).CreateMessage(ctx, req.(*CreateMessageRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Messages_UpdateMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateMessageRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MessagesServer).UpdateMessage(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Messages_UpdateMessage_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MessagesServer).UpdateMessage(ctx, req.(*UpdateMessageRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Messages_DeleteMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteMessageRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MessagesServer).DeleteMessage(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Messages_DeleteMessage_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MessagesServer).DeleteMessage(ctx, req.(*DeleteMessageRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// Messages_ServiceDesc is the grpc.ServiceDesc for Messages service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var Messages_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "chat.Messages",
+	HandlerType: (*MessagesServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GetMessageByID",
+			Handler:    _Messages_GetMessageByID_Handler,
+		},
+		{
+			MethodName: "CreateMessage",
+			Handler:    _Messages_CreateMessage_Handler,
+		},
+		{
+			MethodName: "UpdateMessage",
+			Handler:    _Messages_UpdateMessage_Handler,
+		},
+		{
+			MethodName: "DeleteMessage",
+			Handler:    _Messages_DeleteMessage_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "chat/chat.proto",
+}

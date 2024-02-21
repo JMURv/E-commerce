@@ -93,7 +93,7 @@ func (r *Repository) CreateItem(_ context.Context, i *model.Item) (*model.Item, 
 				return nil, err
 			}
 		}
-		i.Tags[idx] = *existingTag
+		i.Tags[idx] = existingTag
 	}
 
 	i.Status = "created"

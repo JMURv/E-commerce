@@ -5,9 +5,12 @@ option go_package = "github.com/JMURv/e-commerce/api/pb/chat";
 
 import "common/common.proto";
 
-message Message {
-  string id = 1;
-  string content = 2;
+message EmptyResponse {}
+message Close {}
+
+service Broadcast {
+  rpc CreateStream(Connect) returns (stream Message);
+  rpc BroadcastMessage(Message) returns (Close);
 }
 
 message Connect {
@@ -15,9 +18,71 @@ message Connect {
   bool active = 2;
 }
 
-message Close {}
-
-service Broadcast {
-  rpc CreateStream(Connect) returns (stream Message);
-  rpc BroadcastMessage(Message) returns (Close);
+service Rooms {
+  rpc CreateRoom(CreateRoomRequest) returns (Room);
+  rpc GetUserRooms(ListRoomRequest) returns (ListRoomResponse);
 }
+
+message Room {
+  uint64 id = 1;
+  repeated uint64 members = 2;
+  uint64 item_id = 3;
+  repeated Message messages = 4;
+  uint64 created_at = 5;
+}
+
+message CreateRoomRequest {
+  uint64 user_1 = 1;
+  uint64 user_2 = 2;
+}
+
+message ListRoomRequest {
+  uint64 user_id = 1;
+}
+
+message ListRoomResponse {
+  repeated Room rooms = 1;
+}
+
+service Messages {
+  rpc GetMessageByID(GetMessageByIDRequest) returns (Message);
+  rpc CreateMessage(CreateMessageRequest) returns (Message);
+  rpc UpdateMessage(UpdateMessageRequest) returns (Message);
+  rpc DeleteMessage(DeleteMessageRequest) returns (EmptyResponse);
+}
+
+message Message {
+  uint64 id = 1;
+  uint64 user_id = 2;
+  uint64 room_id = 3;
+  uint64 reply_to_id = 4;
+  string text = 5;
+  bool seen = 6;
+  bool edited = 7;
+  uint64 created_at = 8;
+}
+
+message GetMessageByIDRequest {
+  uint64 message_id = 1;
+}
+
+message CreateMessageRequest {
+  uint64 user_id = 1;
+  uint64 room_id = 2;
+  uint64 reply_to_id = 3;
+  string text = 4;
+}
+
+message UpdateMessageRequest {
+  uint64 id = 1;
+  uint64 user_id = 2;
+  uint64 room_id = 3;
+  uint64 reply_to_id = 4;
+  string text = 5;
+}
+
+message DeleteMessageRequest {
+  uint64 user_id = 1;
+  uint64 message_id = 2;
+}
+

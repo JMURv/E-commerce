@@ -3,9 +3,9 @@ package models
 import "time"
 
 type Room struct {
-	ID        uint      `gorm:"primaryKey"`
-	Members   []string  `json:"members" gorm:"many2many:room_members"`
-	ItemID    *uint     `json:"itemID"`
+	ID        uint64    `gorm:"primaryKey"`
+	Members   []uint64  `json:"members" gorm:"many2many:room_members"`
+	ItemID    *uint64   `json:"itemID"`
 	Item      string    `json:"item" gorm:"foreignKey:ItemID"`
 	Messages  []Message `json:"messages"`
 	CreatedAt time.Time `json:"createdAt"`
