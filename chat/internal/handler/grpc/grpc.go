@@ -59,7 +59,6 @@ func (h *Handler) BroadcastMessage(ctx context.Context, msg *pb.Message) (*pb.Cl
 
 	for _, conn := range h.pool.Connection {
 		wg.Add(1)
-
 		go func(msg *pb.Message, conn *Connection) {
 			defer wg.Done()
 
