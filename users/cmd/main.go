@@ -24,6 +24,13 @@ import (
 const serviceName = "users"
 
 func main() {
+	defer func() {
+		if err := recover(); err != nil {
+			log.Printf("Panic occurred: %v", err)
+			os.Exit(1)
+		}
+	}()
+
 	var port int
 	flag.IntVar(&port, "port", 50075, "gRPC handler port")
 	flag.Parse()
@@ -35,7 +42,7 @@ func main() {
 	}
 
 	// Register service
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
 	instanceID := discovery.GenerateInstanceID(serviceName)
 	if err = registry.Register(ctx, instanceID, serviceName, fmt.Sprintf("localhost:%d", port)); err != nil {
 		panic(err)
@@ -48,14 +55,10 @@ func main() {
 			time.Sleep(1 * time.Second)
 		}
 	}()
-	defer registry.Deregister(ctx, instanceID, serviceName)
-
-	// Setting up other services
-	itemGateway := itmgate.New(registry)
 
 	// Setting up main app
 	repo := memory.New()
-	svc := controller.New(repo, *itemGateway)
+	svc := controller.New(repo, *itmgate.New(registry))
 	h := handler.New(svc)
 
 	lis, err := net.Listen("tcp", ":50075")
@@ -65,7 +68,6 @@ func main() {
 
 	srv := grpc.NewServer()
 	pb.RegisterUserServiceServer(srv, h)
-
 	reflection.Register(srv)
 
 	go func() {
@@ -73,10 +75,11 @@ func main() {
 		signal.Notify(c, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 		<-c
 		log.Println("Shutting down gracefully...")
+		cancel()
 		registry.Deregister(ctx, instanceID, serviceName)
-		os.Exit(0)
+		srv.GracefulStop()
 	}()
 
-	log.Println("User service is listening")
+	log.Printf("%v service is listening", serviceName)
 	srv.Serve(lis)
 }
