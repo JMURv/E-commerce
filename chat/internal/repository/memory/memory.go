@@ -32,6 +32,10 @@ func (r *Repository) CreateRoom(_ context.Context, room *mdl.Room) (*mdl.Room, e
 		return nil, repo.ErrItemIDRequired
 	}
 
+	if room.SellerID == room.BuyerID {
+		return nil, repo.ErrCantSendMessageToYourself
+	}
+
 	room.Messages = []*mdl.Message{}
 	room.CreatedAt = time.Now()
 

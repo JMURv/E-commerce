@@ -41,6 +41,10 @@ func (r *Repository) CreateRoom(_ context.Context, room *mdl.Room) (*mdl.Room, e
 		return nil, repo.ErrUserIDRequired
 	}
 
+	if room.SellerID == room.BuyerID {
+		return nil, repo.ErrCantSendMessageToYourself
+	}
+
 	if room.ItemID == 0 {
 		return nil, repo.ErrItemIDRequired
 	}
@@ -58,7 +62,7 @@ func (r *Repository) CreateRoom(_ context.Context, room *mdl.Room) (*mdl.Room, e
 func (r *Repository) GetUserRooms(_ context.Context, userID uint64) ([]*mdl.Room, error) {
 	var rooms []*mdl.Room
 
-	if err := r.conn.Where("SellerID = ?", userID).Or("BuyerID = ?", userID).Find(&rooms).Error; err != nil {
+	if err := r.conn.Preload("Messages").Where("SellerID = ?", userID).Or("BuyerID = ?", userID).Find(&rooms).Error; err != nil {
 		return nil, err
 	}
 
