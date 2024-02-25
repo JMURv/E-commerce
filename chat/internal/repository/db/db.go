@@ -7,6 +7,7 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"log"
+	"time"
 )
 
 var DSN string
@@ -33,6 +34,42 @@ func New() *Repository {
 	}
 
 	return &Repository{conn: db}
+}
+
+func (r *Repository) CreateRoom(_ context.Context, room *mdl.Room) (*mdl.Room, error) {
+	if room.SellerID == 0 || room.BuyerID == 0 {
+		return nil, repo.ErrUserIDRequired
+	}
+
+	if room.ItemID == 0 {
+		return nil, repo.ErrItemIDRequired
+	}
+
+	room.Messages = []*mdl.Message{}
+	room.CreatedAt = time.Now()
+
+	if err := r.conn.Create(&room).Error; err != nil {
+		return nil, err
+	}
+
+	return room, nil
+}
+
+func (r *Repository) GetUserRooms(_ context.Context, userID uint64) ([]*mdl.Room, error) {
+	var rooms []*mdl.Room
+
+	if err := r.conn.Where("SellerID = ?", userID).Or("BuyerID = ?", userID).Find(&rooms).Error; err != nil {
+		return nil, err
+	}
+
+	return rooms, nil
+}
+
+func (r *Repository) DeleteRoom(_ context.Context, roomID uint64) error {
+	if err := r.conn.Where("ID = ?", roomID).Delete(&mdl.Room{}).Error; err != nil {
+		return repo.ErrNotFound
+	}
+	return nil
 }
 
 func (r *Repository) GetMessageByID(ctx context.Context, msgID uint64) (*mdl.Message, error) {

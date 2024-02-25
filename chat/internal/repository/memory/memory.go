@@ -11,12 +11,57 @@ import (
 type Repository struct {
 	sync.RWMutex
 	messageData map[uint64]*mdl.Message
+	roomsData   map[uint64]*mdl.Room
 }
 
 func New() *Repository {
-	return &Repository{messageData: map[uint64]*mdl.Message{}}
+	return &Repository{
+		roomsData:   map[uint64]*mdl.Room{},
+		messageData: map[uint64]*mdl.Message{},
+	}
 }
 
+// Rooms
+func (r *Repository) CreateRoom(_ context.Context, room *mdl.Room) (*mdl.Room, error) {
+	room.ID = uint64(time.Now().Unix())
+	if room.SellerID == 0 || room.BuyerID == 0 {
+		return nil, repo.ErrUserIDRequired
+	}
+
+	if room.ItemID == 0 {
+		return nil, repo.ErrItemIDRequired
+	}
+
+	room.Messages = []*mdl.Message{}
+	room.CreatedAt = time.Now()
+
+	r.Lock()
+	r.roomsData[room.ID] = room
+	r.Unlock()
+	return room, nil
+}
+
+func (r *Repository) GetUserRooms(_ context.Context, userID uint64) ([]*mdl.Room, error) {
+	rooms := make([]*mdl.Room, 0, len(r.roomsData))
+
+	r.RLock()
+	for _, v := range r.roomsData {
+		if v.SellerID == userID || v.BuyerID == userID {
+			rooms = append(rooms, v)
+		}
+	}
+	r.RUnlock()
+	return rooms, nil
+}
+
+func (r *Repository) DeleteRoom(_ context.Context, roomID uint64) error {
+	r.Lock()
+	delete(r.roomsData, roomID)
+	r.Unlock()
+	return nil
+}
+
+// Messages
 func (r *Repository) GetMessageByID(_ context.Context, msgID uint64) (*mdl.Message, error) {
 	r.RLock()
 	defer r.RUnlock()

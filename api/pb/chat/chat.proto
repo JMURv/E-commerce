@@ -21,23 +21,30 @@ message Connect {
 service Rooms {
   rpc CreateRoom(CreateRoomRequest) returns (Room);
   rpc GetUserRooms(ListRoomRequest) returns (ListRoomResponse);
+  rpc DeleteRoom(DeleteRoomRequest) returns (EmptyResponse);
 }
 
 message Room {
   uint64 id = 1;
-  repeated uint64 members = 2;
-  uint64 item_id = 3;
-  repeated Message messages = 4;
-  uint64 created_at = 5;
+  uint64 seller_id = 2;
+  uint64 buyer_id = 3;
+  uint64 item_id = 4;
+  repeated Message messages = 5;
+  uint64 created_at = 6;
 }
 
 message CreateRoomRequest {
-  uint64 user_1 = 1;
-  uint64 user_2 = 2;
+  uint64 seller_id = 1;
+  uint64 buyer_id = 2;
+  uint64 item_id = 3;
 }
 
 message ListRoomRequest {
   uint64 user_id = 1;
+}
+
+message DeleteRoomRequest {
+  uint64 room_id = 1;
 }
 
 message ListRoomResponse {

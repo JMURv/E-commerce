@@ -83,6 +83,48 @@ func (h *Handler) BroadcastMessage(ctx context.Context, msg *pb.Message) (*pb.Cl
 	return &pb.Close{}, nil
 }
 
+// Rooms
+func (h *Handler) CreateRoom(ctx context.Context, req *pb.CreateRoomRequest) (*pb.Room, error) {
+	if req == nil || req.SellerId == 0 || req.BuyerId == 0 || req.ItemId == 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "nil req or empty id")
+	}
+
+	room, err := h.ctrl.CreateRoom(ctx, &mdl.Room{
+		SellerID: req.SellerId,
+		BuyerID:  req.BuyerId,
+		ItemID:   req.ItemId,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return mdl.RoomToProto(room), nil
+}
+
+func (h *Handler) GetUserRooms(ctx context.Context, req *pb.ListRoomRequest) (*pb.ListRoomResponse, error) {
+	if req == nil || req.UserId == 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "nil req or empty id")
+	}
+
+	rooms, err := h.ctrl.GetUserRooms(ctx, req.UserId)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.ListRoomResponse{Rooms: mdl.RoomsToProto(rooms)}, nil
+}
+
+func (h *Handler) DeleteRoom(ctx context.Context, req *pb.DeleteRoomRequest) (*pb.EmptyResponse, error) {
+	if req == nil || req.RoomId == 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "nil req or empty id")
+	}
+
+	if err := h.ctrl.DeleteRoom(ctx, req.RoomId); err != nil {
+		return nil, err
+	}
+	return &pb.EmptyResponse{}, nil
+}
+
 // Messages
 func (h *Handler) GetMessageByID(ctx context.Context, req *pb.GetMessageByIDRequest) (*pb.Message, error) {
 	if req == nil || req.MessageId == 0 {

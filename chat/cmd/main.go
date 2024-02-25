@@ -23,6 +23,13 @@ import (
 const serviceName = "chat"
 
 func main() {
+	defer func() {
+		if err := recover(); err != nil {
+			log.Printf("Panic occurred: %v", err)
+			os.Exit(1)
+		}
+	}()
+
 	var port int
 	flag.IntVar(&port, "port", 8080, "gRPC handler port")
 	flag.Parse()

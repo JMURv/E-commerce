@@ -30,3 +30,49 @@ func MessageFromProto(msg *pb.Message) *Message {
 		CreatedAt: time.Unix(int64(msg.CreatedAt), 0),
 	}
 }
+
+func MessagesToProto(msgs []*Message) []*pb.Message {
+	r := make([]*pb.Message, 0, len(msgs))
+	for _, msg := range msgs {
+		r = append(r, MessageToProto(msg))
+	}
+	return r
+}
+
+func MessagesFromProto(msgs []*pb.Message) []*Message {
+	r := make([]*Message, 0, len(msgs))
+	for _, msg := range msgs {
+		r = append(r, MessageFromProto(msg))
+	}
+	return r
+}
+
+func RoomToProto(room *Room) *pb.Room {
+	return &pb.Room{
+		Id:        room.ID,
+		SellerId:  room.SellerID,
+		BuyerId:   room.BuyerID,
+		ItemId:    room.ItemID,
+		Messages:  MessagesToProto(room.Messages),
+		CreatedAt: uint64(room.CreatedAt.Unix()),
+	}
+}
+
+func RoomFromProto(room *pb.Room) *Room {
+	return &Room{
+		ID:        room.Id,
+		SellerID:  room.SellerId,
+		BuyerID:   room.BuyerId,
+		ItemID:    room.ItemId,
+		Messages:  MessagesFromProto(room.Messages),
+		CreatedAt: time.Unix(int64(room.CreatedAt), 0),
+	}
+}
+
+func RoomsToProto(rooms []*Room) []*pb.Room {
+	r := make([]*pb.Room, 0, len(rooms))
+	for _, room := range rooms {
+		r = append(r, RoomToProto(room))
+	}
+	return r
+}
