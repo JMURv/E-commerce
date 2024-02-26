@@ -24,6 +24,13 @@ import (
 const serviceName = "items"
 
 func main() {
+	defer func() {
+		if err := recover(); err != nil {
+			log.Printf("Panic occurred: %v", err)
+			os.Exit(1)
+		}
+	}()
+
 	var port int
 	flag.IntVar(&port, "port", 50080, "gRPC handler port")
 	flag.Parse()
@@ -48,7 +55,6 @@ func main() {
 			time.Sleep(1 * time.Second)
 		}
 	}()
-	defer registry.Deregister(ctx, instanceID, serviceName)
 
 	// Setting up other services
 	usrGateway := usrgate.New(registry)

@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package chat;
+option go_package = "github.com/JMURv/e-commerce/api/pb/notification";
+
+import "common/common.proto";
+
+message EmptyResponse {}
+
+service Notifications {
+  rpc CreateNotification(Notification) returns (EmptyResponse);
+  rpc DeleteNotification(DeleteNotificationRequest) returns (EmptyResponse);
+  rpc DeleteAllNotifications(DeleteNotificationRequest) returns (EmptyResponse);
+}
+
+message Notification {
+  string type = 1;
+  uint64 user_id = 2;
+  common.User user = 3;
+  uint64 receiver_id = 4;
+  common.User receiver = 5;
+  string message = 6;
+  uint64 created_at = 7;
+}
+
+message DeleteNotificationRequest {
+  uint64 id = 1;
+}

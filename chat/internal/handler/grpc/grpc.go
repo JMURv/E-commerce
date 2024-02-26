@@ -185,7 +185,3 @@ func (h *Handler) DeleteMessage(ctx context.Context, req *pb.DeleteMessageReques
 	}
 	return &pb.EmptyResponse{}, nil
 }
-
-//func (h *Handler) ListMessages(ctx context.Context, req *pb.ListMessagesRequest) (*pb.ListMessagesResponse, error) {
-//	return nil, nil
-//}

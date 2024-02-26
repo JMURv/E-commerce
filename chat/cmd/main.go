@@ -54,7 +54,6 @@ func main() {
 			time.Sleep(1 * time.Second)
 		}
 	}()
-	defer registry.Deregister(ctx, instanceID, serviceName)
 
 	// Setting up main app
 	repo := mem.New()

@@ -4,11 +4,11 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	ctrl "github.com/JMURv/e-commerce/notifications/internal/controller"
+	hdlr "github.com/JMURv/e-commerce/notifications/internal/handler/grpc"
+	mem "github.com/JMURv/e-commerce/notifications/internal/repository/memory"
 	"github.com/JMURv/e-commerce/pkg/discovery"
 	"github.com/JMURv/e-commerce/pkg/discovery/consul"
-	controller "github.com/JMURv/e-commerce/reviews/internal/controller/review"
-	handler "github.com/JMURv/e-commerce/reviews/internal/handler/grpc"
-	"github.com/JMURv/e-commerce/reviews/internal/repository/memory"
 	"log"
 	"net"
 	"os"
@@ -22,7 +22,7 @@ import (
 	pb "github.com/JMURv/e-commerce/api/pb/review"
 )
 
-const serviceName = "reviews"
+const serviceName = "notifications"
 
 func main() {
 	defer func() {
@@ -33,7 +33,7 @@ func main() {
 	}()
 
 	var port int
-	flag.IntVar(&port, "port", 50085, "gRPC handler port")
+	flag.IntVar(&port, "port", 50095, "gRPC handler port")
 	flag.Parse()
 
 	// Setting up registry
@@ -58,9 +58,9 @@ func main() {
 	}()
 
 	// Setting up main app
-	repo := memory.New()
-	svc := controller.New(repo)
-	h := handler.New(svc)
+	repo := mem.New()
+	svc := ctrl.New(repo)
+	h := hdlr.New(svc)
 
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%v", port))
 	if err != nil {

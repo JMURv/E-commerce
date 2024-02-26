@@ -13,6 +13,13 @@ import (
 )
 
 func main() {
+	defer func() {
+		if err := recover(); err != nil {
+			log.Printf("Panic occurred: %v", err)
+			os.Exit(1)
+		}
+	}()
+
 	router := mux.NewRouter()
 	routes.RegisterUsersRoutes(router)
 
