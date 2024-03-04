@@ -2,10 +2,13 @@ package controllers
 
 import (
 	"context"
+	"encoding/json"
 	pb "github.com/JMURv/e-commerce/api/pb/review"
+	"github.com/JMURv/e-commerce/gateway/pkg/models"
 	"github.com/JMURv/e-commerce/gateway/pkg/utils"
 	"github.com/JMURv/e-commerce/pkg/discovery/consul"
 	"github.com/gorilla/mux"
+	"github.com/segmentio/kafka-go"
 	"google.golang.org/grpc"
 	"log"
 	"math/rand"
@@ -36,6 +39,14 @@ func NewReviewCtrl() *ReviewCtrl {
 	return &ReviewCtrl{
 		cli: pb.NewReviewServiceClient(conn),
 	}
+}
+
+func kafkaWriter(brokers []string, topic string) *kafka.Writer {
+	return kafka.NewWriter(kafka.WriterConfig{
+		Brokers:  brokers,
+		Topic:    topic,
+		Balancer: &kafka.LeastBytes{},
+	})
 }
 
 func (ctrl *ReviewCtrl) GetReview(w http.ResponseWriter, r *http.Request) {
@@ -70,24 +81,23 @@ func (ctrl *ReviewCtrl) CreateReview(w http.ResponseWriter, r *http.Request) {
 	utils.OkResponse(w, http.StatusCreated, rev)
 
 	// TODO: Отправить смс-ку в очередь сообщений для уведомлений
-	//newNotification := models.Notification{
-	//	Type:       "notification",
-	//	UserID:     rev.UserId,
-	//	ReceiverID: rev.ReviewedUserId,
-	//	Message:    "new review",
-	//}
-	//
-	//notification, err := newNotification.CreateNotification()
-	//if err != nil {
-	//	log.Printf("Error while creating notification: %v", err)
-	//}
-	//
-	//notificationBytes, err := json.Marshal(notification)
-	//if err != nil {
-	//	log.Printf("Error while encoding notification message: %v", err)
-	//}
-	//
-	//go broadcast(uint(rev.UserId), uint(rev.ReviewedUserId), notificationBytes)
+	brokers := []string{"localhost:29092"}
+	topic := "new_review"
+	notification, err := json.Marshal(models.Notification{
+		Type:       "notification",
+		UserID:     rev.UserId,
+		ReceiverID: rev.ReviewedUserId,
+		Message:    "new review",
+	})
+	if err != nil {
+		log.Printf("Error while encoding notification message: %v", err)
+	}
+	writer := kafkaWriter(brokers, topic)
+	writer.WriteMessages(context.Background(),
+		kafka.Message{
+			Value: notification,
+		},
+	)
 }
 
 func (ctrl *ReviewCtrl) UpdateReview(w http.ResponseWriter, r *http.Request) {

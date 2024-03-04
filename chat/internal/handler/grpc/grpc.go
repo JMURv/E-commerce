@@ -63,7 +63,14 @@ func (h *Handler) BroadcastMessage(ctx context.Context, msg *pb.Message) (*pb.Cl
 			defer wg.Done()
 
 			if conn.active {
-				err := conn.stream.Send(msg)
+				newMsg, err := h.ctrl.CreateMessage(ctx, &mdl.Message{
+					UserID:    msg.UserId,
+					RoomID:    msg.RoomId,
+					ReplyToID: &msg.ReplyToId,
+					Text:      msg.Text,
+				})
+				err = conn.stream.Send(mdl.MessageToProto(newMsg))
+
 				fmt.Printf("Sending message to: %v from %v\n", conn.id, msg.UserId)
 				if err != nil {
 					fmt.Printf("Error with Stream: %v - Error: %v\n", conn.stream, err)
