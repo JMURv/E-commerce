@@ -19,7 +19,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 
-	pb "github.com/JMURv/e-commerce/api/pb/review"
+	pb "github.com/JMURv/e-commerce/api/pb/notification"
 )
 
 const serviceName = "notifications"
@@ -68,7 +68,7 @@ func main() {
 	}
 
 	srv := grpc.NewServer()
-	pb.RegisterReviewServiceServer(srv, h)
+	pb.RegisterNotificationsServer(srv, h)
 
 	reflection.Register(srv)
 
