@@ -6,4 +6,4 @@ COPY ../go.mod ../go.sum ./
 RUN go mod download
 
 COPY . .
-CMD ["go", "run", "./items/cmd/main.go"]
+CMD ["go", "run", "./gateway/cmd/main.go"]

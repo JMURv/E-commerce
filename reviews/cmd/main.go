@@ -23,6 +23,7 @@ import (
 )
 
 const serviceName = "reviews"
+const RegistryAddress = "localhost:8500"
 
 func main() {
 	defer func() {
@@ -37,7 +38,7 @@ func main() {
 	flag.Parse()
 
 	// Setting up registry
-	registry, err := consul.NewRegistry("localhost:8500")
+	registry, err := consul.NewRegistry(RegistryAddress)
 	if err != nil {
 		panic(err)
 	}

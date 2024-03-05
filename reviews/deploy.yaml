@@ -1,0 +1,20 @@
+#file: noinspection YAMLSchemaValidation
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reviews-microservice
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: reviews-microservice
+  template:
+    metadata:
+      labels:
+        app: reviews-microservice
+    spec:
+      containers:
+        - name: reviews-microservice
+          image: jmurv/reviews_srv:latest
+          ports:
+            - containerPort: 50085

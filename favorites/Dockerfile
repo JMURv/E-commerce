@@ -1,4 +1,9 @@
-FROM ubuntu:latest
-LABEL authors="Archi"
+FROM golang:1.21.5-alpine3.19
 
-ENTRYPOINT ["top", "-b"]
+WORKDIR /app
+
+COPY ../go.mod ../go.sum ./
+RUN go mod download
+
+COPY . .
+CMD ["go", "run", "./favorites/cmd/main.go"]

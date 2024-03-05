@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"flag"
 	"fmt"
 	ctrl "github.com/JMURv/e-commerce/notifications/internal/controller"
@@ -10,8 +9,6 @@ import (
 	mem "github.com/JMURv/e-commerce/notifications/internal/repository/memory"
 	"github.com/JMURv/e-commerce/pkg/discovery"
 	"github.com/JMURv/e-commerce/pkg/discovery/consul"
-	"github.com/segmentio/kafka-go"
-	"io"
 	"log"
 	"net"
 	"os"
@@ -27,33 +24,33 @@ import (
 
 const serviceName = "notifications"
 
-func testMessage(brokers []string, topic string) {
-	writer := kafkaWriter(brokers, topic)
+//func testMessage(brokers []string, topic string) {
+//	writer := kafkaWriter(brokers, topic)
+//
+//	writer.WriteMessages(context.Background(),
+//		kafka.Message{
+//			Value: []byte("Hello Kafka!"),
+//		},
+//	)
+//}
 
-	writer.WriteMessages(context.Background(),
-		kafka.Message{
-			Value: []byte("Hello Kafka!"),
-		},
-	)
-}
-
-func kafkaReader(brokers []string, topic string) *kafka.Reader {
-	return kafka.NewReader(kafka.ReaderConfig{
-		Brokers:  brokers,
-		Topic:    topic,
-		GroupID:  "notifications-group",
-		MinBytes: 10e3, // 10KB
-		MaxBytes: 10e6, // 10MB
-	})
-}
-
-func kafkaWriter(brokers []string, topic string) *kafka.Writer {
-	return kafka.NewWriter(kafka.WriterConfig{
-		Brokers:  brokers,
-		Topic:    topic,
-		Balancer: &kafka.LeastBytes{},
-	})
-}
+//func kafkaReader(brokers []string, topic string) *kafka.Reader {
+//	return kafka.NewReader(kafka.ReaderConfig{
+//		Brokers:  brokers,
+//		Topic:    topic,
+//		GroupID:  "notifications-group",
+//		MinBytes: 10e3, // 10KB
+//		MaxBytes: 10e6, // 10MB
+//	})
+//}
+//
+//func kafkaWriter(brokers []string, topic string) *kafka.Writer {
+//	return kafka.NewWriter(kafka.WriterConfig{
+//		Brokers:  brokers,
+//		Topic:    topic,
+//		Balancer: &kafka.LeastBytes{},
+//	})
+//}
 
 func main() {
 	defer func() {
@@ -104,28 +101,28 @@ func main() {
 	reflection.Register(srv)
 
 	// Setting up kafka
-	brokers := []string{"localhost:29092"}
+	//brokers := []string{"localhost:29092"}
 	//topics := []string{"new_review", "new_message", "new_favorite"}
-	topic := "notifications"
-	reader := kafkaReader(brokers, topic)
+	//topic := "notifications"
+	//reader := kafkaReader(brokers, topic)
 
 	// Start Kafka consumer loop
-	go func() {
-		for {
-			m, err := reader.ReadMessage(ctx)
-			if err != nil && errors.Is(err, io.EOF) {
-				log.Printf("Kafka has been stopped")
-				return
-			} else if err != nil {
-				log.Printf("Error reading message from Kafka: %v", err)
-				continue
-			}
-			log.Println(m.Topic)
-			log.Printf("Received message from Kafka: %s", m.Value)
-		}
-	}()
-
-	testMessage(brokers, topic)
+	//go func() {
+	//	for {
+	//		m, err := reader.ReadMessage(ctx)
+	//		if err != nil && errors.Is(err, io.EOF) {
+	//			log.Printf("Kafka has been stopped")
+	//			return
+	//		} else if err != nil {
+	//			log.Printf("Error reading message from Kafka: %v", err)
+	//			continue
+	//		}
+	//		log.Println(m.Topic)
+	//		log.Printf("Received message from Kafka: %s", m.Value)
+	//	}
+	//}()
+	//
+	//testMessage(brokers, topic)
 
 	// Setting up signal handling for graceful shutdown
 	go func() {
@@ -133,7 +130,7 @@ func main() {
 		signal.Notify(c, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 		<-c
 		log.Println("Shutting down gracefully...")
-		reader.Close()
+		//reader.Close()
 		registry.Deregister(ctx, instanceID, serviceName)
 		cancel()
 		os.Exit(0)
