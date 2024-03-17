@@ -2,7 +2,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: reviews-microservice
+  name: reviews-microservice-deploy
 spec:
   replicas: 1
   selector:
@@ -14,7 +14,8 @@ spec:
         app: reviews-microservice
     spec:
       containers:
-        - name: reviews-microservice
-          image: jmurv/reviews_srv:latest
+        - name: reviews-microservice-pod
+          imagePullPolicy: Always
+          image: jmurv/reviews_svc:latest
           ports:
             - containerPort: 50085

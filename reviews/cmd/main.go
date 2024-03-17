@@ -23,7 +23,7 @@ import (
 )
 
 const serviceName = "reviews"
-const RegistryAddress = "localhost:8500"
+const RegistryAddress = "consul:8500"
 
 func main() {
 	defer func() {
