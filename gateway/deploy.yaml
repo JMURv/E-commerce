@@ -2,20 +2,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: reviews-microsvc-deploy
+  name: gateway-microsvc-deploy
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: reviews-microsvc
+      app: gateway-microsvc
   template:
     metadata:
       labels:
-        app: reviews-microsvc
+        app: gateway-microsvc
     spec:
       containers:
-        - name: reviews-microsvc-pod
+        - name: gateway-microsvc-pod
           imagePullPolicy: Always
-          image: jmurv/reviews_svc:latest
+          image: jmurv/gateway_svc:latest
           ports:
-            - containerPort: 50085
+            - containerPort: 8000

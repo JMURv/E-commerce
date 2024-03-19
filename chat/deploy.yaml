@@ -2,20 +2,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: reviews-microsvc-deploy
+  name: chat-microsvc-deploy
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: reviews-microsvc
+      app: chat-microsvc
   template:
     metadata:
       labels:
-        app: reviews-microsvc
+        app: chat-microsvc
     spec:
       containers:
-        - name: reviews-microsvc-pod
+        - name: chat-microsvc-pod
           imagePullPolicy: Always
-          image: jmurv/reviews_svc:latest
+          image: jmurv/chat_svc:latest
           ports:
-            - containerPort: 50085
+            - containerPort: 8080

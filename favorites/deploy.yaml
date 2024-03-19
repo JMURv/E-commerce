@@ -2,20 +2,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: reviews-microsvc-deploy
+  name: favorites-microsvc-deploy
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: reviews-microsvc
+      app: favorites-microsvc
   template:
     metadata:
       labels:
-        app: reviews-microsvc
+        app: favorites-microsvc
     spec:
       containers:
-        - name: reviews-microsvc-pod
+        - name: favorites-microsvc-pod
           imagePullPolicy: Always
-          image: jmurv/reviews_svc:latest
+          image: jmurv/favorites_svc:latest
           ports:
-            - containerPort: 50085
+            - containerPort: 50090

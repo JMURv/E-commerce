@@ -4,8 +4,8 @@ metadata:
   name: reviews-svc
 spec:
   selector:
-    app: reviews-microsvc
+    app: favorites-microsvc
   ports:
     - protocol: TCP
-      port: 50085
-      targetPort: 50085
+      port: 50090
+      targetPort: 50090
