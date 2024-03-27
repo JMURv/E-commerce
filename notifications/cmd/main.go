@@ -121,8 +121,6 @@ func main() {
 	//		log.Printf("Received message from Kafka: %s", m.Value)
 	//	}
 	//}()
-	//
-	//testMessage(brokers, topic)
 
 	// Setting up signal handling for graceful shutdown
 	go func() {

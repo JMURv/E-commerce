@@ -69,9 +69,8 @@ func (h *Handler) BroadcastMessage(ctx context.Context, msg *pb.Message) (*pb.Cl
 					ReplyToID: &msg.ReplyToId,
 					Text:      msg.Text,
 				})
-				err = conn.stream.Send(mdl.MessageToProto(newMsg))
-
 				fmt.Printf("Sending message to: %v from %v\n", conn.id, msg.UserId)
+				err = conn.stream.Send(mdl.MessageToProto(newMsg))
 				if err != nil {
 					fmt.Printf("Error with Stream: %v - Error: %v\n", conn.stream, err)
 					conn.active = false

@@ -58,7 +58,7 @@ func main() {
 
 	// Setting up main app
 	repo := memory.New()
-	svc := controller.New(repo, *itmgate.New(registry))
+	svc := controller.New(repo, itmgate.New(registry))
 	h := handler.New(svc)
 
 	lis, err := net.Listen("tcp", ":50075")

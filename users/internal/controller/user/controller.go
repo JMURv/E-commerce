@@ -21,10 +21,10 @@ type userRepository interface {
 
 type Controller struct {
 	repo       userRepository
-	itmGateway itmgate.Gateway
+	itmGateway *itmgate.Gateway
 }
 
-func New(repo userRepository, itmGateway itmgate.Gateway) *Controller {
+func New(repo userRepository, itmGateway *itmgate.Gateway) *Controller {
 	return &Controller{
 		repo:       repo,
 		itmGateway: itmGateway,

@@ -7,6 +7,7 @@ import (
 	"github.com/JMURv/e-commerce/pkg/discovery"
 	"github.com/JMURv/e-commerce/pkg/discovery/consul"
 	controller "github.com/JMURv/e-commerce/reviews/internal/controller/review"
+	notifygate "github.com/JMURv/e-commerce/reviews/internal/gateway/notifications"
 	handler "github.com/JMURv/e-commerce/reviews/internal/handler/grpc"
 	"github.com/JMURv/e-commerce/reviews/internal/repository/memory"
 	"log"
@@ -60,7 +61,7 @@ func main() {
 
 	// Setting up main app
 	repo := memory.New()
-	svc := controller.New(repo)
+	svc := controller.New(repo, notifygate.New(registry))
 	h := handler.New(svc)
 
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%v", port))

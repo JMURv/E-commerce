@@ -3,6 +3,7 @@ package review
 import (
 	"context"
 	"errors"
+	notifygate "github.com/JMURv/e-commerce/reviews/internal/gateway/notifications"
 	repo "github.com/JMURv/e-commerce/reviews/internal/repository"
 	"github.com/JMURv/e-commerce/reviews/pkg/model"
 )
@@ -19,11 +20,12 @@ type reviewRepository interface {
 }
 
 type Controller struct {
-	repo reviewRepository
+	repo          reviewRepository
+	notifyGateway *notifygate.Gateway
 }
 
-func New(repo reviewRepository) *Controller {
-	return &Controller{repo}
+func New(repo reviewRepository, gate *notifygate.Gateway) *Controller {
+	return &Controller{repo, gate}
 }
 
 func (c *Controller) GetReviewByID(ctx context.Context, reviewID uint64) (*model.Review, error) {
@@ -54,6 +56,12 @@ func (c *Controller) CreateReview(ctx context.Context, review *model.Review) (*m
 	res, err := c.repo.Create(ctx, review)
 	if err != nil && errors.Is(err, repo.ErrNotFound) {
 		return nil, ErrNotFound
+	}
+
+	// Create notification for new review
+	err = c.notifyGateway.CreateReviewNotification(ctx, res)
+	if err != nil {
+		return nil, err
 	}
 	return res, err
 }
