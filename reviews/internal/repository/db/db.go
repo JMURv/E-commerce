@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"fmt"
 	repo "github.com/JMURv/e-commerce/reviews/internal/repository"
 	"github.com/JMURv/e-commerce/reviews/pkg/model"
 	"github.com/joho/godotenv"
@@ -14,11 +15,19 @@ import (
 var DSN string
 
 func init() {
-	if err := godotenv.Load("../.env"); err != nil {
-		log.Fatal("Error loading .env file")
+	if err := godotenv.Load("../.env"); err == nil {
+		DSN = os.Getenv("DSN")
 		return
 	}
-	DSN = os.Getenv("DSN")
+
+	DSN = fmt.Sprintf(
+		"postgres://%s:%s@%s:%s/%s",
+		os.Getenv("POSTGRES_USER"),
+		os.Getenv("POSTGRES_PASSWORD"),
+		os.Getenv("POSTGRES_HOST"),
+		os.Getenv("POSTGRES_PORT"),
+		os.Getenv("POSTGRES_DB"),
+	)
 }
 
 type Repository struct {
@@ -26,10 +35,7 @@ type Repository struct {
 }
 
 func New() *Repository {
-	var err error
-	var db *gorm.DB
-
-	db, err = gorm.Open(postgres.Open(DSN), &gorm.Config{})
+	db, err := gorm.Open(postgres.Open(DSN), &gorm.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -54,8 +60,8 @@ func (r *Repository) GetByID(_ context.Context, reviewID uint64) (*model.Review,
 
 // TODO: reviewed user id
 
-func (r *Repository) GetReviewsByUserID(_ context.Context, userID uint64) (*[]model.Review, error) {
-	var reviews []model.Review
+func (r *Repository) GetReviewsByUserID(_ context.Context, userID uint64) (*[]*model.Review, error) {
+	var reviews []*model.Review
 	if err := r.conn.Where("UserID=?", userID).Find(&reviews).Error; err != nil {
 		return nil, err
 	}

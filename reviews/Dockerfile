@@ -6,4 +6,6 @@ COPY ../go.mod ../go.sum ./
 RUN go mod download
 
 COPY . .
-CMD ["go", "run", "./reviews/cmd/main.go"]
+
+WORKDIR /app/reviews/cmd
+CMD ["go", "run", "."]

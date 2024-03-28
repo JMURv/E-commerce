@@ -16,7 +16,7 @@ spec:
       containers:
         - name: reviews-microsvc-pod
           imagePullPolicy: Always
-          image: jmurv/reviews_svc:latest
+          image: jmurv/reviews_svc:1.6
           ports:
             - containerPort: 50085
           envFrom:

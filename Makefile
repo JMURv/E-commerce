@@ -8,7 +8,7 @@ down:
 	docker-compose down
 
 build_reviews:
-	docker build . -t reviews_svc:latest -f ./reviews/Dockerfile  --no-cache
+	docker build . -t reviews_svc -f ./reviews/Dockerfile  --no-cache
 
 run_reviews:
 	docker run --net=host --rm --name=reviews reviews_svc:latest

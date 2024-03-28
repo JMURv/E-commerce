@@ -49,7 +49,7 @@ func (h *Handler) GetReviewsByUserID(ctx context.Context, req *pb.ByUserIDReques
 		return nil, status.Errorf(codes.Internal, err.Error())
 	}
 
-	return &pb.ListReviewResponse{Reviews: model.ReviewsToProto(r)}, nil
+	return &pb.ListReviewResponse{Reviews: model.ReviewsToProto(*r)}, nil
 }
 
 func (h *Handler) GetReviewByID(ctx context.Context, req *pb.GetReviewByIDRequest) (*cm.Review, error) {

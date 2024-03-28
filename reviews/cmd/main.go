@@ -8,7 +8,8 @@ import (
 	controller "github.com/JMURv/e-commerce/reviews/internal/controller/review"
 	notifygate "github.com/JMURv/e-commerce/reviews/internal/gateway/notifications"
 	handler "github.com/JMURv/e-commerce/reviews/internal/handler/grpc"
-	"github.com/JMURv/e-commerce/reviews/internal/repository/memory"
+	//mem "github.com/JMURv/e-commerce/reviews/internal/repository/memory"
+	db "github.com/JMURv/e-commerce/reviews/internal/repository/db"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"gopkg.in/yaml.v3"
@@ -36,7 +37,7 @@ func main() {
 		}
 	}()
 
-	data, err := os.ReadFile("../config.yaml")
+	data, err := os.ReadFile("../dev.config.yaml")
 	if err != nil {
 		log.Fatalf("error reading configuration file: %v", err)
 	}
@@ -72,7 +73,7 @@ func main() {
 	}()
 
 	// Setting up main app
-	repo := memory.New()
+	repo := db.New()
 	svc := controller.New(repo, notifygate.New(registry))
 	h := handler.New(svc)
 
@@ -98,5 +99,4 @@ func main() {
 
 	log.Printf("%v service is listening", serviceName)
 	srv.Serve(lis)
-
 }

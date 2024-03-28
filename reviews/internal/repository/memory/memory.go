@@ -28,7 +28,7 @@ func (r *Repository) GetByID(_ context.Context, id uint64) (*model.Review, error
 	return rev, nil
 }
 
-func (r *Repository) GetReviewsByUserID(_ context.Context, userID uint64) ([]*model.Review, error) {
+func (r *Repository) GetReviewsByUserID(_ context.Context, userID uint64) (*[]*model.Review, error) {
 	return nil, nil
 }
 
