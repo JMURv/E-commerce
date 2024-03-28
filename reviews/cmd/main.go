@@ -5,9 +5,12 @@ import (
 	"fmt"
 	"github.com/JMURv/e-commerce/pkg/discovery"
 	"github.com/JMURv/e-commerce/pkg/discovery/consul"
+	cache "github.com/JMURv/e-commerce/reviews/internal/cache"
 	controller "github.com/JMURv/e-commerce/reviews/internal/controller/review"
 	notifygate "github.com/JMURv/e-commerce/reviews/internal/gateway/notifications"
 	handler "github.com/JMURv/e-commerce/reviews/internal/handler/grpc"
+	"github.com/go-redis/redis/v8"
+
 	//mem "github.com/JMURv/e-commerce/reviews/internal/repository/memory"
 	db "github.com/JMURv/e-commerce/reviews/internal/repository/db"
 	"google.golang.org/grpc"
@@ -24,9 +27,25 @@ import (
 )
 
 type Config struct {
-	Port            int    `yaml:"port"`
-	ServiceName     string `yaml:"serviceName"`
-	RegistryAddress string `yaml:"registryAddress"`
+	Port         int    `yaml:"port"`
+	ServiceName  string `yaml:"serviceName"`
+	RegistryAddr string `yaml:"registryAddr"`
+	RedisAddr    string `yaml:"redisAddr"`
+	RedisPass    string `yaml:"redisPass"`
+}
+
+func loadConfig() (*Config, error) {
+	var conf Config
+
+	data, err := os.ReadFile("../dev.config.yaml")
+	if err != nil {
+		return nil, err
+	}
+
+	if err = yaml.Unmarshal(data, &conf); err != nil {
+		return nil, err
+	}
+	return &conf, nil
 }
 
 func main() {
@@ -37,19 +56,26 @@ func main() {
 		}
 	}()
 
-	data, err := os.ReadFile("../dev.config.yaml")
+	conf, err := loadConfig()
 	if err != nil {
-		log.Fatalf("error reading configuration file: %v", err)
-	}
-
-	var conf Config
-	if err = yaml.Unmarshal(data, &conf); err != nil {
-		log.Fatalf("error parsing configuration data: %v", err)
+		log.Fatalf("failed to parse config: %v", err)
 	}
 
 	port := conf.Port
 	serviceName := conf.ServiceName
-	registryAddress := conf.RegistryAddress
+	registryAddress := conf.RegistryAddr
+
+	// Setting up redis
+	redisCli := redis.NewClient(&redis.Options{
+		Addr:     conf.RedisAddr,
+		Password: conf.RedisPass,
+		DB:       0,
+	})
+	pong, err := redisCli.Ping(context.Background()).Result()
+	if err != nil {
+		log.Fatalf("Failed to connect to Redis: %v", err)
+	}
+	fmt.Println("Connected to Redis:", pong)
 
 	// Setting up registry
 	registry, err := consul.NewRegistry(registryAddress)
@@ -74,7 +100,7 @@ func main() {
 
 	// Setting up main app
 	repo := db.New()
-	svc := controller.New(repo, notifygate.New(registry))
+	svc := controller.New(repo, cache.New(redisCli), notifygate.New(registry))
 	h := handler.New(svc)
 
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%v", port))
@@ -94,6 +120,7 @@ func main() {
 		<-c
 		log.Println("Shutting down gracefully...")
 		registry.Deregister(ctx, instanceID, serviceName)
+		redisCli.Close()
 		os.Exit(0)
 	}()
 

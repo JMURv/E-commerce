@@ -1,3 +1,5 @@
 port: 50085
 serviceName: "reviews"
 registryAddress: "consul:8500"
+redisAddr: "redis:32712"
+redisPass: ""
