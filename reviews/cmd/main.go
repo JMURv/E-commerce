@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"github.com/JMURv/e-commerce/pkg/discovery"
 	"github.com/JMURv/e-commerce/pkg/discovery/consul"
@@ -10,6 +9,9 @@ import (
 	notifygate "github.com/JMURv/e-commerce/reviews/internal/gateway/notifications"
 	handler "github.com/JMURv/e-commerce/reviews/internal/handler/grpc"
 	"github.com/JMURv/e-commerce/reviews/internal/repository/memory"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
+	"gopkg.in/yaml.v3"
 	"log"
 	"net"
 	"os"
@@ -17,14 +19,14 @@ import (
 	"syscall"
 	"time"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
-
 	pb "github.com/JMURv/e-commerce/api/pb/review"
 )
 
-const serviceName = "reviews"
-const RegistryAddress = "consul:8500"
+type Config struct {
+	Port            int    `yaml:"port"`
+	ServiceName     string `yaml:"serviceName"`
+	RegistryAddress string `yaml:"registryAddress"`
+}
 
 func main() {
 	defer func() {
@@ -34,12 +36,22 @@ func main() {
 		}
 	}()
 
-	var port int
-	flag.IntVar(&port, "port", 50085, "gRPC handler port")
-	flag.Parse()
+	data, err := os.ReadFile("../config.yaml")
+	if err != nil {
+		log.Fatalf("error reading configuration file: %v", err)
+	}
+
+	var conf Config
+	if err = yaml.Unmarshal(data, &conf); err != nil {
+		log.Fatalf("error parsing configuration data: %v", err)
+	}
+
+	port := conf.Port
+	serviceName := conf.ServiceName
+	registryAddress := conf.RegistryAddress
 
 	// Setting up registry
-	registry, err := consul.NewRegistry(RegistryAddress)
+	registry, err := consul.NewRegistry(registryAddress)
 	if err != nil {
 		panic(err)
 	}

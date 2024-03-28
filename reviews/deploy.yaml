@@ -19,3 +19,6 @@ spec:
           image: jmurv/reviews_svc:latest
           ports:
             - containerPort: 50085
+          envFrom:
+            - secretRef:
+                name: reviews-db-credentials

@@ -1,0 +1,3 @@
+port: 50085
+serviceName: "reviews"
+registryAddress: "consul:8500"

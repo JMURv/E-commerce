@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reviews-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: reviews-db
+  template:
+    metadata:
+      labels:
+        app: reviews-db
+    spec:
+      containers:
+        - name: postgresql
+          image: postgres:latest
+          ports:
+            - containerPort: 5432
+          envFrom:
+            - secretRef:
+                name: reviews-db-credentials
