@@ -1,6 +1,6 @@
-port: 50085
-serviceName: "reviews"
+port: 50100
+serviceName: "query"
 registryAddr: "localhost:8500"
 redisAddr: "localhost:32712"
 redisPass: ""
-mongoAddr: "localhost:32133"
+mongoAddr: "mongodb://localhost:32133"

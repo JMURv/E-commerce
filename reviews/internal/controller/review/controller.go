@@ -7,13 +7,14 @@ import (
 	notifygate "github.com/JMURv/e-commerce/reviews/internal/gateway/notifications"
 	repo "github.com/JMURv/e-commerce/reviews/internal/repository"
 	"github.com/JMURv/e-commerce/reviews/pkg/model"
+	"time"
 )
 
 var ErrNotFound = errors.New("not found")
 
 type CacheRepository interface {
 	GetReviewFromCache(ctx context.Context, key string) (*model.Review, error)
-	SetReviewToCache(ctx context.Context, r *model.Review) error
+	SetReviewToCache(ctx context.Context, t time.Duration, r *model.Review) error
 }
 
 type reviewRepository interface {
@@ -46,11 +47,10 @@ func (c *Controller) GetReviewByID(ctx context.Context, reviewID uint64) (*model
 		return nil, ErrNotFound
 	}
 
-	err = c.cache.SetReviewToCache(ctx, r)
+	err = c.cache.SetReviewToCache(ctx, time.Hour, r)
 	if err != nil {
 		return r, err
 	}
-
 	return r, nil
 }
 
@@ -71,17 +71,22 @@ func (c *Controller) GetReviewsByUserID(ctx context.Context, userID uint64) (*[]
 }
 
 func (c *Controller) CreateReview(ctx context.Context, review *model.Review) (*model.Review, error) {
-	res, err := c.repo.Create(ctx, review)
+	r, err := c.repo.Create(ctx, review)
 	if err != nil && errors.Is(err, repo.ErrNotFound) {
 		return nil, ErrNotFound
 	}
 
+	// Save review to cache
+	err = c.cache.SetReviewToCache(ctx, time.Hour, r)
+	if err != nil {
+		return r, err
+	}
 	// Create notification for new review
-	err = c.notifyGateway.CreateReviewNotification(ctx, res)
+	err = c.notifyGateway.CreateReviewNotification(ctx, r)
 	if err != nil {
 		return nil, err
 	}
-	return res, err
+	return r, err
 }
 
 func (c *Controller) UpdateReview(ctx context.Context, reviewID uint64, newData *model.Review) (*model.Review, error) {

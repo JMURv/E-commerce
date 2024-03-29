@@ -35,13 +35,13 @@ func (c *Cache) GetReviewFromCache(ctx context.Context, key string) (*model.Revi
 	return nil, ErrNotFoundInCache
 }
 
-func (c *Cache) SetReviewToCache(ctx context.Context, r *model.Review) error {
+func (c *Cache) SetReviewToCache(ctx context.Context, t time.Duration, r *model.Review) error {
 	newDataJSON, err := json.Marshal(r)
 	if err != nil {
 		return err
 	}
 
-	if err = c.cli.Set(ctx, fmt.Sprintf("review:%d", r.ID), newDataJSON, time.Hour).Err(); err != nil {
+	if err = c.cli.Set(ctx, fmt.Sprintf("review:%d", r.ID), newDataJSON, t).Err(); err != nil {
 		return err
 	}
 	return nil
