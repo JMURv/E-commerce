@@ -65,7 +65,7 @@ func main() {
 	serviceName := conf.ServiceName
 	registryAddress := conf.RegistryAddr
 
-	// Setting up redis
+	// Setting up redis TODO: Убрать подклбчение в реализацию
 	redisCli := redis.NewClient(&redis.Options{
 		Addr:     conf.RedisAddr,
 		Password: conf.RedisPass,

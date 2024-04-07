@@ -5,46 +5,17 @@ import (
 	"fmt"
 	"github.com/JMURv/e-commerce/pkg/discovery"
 	"github.com/JMURv/e-commerce/pkg/discovery/consul"
-	"github.com/go-redis/redis/v8"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
-	"go.mongodb.org/mongo-driver/mongo/readpref"
-	"gopkg.in/yaml.v3"
+	"github.com/JMURv/e-commerce/query/internal/broker/kafka"
+	redis "github.com/JMURv/e-commerce/query/internal/cache"
+	ctrl "github.com/JMURv/e-commerce/query/internal/controller"
+	"github.com/JMURv/e-commerce/query/internal/repository/db"
+	config "github.com/JMURv/e-commerce/query/pkg/config"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 )
-
-type Config struct {
-	Port         int    `yaml:"port"`
-	ServiceName  string `yaml:"serviceName"`
-	RegistryAddr string `yaml:"registryAddr"`
-	RedisAddr    string `yaml:"redisAddr"`
-	RedisPass    string `yaml:"redisPass"`
-	MongoAddr    string `yaml:"mongoAddr"`
-}
-
-func loadConfig() (*Config, error) {
-	var conf Config
-
-	data, err := os.ReadFile("../dev.config.yaml")
-	if err != nil {
-		return nil, err
-	}
-
-	if err = yaml.Unmarshal(data, &conf); err != nil {
-		return nil, err
-	}
-	return &conf, nil
-}
-
-type Trainer struct {
-	Name string
-	Age  int
-	City string
-}
 
 func main() {
 	defer func() {
@@ -54,7 +25,7 @@ func main() {
 		}
 	}()
 
-	conf, err := loadConfig()
+	conf, err := config.LoadConfig()
 	if err != nil {
 		log.Fatalf("failed to parse config: %v", err)
 	}
@@ -63,29 +34,6 @@ func main() {
 	port := conf.Port
 	serviceName := conf.ServiceName
 	registryAddress := conf.RegistryAddr
-	mongoAddr := conf.MongoAddr
-
-	// Setting up mongo
-	clientOpts := options.Client().ApplyURI(mongoAddr)
-	mongoCli, err := mongo.Connect(ctx, clientOpts)
-	if err != nil {
-		log.Fatal(err)
-	}
-	if err = mongoCli.Ping(ctx, readpref.Primary()); err != nil {
-		log.Fatalf("Failed to connect to MongoDB: %v", err)
-	}
-
-	// Setting up redis
-	redisCli := redis.NewClient(&redis.Options{
-		Addr:     conf.RedisAddr,
-		Password: conf.RedisPass,
-		DB:       0,
-	})
-	pong, err := redisCli.Ping(context.Background()).Result()
-	if err != nil {
-		log.Fatalf("Failed to connect to Redis: %v", err)
-	}
-	fmt.Println("Connected to Redis:", pong)
 
 	// Setting up registry
 	registry, err := consul.NewRegistry(registryAddress)
@@ -108,8 +56,10 @@ func main() {
 	}()
 
 	// Setting up main app
-	//repo := db.New()
-	//svc := controller.New(repo, cache.New(redisCli), notifygate.New(registry))
+	broker := kafka.New(conf.KafkaAddr)
+	cache := redis.New(conf.RedisAddr, conf.RedisPass)
+	repo := db.New(conf.MongoAddr)
+	svc := ctrl.New(repo, cache)
 	//h := handler.New(svc)
 	//
 	//lis, err := net.Listen("tcp", fmt.Sprintf(":%v", port))
@@ -128,9 +78,14 @@ func main() {
 		signal.Notify(c, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 		<-c
 		log.Println("Shutting down gracefully...")
-		registry.Deregister(ctx, instanceID, serviceName)
-		redisCli.Close()
-		mongoCli.Disconnect(ctx)
+
+		repo.Close()
+		cache.Close()
+		broker.Close()
+		if err = registry.Deregister(ctx, instanceID, serviceName); err != nil {
+			log.Printf("Error deregistering service: %v", err)
+		}
+
 		os.Exit(0)
 	}()
 

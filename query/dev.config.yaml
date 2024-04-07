@@ -4,3 +4,10 @@ registryAddr: "localhost:8500"
 redisAddr: "localhost:32712"
 redisPass: ""
 mongoAddr: "mongodb://localhost:32133"
+kafka:
+  globalTopics: ["users", "reviews", "items", "notifications", "favorites"]
+  kafkaAddr: "localhost:9092"
+  topics:
+    create: "query.create"
+    delete: "query.delete"
+    update: "query.update"
