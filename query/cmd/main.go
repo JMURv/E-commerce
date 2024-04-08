@@ -56,7 +56,7 @@ func main() {
 	}()
 
 	// Setting up main app
-	broker := kafka.New(conf.KafkaAddr)
+	broker := kafka.New(conf.Kafka.Addrs, conf)
 	cache := redis.New(conf.RedisAddr, conf.RedisPass)
 	repo := db.New(conf.MongoAddr)
 	svc := ctrl.New(repo, cache)

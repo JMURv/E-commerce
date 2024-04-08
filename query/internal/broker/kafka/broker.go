@@ -1,58 +1,66 @@
 package kafka
 
 import (
+	"context"
 	"github.com/IBM/sarama"
-	_ "github.com/JMURv/e-commerce/query/pkg/config"
+	conf "github.com/JMURv/e-commerce/query/pkg/config"
 	"log"
 )
 
 type Broker struct {
-	consumer sarama.Consumer
-	cfg      *config.Config
+	cfg                *conf.Config
+	consumer           sarama.Consumer
+	partitionConsumers map[string]sarama.PartitionConsumer
 }
 
-func New(addr string) *Broker {
+func New(addrs []string, conf *conf.Config) *Broker {
 	consumerConfig := sarama.NewConfig()
 	consumerConfig.Consumer.Return.Errors = true
-	brokers := []string{addr}
 
-	consumer, err := sarama.NewConsumer(brokers, consumerConfig)
+	consumer, err := sarama.NewConsumer(addrs, consumerConfig)
 	if err != nil {
 		log.Fatalf("Error creating Kafka consumer: %v", err)
 	}
 
-	// Subscribe to Kafka topics
-	topics := []string{"topic1", "topic2", "topic3", "topic4", "topic5", "topic6"}
-	partitionConsumers := make(map[string]sarama.PartitionConsumer)
-	for _, topic := range topics {
-		partitionConsumer, err := consumer.ConsumePartition(topic, 0, sarama.OffsetNewest)
+	return &Broker{
+		cfg:                conf,
+		consumer:           consumer,
+		partitionConsumers: make(map[string]sarama.PartitionConsumer),
+	}
+}
+
+func (b *Broker) Start() {
+	ctx := context.Background()
+	for _, topic := range b.cfg.Kafka.Topics {
+		partitionConsumer, err := b.consumer.ConsumePartition(topic, 0, sarama.OffsetNewest)
 		if err != nil {
 			log.Fatalf("Error consuming Kafka topic %s: %v", topic, err)
 		}
-		partitionConsumers[topic] = partitionConsumer
+		b.partitionConsumers[topic] = partitionConsumer
 
 		go func(topic string, partitionConsumer sarama.PartitionConsumer) {
 			for msg := range partitionConsumer.Messages() {
 				switch msg.Topic {
-				case s.cfg.KafkaTopics.ProductCreate.TopicName:
-					s.processCreateProduct(ctx, r, msg)
-				case s.cfg.KafkaTopics.ProductUpdate.TopicName:
-					s.processUpdateProduct(ctx, r, msg)
-				case s.cfg.KafkaTopics.ProductDelete.TopicName:
-					s.processDeleteProduct(ctx, r, msg)
+				case b.cfg.Kafka.TopicName.Create:
+					b.processCreate(ctx, topic, msg)
+				case b.cfg.Kafka.TopicName.Update:
+					b.processUpdate(ctx, topic, msg)
+				case b.cfg.Kafka.TopicName.Delete:
+					b.processDelete(ctx, topic, msg)
 				}
 				log.Printf("Received message from topic %s: %s", msg.Topic, string(msg.Value))
 			}
 		}(topic, partitionConsumer)
 	}
-	return &Broker{consumer: consumer}
-}
-
-func (b *Broker) Start() {
-
 }
 
 func (b *Broker) Close() {
+	// Close all partition consumers
+	for _, topic := range b.cfg.Kafka.Topics {
+		if err := b.partitionConsumers[topic].Close(); err != nil {
+			log.Printf("Error closing Kafka partition consumer for topic %s: %v", topic, err)
+		}
+	}
 	if err := b.consumer.Close(); err != nil {
 		log.Printf("Error closing Kafka consumer: %v", err)
 	}

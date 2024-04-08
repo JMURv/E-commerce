@@ -12,7 +12,16 @@ type Config struct {
 	RedisAddr    string `yaml:"redisAddr"`
 	RedisPass    string `yaml:"redisPass"`
 	MongoAddr    string `yaml:"mongoAddr"`
-	KafkaAddr    string `yaml:"kafkaAddr"`
+
+	Kafka struct {
+		Addrs     []string `yaml:"addrs"`
+		Topics    []string `yaml:"topics"`
+		TopicName struct {
+			Create string `yaml:"create"`
+			Update string `yaml:"update"`
+			Delete string `yaml:"delete"`
+		} `yaml:"topicName"`
+	} `yaml:"kafka"`
 }
 
 func LoadConfig() (*Config, error) {

@@ -5,9 +5,9 @@ redisAddr: "localhost:32712"
 redisPass: ""
 mongoAddr: "mongodb://localhost:32133"
 kafka:
-  globalTopics: ["users", "reviews", "items", "notifications", "favorites"]
-  kafkaAddr: "localhost:9092"
-  topics:
-    create: "query.create"
-    delete: "query.delete"
-    update: "query.update"
+  addr: ["localhost:9092"]
+  topics: ["users", "reviews", "items", "notifications", "favorites"]
+  topicName:
+    create: "create"
+    update: "update"
+    delete: "delete"
