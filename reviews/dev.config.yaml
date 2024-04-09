@@ -3,4 +3,6 @@ serviceName: "reviews"
 registryAddr: "localhost:8500"
 redisAddr: "localhost:32712"
 redisPass: ""
-mongoAddr: "localhost:32133"
+kafka:
+  addr: ["localhost:9092"]
+  notificationTopic: "notifications"

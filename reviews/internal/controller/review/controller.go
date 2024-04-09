@@ -2,22 +2,27 @@ package review
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	pb "github.com/JMURv/e-commerce/api/pb/notification"
+	kafka "github.com/JMURv/e-commerce/reviews/internal/broker/kafka"
 	notifygate "github.com/JMURv/e-commerce/reviews/internal/gateway/notifications"
 	repo "github.com/JMURv/e-commerce/reviews/internal/repository"
 	"github.com/JMURv/e-commerce/reviews/pkg/model"
+	"log"
 	"time"
 )
 
 var ErrNotFound = errors.New("not found")
 
 type CacheRepository interface {
-	GetReviewFromCache(ctx context.Context, key string) (*model.Review, error)
-	SetReviewToCache(ctx context.Context, t time.Duration, r *model.Review) error
+	Get(ctx context.Context, key string) (*model.Review, error)
+	Set(ctx context.Context, t time.Duration, key string, r *model.Review) error
+	Delete(ctx context.Context, key string) error
 }
 
-type reviewRepository interface {
+type ReviewRepository interface {
 	GetByID(ctx context.Context, reviewID uint64) (*model.Review, error)
 	GetReviewsByUserID(ctx context.Context, userID uint64) (*[]*model.Review, error)
 	AggregateUserRatingByID(ctx context.Context, userID uint64) (float32, error)
@@ -27,17 +32,23 @@ type reviewRepository interface {
 }
 
 type Controller struct {
-	repo          reviewRepository
-	cache         CacheRepository
-	notifyGateway *notifygate.Gateway
+	repo   ReviewRepository
+	cache  CacheRepository
+	gate   *notifygate.Gateway
+	broker *kafka.Broker
 }
 
-func New(repo reviewRepository, cache CacheRepository, gate *notifygate.Gateway) *Controller {
-	return &Controller{repo, cache, gate}
+func New(repo ReviewRepository, cache CacheRepository, gate *notifygate.Gateway, broker *kafka.Broker) *Controller {
+	return &Controller{
+		repo:   repo,
+		cache:  cache,
+		gate:   gate,
+		broker: broker,
+	}
 }
 
 func (c *Controller) GetReviewByID(ctx context.Context, reviewID uint64) (*model.Review, error) {
-	cached, err := c.cache.GetReviewFromCache(ctx, fmt.Sprintf("review:%d", reviewID))
+	cached, err := c.cache.Get(ctx, fmt.Sprintf("review:%d", reviewID))
 	if err == nil {
 		return cached, nil
 	}
@@ -47,7 +58,7 @@ func (c *Controller) GetReviewByID(ctx context.Context, reviewID uint64) (*model
 		return nil, ErrNotFound
 	}
 
-	err = c.cache.SetReviewToCache(ctx, time.Hour, r)
+	err = c.cache.Set(ctx, time.Hour, fmt.Sprintf("review:%d", reviewID), r)
 	if err != nil {
 		return r, err
 	}
@@ -77,14 +88,25 @@ func (c *Controller) CreateReview(ctx context.Context, review *model.Review) (*m
 	}
 
 	// Save review to cache
-	err = c.cache.SetReviewToCache(ctx, time.Hour, r)
+	err = c.cache.Set(ctx, time.Hour, fmt.Sprintf("review:%d", r.ID), r)
 	if err != nil {
 		return r, err
 	}
+
 	// Create notification for new review
-	err = c.notifyGateway.CreateReviewNotification(ctx, r)
+	bytes, err := json.Marshal(pb.Notification{
+		Type:       "new_review",
+		UserId:     r.UserID,
+		ReceiverId: r.ReviewedUserID,
+		Message:    "New review received!",
+	})
 	if err != nil {
-		return nil, err
+		log.Printf("Error notification encoding: %v", err)
+		return r, err
+	}
+
+	if err = c.broker.NewReviewNotification(r.ID, bytes); err != nil {
+		log.Println(err)
 	}
 	return r, err
 }
@@ -99,6 +121,11 @@ func (c *Controller) UpdateReview(ctx context.Context, reviewID uint64, newData 
 
 func (c *Controller) DeleteReview(ctx context.Context, reviewID uint64) error {
 	err := c.repo.Delete(ctx, reviewID)
+	if err != nil {
+		return err
+	}
+
+	err = c.cache.Delete(ctx, fmt.Sprintf("review:%d", reviewID))
 	if err != nil {
 		return err
 	}
