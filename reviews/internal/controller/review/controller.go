@@ -6,8 +6,6 @@ import (
 	"errors"
 	"fmt"
 	pb "github.com/JMURv/e-commerce/api/pb/notification"
-	kafka "github.com/JMURv/e-commerce/reviews/internal/broker/kafka"
-	notifygate "github.com/JMURv/e-commerce/reviews/internal/gateway/notifications"
 	repo "github.com/JMURv/e-commerce/reviews/internal/repository"
 	"github.com/JMURv/e-commerce/reviews/pkg/model"
 	"log"
@@ -15,6 +13,10 @@ import (
 )
 
 var ErrNotFound = errors.New("not found")
+
+type BrokerRepository interface {
+	NewReviewNotification(reviewID uint64, notification []byte) error
+}
 
 type CacheRepository interface {
 	Get(ctx context.Context, key string) (*model.Review, error)
@@ -34,15 +36,13 @@ type ReviewRepository interface {
 type Controller struct {
 	repo   ReviewRepository
 	cache  CacheRepository
-	gate   *notifygate.Gateway
-	broker *kafka.Broker
+	broker BrokerRepository
 }
 
-func New(repo ReviewRepository, cache CacheRepository, gate *notifygate.Gateway, broker *kafka.Broker) *Controller {
+func New(repo ReviewRepository, cache CacheRepository, broker BrokerRepository) *Controller {
 	return &Controller{
 		repo:   repo,
 		cache:  cache,
-		gate:   gate,
 		broker: broker,
 	}
 }

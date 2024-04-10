@@ -1,5 +1,8 @@
 port: 50085
 serviceName: "reviews"
-registryAddress: "consul:8500"
-redisAddr: "redis:32712"
+registryAddress: "consul:8500" #<имя сервиса>.<namespace>.svc.cluster.local<:port>
+redisAddr: "redis-reviews-service.default.svc.cluster.local:6379"#redis-reviews-service.default.svc.cluster.local:6379
 redisPass: ""
+kafka:
+  addr: ["localhost:9092"]
+  notificationTopic: "notifications"

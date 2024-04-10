@@ -12,8 +12,8 @@ type Broker struct {
 	producer sarama.AsyncProducer
 }
 
-func New(addrs []string, conf *conf.Config) *Broker {
-	producer, err := sarama.NewAsyncProducer(addrs, nil)
+func New(conf *conf.Config) *Broker {
+	producer, err := sarama.NewAsyncProducer(conf.Kafka.Addrs, nil)
 	if err != nil {
 		log.Fatalf("Error creating Kafka producer: %v", err)
 	}

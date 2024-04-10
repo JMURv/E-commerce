@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: reviews-db
+  name: reviews-db-deploy
 spec:
   replicas: 1
   selector:
@@ -13,7 +13,7 @@ spec:
         app: reviews-db
     spec:
       containers:
-        - name: postgresql
+        - name: reviews-db-pod
           image: postgres:15.0-alpine
           ports:
             - containerPort: 5432

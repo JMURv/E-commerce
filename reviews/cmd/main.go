@@ -8,7 +8,6 @@ import (
 	kafka "github.com/JMURv/e-commerce/reviews/internal/broker/kafka"
 	redis "github.com/JMURv/e-commerce/reviews/internal/cache/redis"
 	ctrl "github.com/JMURv/e-commerce/reviews/internal/controller/review"
-	notifygate "github.com/JMURv/e-commerce/reviews/internal/gateway/notifications"
 	handler "github.com/JMURv/e-commerce/reviews/internal/handler/grpc"
 	cfg "github.com/JMURv/e-commerce/reviews/pkg/config"
 	//mem "github.com/JMURv/e-commerce/reviews/internal/repository/memory"
@@ -64,10 +63,10 @@ func main() {
 	}()
 
 	// Setting up main app
-	broker := kafka.New(conf.Kafka.Addrs, conf)
+	broker := kafka.New(conf)
 	cache := redis.New(conf.RedisAddr, conf.RedisPass)
 	repo := db.New()
-	svc := ctrl.New(repo, cache, notifygate.New(registry), broker)
+	svc := ctrl.New(repo, cache, broker)
 	h := handler.New(svc)
 
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%v", port))
@@ -77,16 +76,16 @@ func main() {
 
 	srv := grpc.NewServer()
 	pb.RegisterReviewServiceServer(srv, h)
-
 	reflection.Register(srv)
 
-	// Setting up signal handling for graceful shutdown
+	// Graceful shutdown
 	go func() {
 		c := make(chan os.Signal, 1)
 		signal.Notify(c, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 		<-c
 		log.Println("Shutting down gracefully...")
 
+		broker.Close()
 		cache.Close()
 		if err = registry.Deregister(ctx, instanceID, serviceName); err != nil {
 			log.Printf("Error deregistering service: %v", err)
@@ -94,6 +93,7 @@ func main() {
 		os.Exit(0)
 	}()
 
+	// Start server
 	log.Printf("%v service is listening", serviceName)
 	srv.Serve(lis)
 }
