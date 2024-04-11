@@ -4,50 +4,40 @@ import (
 	"context"
 	"fmt"
 	repo "github.com/JMURv/e-commerce/reviews/internal/repository"
+	conf "github.com/JMURv/e-commerce/reviews/pkg/config"
 	"github.com/JMURv/e-commerce/reviews/pkg/model"
-	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"log"
-	"os"
 )
-
-var DSN string
-
-func init() {
-	if err := godotenv.Load("../.env"); err == nil {
-		DSN = os.Getenv("DSN")
-		return
-	}
-
-	DSN = fmt.Sprintf(
-		"postgres://%s:%s@%s:%s/%s",
-		os.Getenv("POSTGRES_USER"),
-		os.Getenv("POSTGRES_PASSWORD"),
-		os.Getenv("POSTGRES_HOST"),
-		os.Getenv("POSTGRES_PORT"),
-		os.Getenv("POSTGRES_DB"),
-	)
-}
 
 type Repository struct {
 	conn *gorm.DB
 }
 
-func New() *Repository {
-	db, err := gorm.Open(postgres.Open(DSN), &gorm.Config{})
+func New(conf *conf.Config) *Repository {
+	DSN := fmt.Sprintf(
+		"postgres://%s:%s@%s:%v/%s",
+		conf.DB.User,
+		conf.DB.Password,
+		conf.DB.Host,
+		conf.DB.Port,
+		conf.DB.Database,
+	)
+
+	conn, err := gorm.Open(postgres.Open(DSN), &gorm.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	err = db.AutoMigrate(
+	err = conn.AutoMigrate(
 		&model.Review{},
 	)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	return &Repository{conn: db}
+	return &Repository{conn: conn}
 }
 
 func (r *Repository) GetByID(_ context.Context, reviewID uint64) (*model.Review, error) {

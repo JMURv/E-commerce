@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/JMURv/e-commerce/reviews/pkg/model"
 	"github.com/go-redis/redis/v8"
 	"log"
@@ -23,12 +22,11 @@ func New(addr, pass string) *Cache {
 		Password: pass,
 		DB:       0,
 	})
-	pong, err := redisCli.Ping(context.Background()).Result()
+	_, err := redisCli.Ping(context.Background()).Result()
 	if err != nil {
 		log.Fatalf("Failed to connect to Redis: %v", err)
 	}
 
-	fmt.Println("Connected to Redis:", pong)
 	return &Cache{cli: redisCli}
 }
 

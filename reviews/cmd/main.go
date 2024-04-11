@@ -24,6 +24,8 @@ import (
 	pb "github.com/JMURv/e-commerce/api/pb/review"
 )
 
+const AppState = "dev" // dev || prod
+
 func main() {
 	defer func() {
 		if err := recover(); err != nil {
@@ -32,7 +34,8 @@ func main() {
 		}
 	}()
 
-	conf, err := cfg.LoadConfig()
+	// Load configuration
+	conf, err := cfg.LoadConfig(AppState)
 	if err != nil {
 		log.Fatalf("failed to parse config: %v", err)
 	}
@@ -65,7 +68,8 @@ func main() {
 	// Setting up main app
 	broker := kafka.New(conf)
 	cache := redis.New(conf.RedisAddr, conf.RedisPass)
-	repo := db.New()
+	repo := db.New(conf)
+
 	svc := ctrl.New(repo, cache, broker)
 	h := handler.New(svc)
 
