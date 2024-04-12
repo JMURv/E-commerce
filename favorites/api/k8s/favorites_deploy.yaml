@@ -1,0 +1,24 @@
+#file: noinspection YAMLSchemaValidation
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: favorites-microsvc-deploy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: favorites-microsvc
+  template:
+    metadata:
+      labels:
+        app: favorites-microsvc
+    spec:
+      containers:
+        - name: favorites-microsvc-pod
+          imagePullPolicy: Always
+          image: jmurv/favorites_svc:1.0
+          ports:
+            - containerPort: 50075
+          envFrom:
+            - secretRef:
+                name: favorites-db-credentials

@@ -1,11 +1,12 @@
 package db
 
 import (
+	"context"
 	repo "github.com/JMURv/e-commerce/items/internal/repository"
 	"github.com/JMURv/e-commerce/items/pkg/model"
 )
 
-func (r *Repository) GetAllCategories() ([]*model.Category, error) {
+func (r *Repository) GetAllCategories(_ context.Context) ([]*model.Category, error) {
 	var categories []*model.Category
 	if err := r.conn.Preload("ParentCategory").Find(&categories).Error; err != nil {
 		return categories, err
@@ -13,7 +14,7 @@ func (r *Repository) GetAllCategories() ([]*model.Category, error) {
 	return categories, nil
 }
 
-func (r *Repository) GetCategoryByID(categoryID uint64) (*model.Category, error) {
+func (r *Repository) GetCategoryByID(_ context.Context, categoryID uint64) (*model.Category, error) {
 	var category model.Category
 	if err := r.conn.Preload("ParentCategory").Where("ID = ?", categoryID).First(&category).Error; err != nil {
 		return &category, err
@@ -21,7 +22,7 @@ func (r *Repository) GetCategoryByID(categoryID uint64) (*model.Category, error)
 	return &category, nil
 }
 
-func (r *Repository) CreateCategory(c *model.Category) (*model.Category, error) {
+func (r *Repository) CreateCategory(_ context.Context, c *model.Category) (*model.Category, error) {
 	if c.Name == "" {
 		return nil, repo.ErrCategoryNameIsRequired
 	}
@@ -35,8 +36,8 @@ func (r *Repository) CreateCategory(c *model.Category) (*model.Category, error) 
 	return c, nil
 }
 
-func (r *Repository) UpdateCategory(categoryID uint64, newData *model.Category) (*model.Category, error) {
-	category, err := r.GetCategoryByID(categoryID)
+func (r *Repository) UpdateCategory(ctx context.Context, categoryID uint64, newData *model.Category) (*model.Category, error) {
+	category, err := r.GetCategoryByID(ctx, categoryID)
 	if err != nil {
 		return category, err
 	}
@@ -59,7 +60,7 @@ func (r *Repository) UpdateCategory(categoryID uint64, newData *model.Category) 
 	return category, nil
 }
 
-func (r *Repository) DeleteCategory(categoryID uint64) error {
+func (r *Repository) DeleteCategory(_ context.Context, categoryID uint64) error {
 	var category model.Category
 	if err := r.conn.Delete(&category, categoryID).Error; err != nil {
 		return err

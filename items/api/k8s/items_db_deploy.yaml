@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: items-db-deploy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: items-db
+  template:
+    metadata:
+      labels:
+        app: items-db
+    spec:
+      containers:
+        - name: items-db-pod
+          image: postgres:15.0-alpine
+          ports:
+            - containerPort: 5432
+          envFrom:
+            - secretRef:
+                name: items-db-credentials

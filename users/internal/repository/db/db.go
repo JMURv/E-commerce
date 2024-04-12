@@ -2,46 +2,42 @@ package db
 
 import (
 	"context"
+	"fmt"
 	repo "github.com/JMURv/e-commerce/users/internal/repository"
+	conf "github.com/JMURv/e-commerce/users/pkg/config"
 	"github.com/JMURv/e-commerce/users/pkg/model"
-	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"log"
-	"os"
 )
-
-var DSN string
-
-func init() {
-	if err := godotenv.Load("../../.env"); err != nil {
-		log.Fatal("Error loading .env file")
-		return
-	}
-	DSN = os.Getenv("DSN")
-}
 
 type Repository struct {
 	conn *gorm.DB
 }
 
-func New() *Repository {
-	var err error
-	var db *gorm.DB
+func New(conf *conf.Config) *Repository {
+	DSN := fmt.Sprintf(
+		"postgres://%s:%s@%s:%v/%s",
+		conf.DB.User,
+		conf.DB.Password,
+		conf.DB.Host,
+		conf.DB.Port,
+		conf.DB.Database,
+	)
 
-	db, err = gorm.Open(postgres.Open(DSN), &gorm.Config{})
+	conn, err := gorm.Open(postgres.Open(DSN), &gorm.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	err = db.AutoMigrate(
+	err = conn.AutoMigrate(
 		&model.User{},
 	)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	return &Repository{conn: db}
+	return &Repository{conn: conn}
 }
 
 func (r *Repository) GetUsersList(_ context.Context) (*[]model.User, error) {

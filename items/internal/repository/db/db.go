@@ -3,32 +3,36 @@ package db
 import (
 	"context"
 	"errors"
+	"fmt"
 	repo "github.com/JMURv/e-commerce/items/internal/repository"
+	conf "github.com/JMURv/e-commerce/items/pkg/config"
 	"github.com/JMURv/e-commerce/items/pkg/model"
-	"github.com/joho/godotenv"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"log"
-	"os"
 )
-
-var DSN string
 
 type Repository struct {
 	conn *gorm.DB
 }
 
-func New() *Repository {
-	var err error
-	var db *gorm.DB
+func New(conf *conf.Config) *Repository {
+	DSN := fmt.Sprintf(
+		"postgres://%s:%s@%s:%v/%s",
+		conf.DB.User,
+		conf.DB.Password,
+		conf.DB.Host,
+		conf.DB.Port,
+		conf.DB.Database,
+	)
 
-	db, err = gorm.Open(postgres.Open(DSN), &gorm.Config{})
+	conn, err := gorm.Open(postgres.Open(DSN), &gorm.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	err = db.AutoMigrate(
+	err = conn.AutoMigrate(
 		&model.Item{},
 		&model.Category{},
 		&model.Tag{},
@@ -37,7 +41,12 @@ func New() *Repository {
 		log.Fatal(err)
 	}
 
-	return &Repository{conn: db}
+	return &Repository{conn: conn}
+}
+
+func (r *Repository) ListItem(_ context.Context) ([]*model.Item, error) {
+	//TODO implement me
+	panic("implement me")
 }
 
 func (r *Repository) GetItemByID(_ context.Context, id uint64) (*model.Item, error) {
@@ -49,12 +58,12 @@ func (r *Repository) GetItemByID(_ context.Context, id uint64) (*model.Item, err
 
 }
 
-func (r *Repository) ListUserItemsByID(_ context.Context, userID uint64) (*[]model.Item, error) {
-	var items []model.Item
+func (r *Repository) ListUserItemsByID(_ context.Context, userID uint64) ([]*model.Item, error) {
+	var items []*model.Item
 	if err := r.conn.Preload("Category").Preload("Tags").Where("UserID=?", userID).Find(&items).Error; err != nil {
 		return nil, repo.ErrNotFound
 	}
-	return &items, nil
+	return items, nil
 }
 
 func (r *Repository) CreateItem(_ context.Context, i *model.Item) (*model.Item, error) {
@@ -144,12 +153,4 @@ func (r *Repository) DeleteItem(_ context.Context, itemID uint64) error {
 		return err
 	}
 	return nil
-}
-
-func init() {
-	if err := godotenv.Load("../.env"); err != nil {
-		log.Fatal("Error loading .env file")
-		return
-	}
-	DSN = os.Getenv("DSN")
 }

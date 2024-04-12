@@ -17,7 +17,7 @@ func New() *Repository {
 	return &Repository{data: map[uint64]*model.Notification{}}
 }
 
-func (r *Repository) ListUserNotifications(_ context.Context, userID uint64) ([]*model.Notification, error) {
+func (r *Repository) ListUserNotifications(_ context.Context, userID uint64) (*[]*model.Notification, error) {
 	r.RLock()
 	defer r.RUnlock()
 	n := make([]*model.Notification, 0, len(r.data))
@@ -26,7 +26,7 @@ func (r *Repository) ListUserNotifications(_ context.Context, userID uint64) ([]
 			n = append(n, v)
 		}
 	}
-	return n, nil
+	return &n, nil
 }
 
 func (r *Repository) CreateNotification(_ context.Context, notify *model.Notification) (*model.Notification, error) {

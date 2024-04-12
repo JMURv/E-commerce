@@ -1,4 +1,4 @@
-package cacheutil
+package cache
 
 import (
 	"context"
@@ -31,8 +31,7 @@ func New(addr, pass string) *Cache {
 }
 
 func (c *Cache) Close() {
-	err := c.cli.Close()
-	if err != nil {
+	if err := c.cli.Close(); err != nil {
 		log.Println("Failed to close connection to Redis: ", err)
 	}
 }

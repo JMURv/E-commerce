@@ -2,12 +2,16 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	pb "github.com/JMURv/e-commerce/api/pb/chat"
+	kafka "github.com/JMURv/e-commerce/chat/internal/broker/kafka"
 	ctrl "github.com/JMURv/e-commerce/chat/internal/controller/chat"
 	hdlr "github.com/JMURv/e-commerce/chat/internal/handler/grpc"
-	mem "github.com/JMURv/e-commerce/chat/internal/repository/memory"
+	db "github.com/JMURv/e-commerce/chat/internal/repository/db"
+
+	redis "github.com/JMURv/e-commerce/chat/internal/cache/redis"
+	//mem "github.com/JMURv/e-commerce/chat/internal/repository/memory"
+	cfg "github.com/JMURv/e-commerce/chat/pkg/config"
 	"github.com/JMURv/e-commerce/pkg/discovery"
 	"github.com/JMURv/e-commerce/pkg/discovery/consul"
 	"google.golang.org/grpc"
@@ -20,7 +24,7 @@ import (
 	"time"
 )
 
-const serviceName = "chat"
+const configName = "dev.config"
 
 func main() {
 	defer func() {
@@ -30,18 +34,23 @@ func main() {
 		}
 	}()
 
-	var port int
-	flag.IntVar(&port, "port", 8080, "gRPC handler port")
-	flag.Parse()
+	// Load configuration
+	conf, err := cfg.LoadConfig(configName)
+	if err != nil {
+		log.Fatalf("failed to parse config: %v", err)
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	port := conf.Port
+	serviceName := conf.ServiceName
 
 	// Setting up registry
-	registry, err := consul.NewRegistry("localhost:8500")
+	registry, err := consul.NewRegistry(conf.RegistryAddr)
 	if err != nil {
 		panic(err)
 	}
 
 	// Register service
-	ctx := context.Background()
 	instanceID := discovery.GenerateInstanceID(serviceName)
 	if err = registry.Register(ctx, instanceID, serviceName, fmt.Sprintf("localhost:%d", port)); err != nil {
 		panic(err)
@@ -56,8 +65,11 @@ func main() {
 	}()
 
 	// Setting up main app
-	repo := mem.New()
-	svc := ctrl.New(repo)
+	broker := kafka.New(conf)
+	cache := redis.New(conf.RedisAddr, conf.RedisPass)
+	repo := db.New(conf)
+
+	svc := ctrl.New(repo, cache, broker)
 	h := hdlr.New(svc)
 
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
@@ -71,15 +83,24 @@ func main() {
 	pb.RegisterRoomsServer(srv, h)
 	reflection.Register(srv)
 
+	// Graceful shutdown
 	go func() {
 		c := make(chan os.Signal, 1)
 		signal.Notify(c, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 		<-c
 		log.Println("Shutting down gracefully...")
-		registry.Deregister(ctx, instanceID, serviceName)
+
+		cancel()
+		broker.Close()
+		cache.Close()
+		if err = registry.Deregister(ctx, instanceID, serviceName); err != nil {
+			log.Printf("Error deregistering service: %v", err)
+		}
+		srv.GracefulStop()
 		os.Exit(0)
 	}()
 
+	// Start server
 	log.Printf("%v service is listening", serviceName)
 	srv.Serve(lis)
 }

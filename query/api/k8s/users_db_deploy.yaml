@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: users-db-deploy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: users-db
+  template:
+    metadata:
+      labels:
+        app: users-db
+    spec:
+      containers:
+        - name: users-db-pod
+          image: postgres:15.0-alpine
+          ports:
+            - containerPort: 5432
+          envFrom:
+            - secretRef:
+                name: users-db-credentials

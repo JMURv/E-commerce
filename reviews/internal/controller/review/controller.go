@@ -12,6 +12,8 @@ import (
 	"time"
 )
 
+const cacheKey = "review:%v"
+
 var ErrNotFound = errors.New("not found")
 
 type BrokerRepository interface {
@@ -48,7 +50,7 @@ func New(repo ReviewRepository, cache CacheRepository, broker BrokerRepository) 
 }
 
 func (c *Controller) GetReviewByID(ctx context.Context, reviewID uint64) (*model.Review, error) {
-	cached, err := c.cache.Get(ctx, fmt.Sprintf("review:%d", reviewID))
+	cached, err := c.cache.Get(ctx, fmt.Sprintf(cacheKey, reviewID))
 	if err == nil {
 		return cached, nil
 	}
@@ -58,7 +60,7 @@ func (c *Controller) GetReviewByID(ctx context.Context, reviewID uint64) (*model
 		return nil, ErrNotFound
 	}
 
-	err = c.cache.Set(ctx, time.Hour, fmt.Sprintf("review:%d", reviewID), r)
+	err = c.cache.Set(ctx, time.Hour, fmt.Sprintf(cacheKey, reviewID), r)
 	if err != nil {
 		return r, err
 	}
@@ -70,7 +72,7 @@ func (c *Controller) AggregateUserRatingByID(ctx context.Context, userID uint64)
 	if err != nil && errors.Is(err, repo.ErrNotFound) {
 		return 0.0, ErrNotFound
 	}
-	return r, err
+	return r, nil
 }
 
 func (c *Controller) GetReviewsByUserID(ctx context.Context, userID uint64) (*[]*model.Review, error) {
@@ -78,37 +80,38 @@ func (c *Controller) GetReviewsByUserID(ctx context.Context, userID uint64) (*[]
 	if err != nil && errors.Is(err, repo.ErrNotFound) {
 		return nil, ErrNotFound
 	}
-	return r, err
+	return r, nil
 }
 
 func (c *Controller) CreateReview(ctx context.Context, review *model.Review) (*model.Review, error) {
-	r, err := c.repo.Create(ctx, review)
+	res, err := c.repo.Create(ctx, review)
+	// TODO: Check for errs
 	if err != nil && errors.Is(err, repo.ErrNotFound) {
 		return nil, ErrNotFound
 	}
 
 	// Save review to cache
-	err = c.cache.Set(ctx, time.Hour, fmt.Sprintf("review:%d", r.ID), r)
+	err = c.cache.Set(ctx, time.Hour, fmt.Sprintf(cacheKey, res.ID), res)
 	if err != nil {
-		return r, err
+		return res, err
 	}
 
 	// Create notification for new review
 	bytes, err := json.Marshal(pb.Notification{
 		Type:       "new_review",
-		UserId:     r.UserID,
-		ReceiverId: r.ReviewedUserID,
+		UserId:     res.UserID,
+		ReceiverId: res.ReviewedUserID,
 		Message:    "New review received!",
 	})
 	if err != nil {
 		log.Printf("Error notification encoding: %v", err)
-		return r, err
+		return res, err
 	}
 
-	if err = c.broker.NewReviewNotification(r.ID, bytes); err != nil {
+	if err = c.broker.NewReviewNotification(res.ID, bytes); err != nil {
 		log.Println(err)
 	}
-	return r, err
+	return res, nil
 }
 
 func (c *Controller) UpdateReview(ctx context.Context, reviewID uint64, newData *model.Review) (*model.Review, error) {
@@ -116,17 +119,20 @@ func (c *Controller) UpdateReview(ctx context.Context, reviewID uint64, newData 
 	if err != nil && errors.Is(err, repo.ErrNotFound) {
 		return nil, ErrNotFound
 	}
-	return res, err
+
+	err = c.cache.Set(ctx, time.Hour, fmt.Sprintf(cacheKey, res.ID), res)
+	if err != nil {
+		return res, err
+	}
+	return res, nil
 }
 
 func (c *Controller) DeleteReview(ctx context.Context, reviewID uint64) error {
-	err := c.repo.Delete(ctx, reviewID)
-	if err != nil {
+	if err := c.repo.Delete(ctx, reviewID); err != nil {
 		return err
 	}
 
-	err = c.cache.Delete(ctx, fmt.Sprintf("review:%d", reviewID))
-	if err != nil {
+	if err := c.cache.Delete(ctx, fmt.Sprintf(cacheKey, reviewID)); err != nil {
 		return err
 	}
 	return nil

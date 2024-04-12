@@ -2,7 +2,9 @@ package db
 
 import (
 	"context"
+	"fmt"
 	repo "github.com/JMURv/e-commerce/chat/internal/repository"
+	conf "github.com/JMURv/e-commerce/chat/pkg/config"
 	mdl "github.com/JMURv/e-commerce/chat/pkg/model"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -10,22 +12,26 @@ import (
 	"time"
 )
 
-var DSN string
-
 type Repository struct {
 	conn *gorm.DB
 }
 
-func New() *Repository {
-	var err error
-	var db *gorm.DB
+func New(conf *conf.Config) *Repository {
+	DSN := fmt.Sprintf(
+		"postgres://%s:%s@%s:%v/%s",
+		conf.DB.User,
+		conf.DB.Password,
+		conf.DB.Host,
+		conf.DB.Port,
+		conf.DB.Database,
+	)
 
-	db, err = gorm.Open(postgres.Open(DSN), &gorm.Config{})
+	conn, err := gorm.Open(postgres.Open(DSN), &gorm.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	err = db.AutoMigrate(
+	err = conn.AutoMigrate(
 		&mdl.Message{},
 		&mdl.Room{},
 	)
@@ -33,7 +39,7 @@ func New() *Repository {
 		log.Fatal(err)
 	}
 
-	return &Repository{conn: db}
+	return &Repository{conn: conn}
 }
 
 func (r *Repository) CreateRoom(_ context.Context, room *mdl.Room) (*mdl.Room, error) {

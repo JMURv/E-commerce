@@ -1,0 +1,14 @@
+port: 50080
+serviceName: "items"
+registryAddr: "localhost:8500"
+db:
+  host: "localhost"
+  port: 5432
+  user: "postgres"
+  password: "794613825Zx!"
+  database: "items_db"
+redisAddr: "localhost:6379"
+redisPass: ""
+kafka:
+  addrs: [ "localhost:9092" ]
+  notificationTopic: "notifications"

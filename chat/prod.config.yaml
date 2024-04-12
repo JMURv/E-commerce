@@ -1,0 +1,14 @@
+port: 8080
+serviceName: "chat"
+registryAddress: "consul-service:8500"
+db:
+  host: "chat-db-service"
+  port: 5432
+  user: "postgres"
+  password: "794613825Zx!"
+  database: "chat_db"
+redisAddr: "redis-chat-service.default.svc.cluster.local:6379"
+redisPass: ""
+kafka:
+  addrs: [ "localhost:9092" ]
+  notificationTopic: "notifications"

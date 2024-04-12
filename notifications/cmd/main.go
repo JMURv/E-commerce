@@ -2,11 +2,14 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
-	ctrl "github.com/JMURv/e-commerce/notifications/internal/controller"
+	kafka "github.com/JMURv/e-commerce/notifications/internal/broker/kafka"
+	redis "github.com/JMURv/e-commerce/notifications/internal/cache/redis"
+	ctrl "github.com/JMURv/e-commerce/notifications/internal/controller/notifications"
 	hdlr "github.com/JMURv/e-commerce/notifications/internal/handler/grpc"
-	mem "github.com/JMURv/e-commerce/notifications/internal/repository/memory"
+	db "github.com/JMURv/e-commerce/notifications/internal/repository/db"
+	cfg "github.com/JMURv/e-commerce/notifications/pkg/config"
+	//mem "github.com/JMURv/e-commerce/notifications/internal/repository/memory"
 	"github.com/JMURv/e-commerce/pkg/discovery"
 	"github.com/JMURv/e-commerce/pkg/discovery/consul"
 	"log"
@@ -22,35 +25,7 @@ import (
 	pb "github.com/JMURv/e-commerce/api/pb/notification"
 )
 
-const serviceName = "notifications"
-
-//func testMessage(brokers []string, topic string) {
-//	writer := kafkaWriter(brokers, topic)
-//
-//	writer.WriteMessages(context.Background(),
-//		kafka.Message{
-//			Value: []byte("Hello Kafka!"),
-//		},
-//	)
-//}
-
-//func kafkaReader(brokers []string, topic string) *kafka.Reader {
-//	return kafka.NewReader(kafka.ReaderConfig{
-//		Brokers:  brokers,
-//		Topic:    topic,
-//		GroupID:  "notifications-group",
-//		MinBytes: 10e3, // 10KB
-//		MaxBytes: 10e6, // 10MB
-//	})
-//}
-//
-//func kafkaWriter(brokers []string, topic string) *kafka.Writer {
-//	return kafka.NewWriter(kafka.WriterConfig{
-//		Brokers:  brokers,
-//		Topic:    topic,
-//		Balancer: &kafka.LeastBytes{},
-//	})
-//}
+const configName = "dev.config"
 
 func main() {
 	defer func() {
@@ -60,18 +35,23 @@ func main() {
 		}
 	}()
 
-	var port int
-	flag.IntVar(&port, "port", 50095, "gRPC handler port")
-	flag.Parse()
+	// Load configuration
+	conf, err := cfg.LoadConfig(configName)
+	if err != nil {
+		log.Fatalf("failed to parse config: %v", err)
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	port := conf.Port
+	serviceName := conf.ServiceName
 
 	// Setting up registry
-	registry, err := consul.NewRegistry("localhost:8500")
+	registry, err := consul.NewRegistry(conf.RegistryAddr)
 	if err != nil {
 		panic(err)
 	}
 
 	// Register service
-	ctx, cancel := context.WithCancel(context.Background())
 	instanceID := discovery.GenerateInstanceID(serviceName)
 	if err = registry.Register(ctx, instanceID, serviceName, fmt.Sprintf("localhost:%d", port)); err != nil {
 		panic(err)
@@ -86,8 +66,11 @@ func main() {
 	}()
 
 	// Setting up main app
-	repo := mem.New()
-	svc := ctrl.New(repo)
+	broker := kafka.New(conf)
+	cache := redis.New(conf.RedisAddr, conf.RedisPass)
+	repo := db.New(conf)
+
+	svc := ctrl.New(repo, cache, broker)
 	h := hdlr.New(svc)
 
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%v", port))
@@ -97,44 +80,25 @@ func main() {
 
 	srv := grpc.NewServer()
 	pb.RegisterNotificationsServer(srv, h)
-
 	reflection.Register(srv)
 
-	// Setting up kafka
-	//brokers := []string{"localhost:29092"}
-	//topics := []string{"new_review", "new_message", "new_favorite"}
-	//topic := "notifications"
-	//reader := kafkaReader(brokers, topic)
-
-	// Start Kafka consumer loop
-	//go func() {
-	//	for {
-	//		m, err := reader.ReadMessage(ctx)
-	//		if err != nil && errors.Is(err, io.EOF) {
-	//			log.Printf("Kafka has been stopped")
-	//			return
-	//		} else if err != nil {
-	//			log.Printf("Error reading message from Kafka: %v", err)
-	//			continue
-	//		}
-	//		log.Println(m.Topic)
-	//		log.Printf("Received message from Kafka: %s", m.Value)
-	//	}
-	//}()
-
-	// Setting up signal handling for graceful shutdown
+	// Graceful shutdown
 	go func() {
 		c := make(chan os.Signal, 1)
 		signal.Notify(c, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 		<-c
 		log.Println("Shutting down gracefully...")
-		//reader.Close()
-		registry.Deregister(ctx, instanceID, serviceName)
+
 		cancel()
+		broker.Close()
+		cache.Close()
+		if err = registry.Deregister(ctx, instanceID, serviceName); err != nil {
+			log.Printf("Error deregistering service: %v", err)
+		}
+		srv.GracefulStop()
 		os.Exit(0)
 	}()
 
 	log.Printf("%v service is listening", serviceName)
 	srv.Serve(lis)
-
 }

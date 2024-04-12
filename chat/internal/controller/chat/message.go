@@ -5,13 +5,26 @@ import (
 	"errors"
 	repo "github.com/JMURv/e-commerce/chat/internal/repository"
 	mdl "github.com/JMURv/e-commerce/chat/pkg/model"
+	"time"
 )
+
+const roomsCacheKey = "room:%v"
 
 var ErrNotFound = errors.New("not found")
 var ErrUserIDRequired = errors.New("userID is required")
 var ErrRoomIDRequired = errors.New("roomID is required")
 var ErrItemIDRequired = errors.New("itemID is required")
 var ErrTextRequired = errors.New("text is required")
+
+type BrokerRepository interface {
+	NewMessageNotification(msgID uint64, msg []byte) error
+}
+
+type CacheRepository interface {
+	Get(ctx context.Context, key string) (*mdl.Room, error)
+	Set(ctx context.Context, t time.Duration, key string, r *mdl.Room) error
+	Delete(ctx context.Context, key string) error
+}
 
 type ChatRepository interface {
 	GetMessageByID(ctx context.Context, msgID uint64) (*mdl.Message, error)
@@ -25,11 +38,17 @@ type ChatRepository interface {
 }
 
 type Controller struct {
-	repo ChatRepository
+	repo   ChatRepository
+	cache  CacheRepository
+	broker BrokerRepository
 }
 
-func New(repo ChatRepository) *Controller {
-	return &Controller{repo}
+func New(repo ChatRepository, cache CacheRepository, broker BrokerRepository) *Controller {
+	return &Controller{
+		repo:   repo,
+		cache:  cache,
+		broker: broker,
+	}
 }
 
 // Rooms
@@ -42,7 +61,7 @@ func (c *Controller) CreateRoom(ctx context.Context, room *mdl.Room) (*mdl.Room,
 	} else if err != nil {
 		return nil, err
 	}
-	return r, err
+	return r, nil
 }
 
 func (c *Controller) GetUserRooms(ctx context.Context, userID uint64) ([]*mdl.Room, error) {
@@ -60,7 +79,7 @@ func (c *Controller) DeleteRoom(ctx context.Context, roomID uint64) error {
 	} else if err != nil {
 		return err
 	}
-	return err
+	return nil
 }
 
 //Messages
@@ -72,7 +91,7 @@ func (c *Controller) GetMessageByID(ctx context.Context, msgID uint64) (*mdl.Mes
 	} else if err != nil {
 		return nil, err
 	}
-	return r, err
+	return r, nil
 }
 
 func (c *Controller) CreateMessage(ctx context.Context, msgData *mdl.Message) (*mdl.Message, error) {
@@ -86,7 +105,7 @@ func (c *Controller) CreateMessage(ctx context.Context, msgData *mdl.Message) (*
 	} else if err != nil {
 		return nil, err
 	}
-	return r, err
+	return r, nil
 }
 
 func (c *Controller) UpdateMessage(ctx context.Context, msgID uint64, msgData *mdl.Message) (*mdl.Message, error) {
@@ -96,7 +115,7 @@ func (c *Controller) UpdateMessage(ctx context.Context, msgID uint64, msgData *m
 	} else if err != nil {
 		return nil, err
 	}
-	return r, err
+	return r, nil
 }
 
 func (c *Controller) DeleteMessage(ctx context.Context, msgID uint64) error {
@@ -106,5 +125,5 @@ func (c *Controller) DeleteMessage(ctx context.Context, msgID uint64) error {
 	} else if err != nil {
 		return err
 	}
-	return err
+	return nil
 }

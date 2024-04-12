@@ -1,0 +1,43 @@
+version: '3.3'
+services:
+  postgres:
+    container_name: postgres_items_db
+    image: postgres:15.0-alpine
+    restart: always
+    ports:
+      - "5432:5432"
+    env_file:
+      - ./.env.dev
+    volumes:
+      - pg_data_items:/var/lib/postgresql/data
+
+  redis:
+    container_name: redis_items
+    image: redis:alpine
+    env_file:
+      - ./.env.dev
+    ports:
+      - "6379:6379"
+
+  backend:
+    container_name: backend
+    image: "jmurv/items_svc:latest"
+    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - ./.env.dev
+    volumes:
+      - .:/app
+    ports:
+      - "50080:50080"
+    expose:
+      - "50080"
+    depends_on:
+      - postgres
+      - redis
+    command: sh -c "cd cmd && go run ."
+
+volumes:
+  pg_data_items:

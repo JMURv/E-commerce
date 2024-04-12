@@ -1,0 +1,24 @@
+#file: noinspection YAMLSchemaValidation
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chat-microsvc-deploy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: chat-microsvc
+  template:
+    metadata:
+      labels:
+        app: chat-microsvc
+    spec:
+      containers:
+        - name: chat-microsvc-pod
+          imagePullPolicy: Always
+          image: jmurv/chat_svc:1.0
+          ports:
+            - containerPort: 50075
+          envFrom:
+            - secretRef:
+                name: chat-db-credentials

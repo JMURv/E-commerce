@@ -14,6 +14,6 @@ spec:
     spec:
       containers:
         - name: redis-pod
-          image: redis:latest
+          image: redis:alpine
           ports:
             - containerPort: 6379

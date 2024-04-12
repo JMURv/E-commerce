@@ -3,7 +3,7 @@ package handler
 import (
 	"context"
 	pb "github.com/JMURv/e-commerce/api/pb/notification"
-	controller "github.com/JMURv/e-commerce/notifications/internal/controller"
+	ctrl "github.com/JMURv/e-commerce/notifications/internal/controller/notifications"
 	mdl "github.com/JMURv/e-commerce/notifications/pkg/model"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -11,10 +11,10 @@ import (
 
 type Handler struct {
 	pb.NotificationsServer
-	ctrl *controller.Controller
+	ctrl *ctrl.Controller
 }
 
-func New(ctrl *controller.Controller) *Handler {
+func New(ctrl *ctrl.Controller) *Handler {
 	return &Handler{ctrl: ctrl}
 }
 
@@ -29,7 +29,7 @@ func (h *Handler) ListUserNotifications(ctx context.Context, req *pb.ByUserIDReq
 		return nil, status.Errorf(codes.Internal, err.Error())
 	}
 
-	return &pb.ListNotificationResponse{Notifications: mdl.NotificationsToProto(n)}, nil
+	return &pb.ListNotificationResponse{Notifications: mdl.NotificationsToProto(*n)}, nil
 }
 
 func (h *Handler) CreateNotification(ctx context.Context, req *pb.Notification) (*pb.Notification, error) {

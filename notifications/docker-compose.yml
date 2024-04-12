@@ -1,0 +1,43 @@
+version: '3.3'
+services:
+  postgres:
+    container_name: postgres_notifications_db
+    image: postgres:15.0-alpine
+    restart: always
+    ports:
+      - "5432:5432"
+    env_file:
+      - ./.env.dev
+    volumes:
+      - pg_data_notifications:/var/lib/postgresql/data
+
+  redis:
+    container_name: redis_notifications
+    image: redis:alpine
+    env_file:
+      - ./.env.dev
+    ports:
+      - "6379:6379"
+
+  backend:
+    container_name: backend
+    image: "jmurv/notifications_svc:latest"
+    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - ./.env.dev
+    volumes:
+      - .:/app
+    ports:
+      - "50085:50085"
+    expose:
+      - "50085"
+    depends_on:
+      - postgres
+      - redis
+    command: sh -c "cd cmd && go run ."
+
+volumes:
+  pg_data_notifications:

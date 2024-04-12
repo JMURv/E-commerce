@@ -2,37 +2,39 @@ package db
 
 import (
 	"context"
+	"fmt"
 	repo "github.com/JMURv/e-commerce/favorites/internal/repository"
+	conf "github.com/JMURv/e-commerce/favorites/pkg/config"
 	"github.com/JMURv/e-commerce/favorites/pkg/model"
-	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"log"
-	"os"
 )
 
 type Repository struct {
 	conn *gorm.DB
 }
 
-func New() *Repository {
-	var err error
-	var db *gorm.DB
+func New(conf *conf.Config) *Repository {
+	DSN := fmt.Sprintf(
+		"postgres://%s:%s@%s:%v/%s",
+		conf.DB.User,
+		conf.DB.Password,
+		conf.DB.Host,
+		conf.DB.Port,
+		conf.DB.Database,
+	)
 
-	if err = godotenv.Load("../../.env"); err != nil {
-		log.Fatal("Error loading .env file")
-	}
-
-	db, err = gorm.Open(postgres.Open(os.Getenv("DSN")), &gorm.Config{})
+	conn, err := gorm.Open(postgres.Open(DSN), &gorm.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	if err = db.AutoMigrate(&model.Favorite{}); err != nil {
+	if err = conn.AutoMigrate(&model.Favorite{}); err != nil {
 		log.Fatal(err)
 	}
 
-	return &Repository{conn: db}
+	return &Repository{conn: conn}
 }
 
 func (r *Repository) GetAllUserFavorites(_ context.Context, userID uint64) ([]*model.Favorite, error) {

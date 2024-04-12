@@ -57,18 +57,22 @@ func (h *Handler) BroadcastMessage(ctx context.Context, msg *pb.Message) (*pb.Cl
 	wg := sync.WaitGroup{}
 	done := make(chan int)
 
+	currRoom := h.ctrl.GetRoomByID()
+	newMsg, err := h.ctrl.CreateMessage(ctx, &mdl.Message{
+		UserID:    msg.UserId,
+		RoomID:    msg.RoomId,
+		ReplyToID: &msg.ReplyToId,
+		Text:      msg.Text,
+	})
+
 	for _, conn := range h.pool.Connection {
 		wg.Add(1)
 		go func(msg *pb.Message, conn *Connection) {
 			defer wg.Done()
+			if conn.id == msg.UserId {
 
+			}
 			if conn.active {
-				newMsg, err := h.ctrl.CreateMessage(ctx, &mdl.Message{
-					UserID:    msg.UserId,
-					RoomID:    msg.RoomId,
-					ReplyToID: &msg.ReplyToId,
-					Text:      msg.Text,
-				})
 				fmt.Printf("Sending message to: %v from %v\n", conn.id, msg.UserId)
 				err = conn.stream.Send(mdl.MessageToProto(newMsg))
 				if err != nil {

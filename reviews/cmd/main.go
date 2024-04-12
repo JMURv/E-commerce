@@ -24,7 +24,7 @@ import (
 	pb "github.com/JMURv/e-commerce/api/pb/review"
 )
 
-const AppState = "dev" // dev || prod
+const configName = "dev.config"
 
 func main() {
 	defer func() {
@@ -35,18 +35,17 @@ func main() {
 	}()
 
 	// Load configuration
-	conf, err := cfg.LoadConfig(AppState)
+	conf, err := cfg.LoadConfig(configName)
 	if err != nil {
 		log.Fatalf("failed to parse config: %v", err)
 	}
 
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
 	port := conf.Port
 	serviceName := conf.ServiceName
-	registryAddress := conf.RegistryAddr
 
 	// Setting up registry
-	registry, err := consul.NewRegistry(registryAddress)
+	registry, err := consul.NewRegistry(conf.RegistryAddr)
 	if err != nil {
 		panic(err)
 	}
@@ -89,11 +88,13 @@ func main() {
 		<-c
 		log.Println("Shutting down gracefully...")
 
+		cancel()
 		broker.Close()
 		cache.Close()
 		if err = registry.Deregister(ctx, instanceID, serviceName); err != nil {
 			log.Printf("Error deregistering service: %v", err)
 		}
+		srv.GracefulStop()
 		os.Exit(0)
 	}()
 
