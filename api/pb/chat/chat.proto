@@ -6,11 +6,12 @@ option go_package = "github.com/JMURv/e-commerce/api/pb/chat";
 import "common/common.proto";
 
 message EmptyResponse {}
-message Close {}
 
 service Broadcast {
   rpc CreateStream(Connect) returns (stream Message);
-  rpc BroadcastMessage(CreateMessageRequest) returns (Close);
+  rpc CreateMessage(CreateMessageRequest) returns (EmptyResponse);
+  rpc UpdateMessage(UpdateMessageRequest) returns (EmptyResponse);
+  rpc DeleteMessage(DeleteMessageRequest) returns (EmptyResponse);
 }
 
 message Connect {
@@ -53,9 +54,6 @@ message ListRoomResponse {
 
 service Messages {
   rpc GetMessageByID(GetMessageByIDRequest) returns (Message);
-  rpc CreateMessage(CreateMessageRequest) returns (Message);
-  rpc UpdateMessage(UpdateMessageRequest) returns (Message);
-  rpc DeleteMessage(DeleteMessageRequest) returns (EmptyResponse);
 }
 
 message Media {
@@ -93,10 +91,12 @@ message UpdateMessageRequest {
   uint64 room_id = 3;
   uint64 reply_to_id = 4;
   string text = 5;
+  repeated bytes media = 6;
 }
 
 message DeleteMessageRequest {
   uint64 user_id = 1;
   uint64 message_id = 2;
+  uint64 room_id = 3;
 }
 

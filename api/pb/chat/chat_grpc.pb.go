@@ -19,8 +19,10 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	Broadcast_CreateStream_FullMethodName     = "/chat.Broadcast/CreateStream"
-	Broadcast_BroadcastMessage_FullMethodName = "/chat.Broadcast/BroadcastMessage"
+	Broadcast_CreateStream_FullMethodName  = "/chat.Broadcast/CreateStream"
+	Broadcast_CreateMessage_FullMethodName = "/chat.Broadcast/CreateMessage"
+	Broadcast_UpdateMessage_FullMethodName = "/chat.Broadcast/UpdateMessage"
+	Broadcast_DeleteMessage_FullMethodName = "/chat.Broadcast/DeleteMessage"
 )
 
 // BroadcastClient is the client API for Broadcast service.
@@ -28,7 +30,9 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type BroadcastClient interface {
 	CreateStream(ctx context.Context, in *Connect, opts ...grpc.CallOption) (Broadcast_CreateStreamClient, error)
-	BroadcastMessage(ctx context.Context, in *CreateMessageRequest, opts ...grpc.CallOption) (*Close, error)
+	CreateMessage(ctx context.Context, in *CreateMessageRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	UpdateMessage(ctx context.Context, in *UpdateMessageRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
+	DeleteMessage(ctx context.Context, in *DeleteMessageRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 }
 
 type broadcastClient struct {
@@ -71,9 +75,27 @@ func (x *broadcastCreateStreamClient) Recv() (*Message, error) {
 	return m, nil
 }
 
-func (c *broadcastClient) BroadcastMessage(ctx context.Context, in *CreateMessageRequest, opts ...grpc.CallOption) (*Close, error) {
-	out := new(Close)
-	err := c.cc.Invoke(ctx, Broadcast_BroadcastMessage_FullMethodName, in, out, opts...)
+func (c *broadcastClient) CreateMessage(ctx context.Context, in *CreateMessageRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+	out := new(EmptyResponse)
+	err := c.cc.Invoke(ctx, Broadcast_CreateMessage_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *broadcastClient) UpdateMessage(ctx context.Context, in *UpdateMessageRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+	out := new(EmptyResponse)
+	err := c.cc.Invoke(ctx, Broadcast_UpdateMessage_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *broadcastClient) DeleteMessage(ctx context.Context, in *DeleteMessageRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
+	out := new(EmptyResponse)
+	err := c.cc.Invoke(ctx, Broadcast_DeleteMessage_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +107,9 @@ func (c *broadcastClient) BroadcastMessage(ctx context.Context, in *CreateMessag
 // for forward compatibility
 type BroadcastServer interface {
 	CreateStream(*Connect, Broadcast_CreateStreamServer) error
-	BroadcastMessage(context.Context, *CreateMessageRequest) (*Close, error)
+	CreateMessage(context.Context, *CreateMessageRequest) (*EmptyResponse, error)
+	UpdateMessage(context.Context, *UpdateMessageRequest) (*EmptyResponse, error)
+	DeleteMessage(context.Context, *DeleteMessageRequest) (*EmptyResponse, error)
 	mustEmbedUnimplementedBroadcastServer()
 }
 
@@ -96,8 +120,14 @@ type UnimplementedBroadcastServer struct {
 func (UnimplementedBroadcastServer) CreateStream(*Connect, Broadcast_CreateStreamServer) error {
 	return status.Errorf(codes.Unimplemented, "method CreateStream not implemented")
 }
-func (UnimplementedBroadcastServer) BroadcastMessage(context.Context, *CreateMessageRequest) (*Close, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method BroadcastMessage not implemented")
+func (UnimplementedBroadcastServer) CreateMessage(context.Context, *CreateMessageRequest) (*EmptyResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateMessage not implemented")
+}
+func (UnimplementedBroadcastServer) UpdateMessage(context.Context, *UpdateMessageRequest) (*EmptyResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateMessage not implemented")
+}
+func (UnimplementedBroadcastServer) DeleteMessage(context.Context, *DeleteMessageRequest) (*EmptyResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteMessage not implemented")
 }
 func (UnimplementedBroadcastServer) mustEmbedUnimplementedBroadcastServer() {}
 
@@ -133,20 +163,56 @@ func (x *broadcastCreateStreamServer) Send(m *Message) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func _Broadcast_BroadcastMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Broadcast_CreateMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CreateMessageRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(BroadcastServer).BroadcastMessage(ctx, in)
+		return srv.(BroadcastServer).CreateMessage(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Broadcast_BroadcastMessage_FullMethodName,
+		FullMethod: Broadcast_CreateMessage_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(BroadcastServer).BroadcastMessage(ctx, req.(*CreateMessageRequest))
+		return srv.(BroadcastServer).CreateMessage(ctx, req.(*CreateMessageRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Broadcast_UpdateMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateMessageRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BroadcastServer).UpdateMessage(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Broadcast_UpdateMessage_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BroadcastServer).UpdateMessage(ctx, req.(*UpdateMessageRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Broadcast_DeleteMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteMessageRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BroadcastServer).DeleteMessage(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Broadcast_DeleteMessage_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BroadcastServer).DeleteMessage(ctx, req.(*DeleteMessageRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -159,8 +225,16 @@ var Broadcast_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*BroadcastServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "BroadcastMessage",
-			Handler:    _Broadcast_BroadcastMessage_Handler,
+			MethodName: "CreateMessage",
+			Handler:    _Broadcast_CreateMessage_Handler,
+		},
+		{
+			MethodName: "UpdateMessage",
+			Handler:    _Broadcast_UpdateMessage_Handler,
+		},
+		{
+			MethodName: "DeleteMessage",
+			Handler:    _Broadcast_DeleteMessage_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
@@ -339,9 +413,6 @@ var Rooms_ServiceDesc = grpc.ServiceDesc{
 
 const (
 	Messages_GetMessageByID_FullMethodName = "/chat.Messages/GetMessageByID"
-	Messages_CreateMessage_FullMethodName  = "/chat.Messages/CreateMessage"
-	Messages_UpdateMessage_FullMethodName  = "/chat.Messages/UpdateMessage"
-	Messages_DeleteMessage_FullMethodName  = "/chat.Messages/DeleteMessage"
 )
 
 // MessagesClient is the client API for Messages service.
@@ -349,9 +420,6 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type MessagesClient interface {
 	GetMessageByID(ctx context.Context, in *GetMessageByIDRequest, opts ...grpc.CallOption) (*Message, error)
-	CreateMessage(ctx context.Context, in *CreateMessageRequest, opts ...grpc.CallOption) (*Message, error)
-	UpdateMessage(ctx context.Context, in *UpdateMessageRequest, opts ...grpc.CallOption) (*Message, error)
-	DeleteMessage(ctx context.Context, in *DeleteMessageRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 }
 
 type messagesClient struct {
@@ -371,41 +439,11 @@ func (c *messagesClient) GetMessageByID(ctx context.Context, in *GetMessageByIDR
 	return out, nil
 }
 
-func (c *messagesClient) CreateMessage(ctx context.Context, in *CreateMessageRequest, opts ...grpc.CallOption) (*Message, error) {
-	out := new(Message)
-	err := c.cc.Invoke(ctx, Messages_CreateMessage_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *messagesClient) UpdateMessage(ctx context.Context, in *UpdateMessageRequest, opts ...grpc.CallOption) (*Message, error) {
-	out := new(Message)
-	err := c.cc.Invoke(ctx, Messages_UpdateMessage_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *messagesClient) DeleteMessage(ctx context.Context, in *DeleteMessageRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
-	out := new(EmptyResponse)
-	err := c.cc.Invoke(ctx, Messages_DeleteMessage_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // MessagesServer is the server API for Messages service.
 // All implementations must embed UnimplementedMessagesServer
 // for forward compatibility
 type MessagesServer interface {
 	GetMessageByID(context.Context, *GetMessageByIDRequest) (*Message, error)
-	CreateMessage(context.Context, *CreateMessageRequest) (*Message, error)
-	UpdateMessage(context.Context, *UpdateMessageRequest) (*Message, error)
-	DeleteMessage(context.Context, *DeleteMessageRequest) (*EmptyResponse, error)
 	mustEmbedUnimplementedMessagesServer()
 }
 
@@ -415,15 +453,6 @@ type UnimplementedMessagesServer struct {
 
 func (UnimplementedMessagesServer) GetMessageByID(context.Context, *GetMessageByIDRequest) (*Message, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetMessageByID not implemented")
-}
-func (UnimplementedMessagesServer) CreateMessage(context.Context, *CreateMessageRequest) (*Message, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CreateMessage not implemented")
-}
-func (UnimplementedMessagesServer) UpdateMessage(context.Context, *UpdateMessageRequest) (*Message, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UpdateMessage not implemented")
-}
-func (UnimplementedMessagesServer) DeleteMessage(context.Context, *DeleteMessageRequest) (*EmptyResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DeleteMessage not implemented")
 }
 func (UnimplementedMessagesServer) mustEmbedUnimplementedMessagesServer() {}
 
@@ -456,60 +485,6 @@ func _Messages_GetMessageByID_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Messages_CreateMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CreateMessageRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MessagesServer).CreateMessage(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Messages_CreateMessage_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MessagesServer).CreateMessage(ctx, req.(*CreateMessageRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Messages_UpdateMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UpdateMessageRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MessagesServer).UpdateMessage(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Messages_UpdateMessage_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MessagesServer).UpdateMessage(ctx, req.(*UpdateMessageRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Messages_DeleteMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DeleteMessageRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MessagesServer).DeleteMessage(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Messages_DeleteMessage_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MessagesServer).DeleteMessage(ctx, req.(*DeleteMessageRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // Messages_ServiceDesc is the grpc.ServiceDesc for Messages service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -520,18 +495,6 @@ var Messages_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetMessageByID",
 			Handler:    _Messages_GetMessageByID_Handler,
-		},
-		{
-			MethodName: "CreateMessage",
-			Handler:    _Messages_CreateMessage_Handler,
-		},
-		{
-			MethodName: "UpdateMessage",
-			Handler:    _Messages_UpdateMessage_Handler,
-		},
-		{
-			MethodName: "DeleteMessage",
-			Handler:    _Messages_DeleteMessage_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

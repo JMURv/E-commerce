@@ -41,54 +41,26 @@ func New(ctrl *ctrl.Controller) *Handler {
 }
 
 // Boradcasting
-func (h *Handler) CreateStream(pconn *pb.Connect, stream pb.Broadcast_CreateStreamServer) error {
+func (h *Handler) CreateStream(pbConn *pb.Connect, stream pb.Broadcast_CreateStreamServer) error {
 	conn := &Connection{
 		stream: stream,
-		userID: pconn.User.Id,
+		userID: pbConn.User.Id,
 		active: true,
 		error:  make(chan error),
 	}
 
 	h.pool.Connection = append(h.pool.Connection, conn)
-	log.Printf("UserID: %v has been connected\n", pconn.User.Id)
+	log.Printf("UserID: %v has been connected\n", pbConn.User.Id)
 	return <-conn.error
 }
 
-// TODO: Разделить бродкаст и создание смски
 func (h *Handler) broadcast(ctx context.Context, msg *mdl.Message) error {
-	return nil
-}
-
-func (h *Handler) BroadcastMessage(ctx context.Context, msg *pb.CreateMessageRequest) (*pb.Close, error) {
-	currRoom, err := h.ctrl.GetRoomByID(ctx, msg.RoomId)
+	currRoom, err := h.ctrl.GetRoomByID(ctx, msg.RoomID)
 	if err != nil {
 		log.Printf("Error getting room: %v\n", err)
-		return nil, err
+		return err
 	}
 	roomMembers := []uint64{currRoom.SellerID, currRoom.BuyerID}
-
-	mediaPaths := make([]*mdl.Media, 0, len(msg.Media))
-	for _, v := range msg.Media {
-		path, err := h.ctrl.UploadMedia(ctx, v)
-		if err != nil {
-			log.Printf("Error uploading media: %v\n", err)
-			continue
-		}
-
-		mediaPaths = append(mediaPaths, path)
-	}
-
-	newMsg, err := h.ctrl.CreateMessage(ctx, &mdl.Message{
-		UserID:    msg.UserId,
-		RoomID:    msg.RoomId,
-		ReplyToID: &msg.ReplyToId,
-		Text:      msg.Text,
-		Media:     mediaPaths,
-	})
-	if err != nil {
-		log.Printf("Error creating message: %v\n", err)
-		return nil, err
-	}
 
 	var wg sync.WaitGroup
 	for _, conn := range h.pool.Connection {
@@ -97,18 +69,18 @@ func (h *Handler) BroadcastMessage(ctx context.Context, msg *pb.CreateMessageReq
 			defer wg.Done()
 			if slices.Contains(roomMembers, conn.userID) && conn.active {
 				log.Printf("Sending message to: %v from %v\n", conn.userID, msg.UserID)
-				err = conn.stream.Send(mdl.MessageToProto(newMsg))
+				err := conn.stream.Send(mdl.MessageToProto(msg))
 				if err != nil {
 					log.Printf("Error with Stream: %v - Error: %v\n", conn.stream, err)
 					conn.active = false
 					conn.error <- err
 				}
 			}
-		}(newMsg, conn)
+		}(msg, conn)
 	}
 
 	wg.Wait()
-	return &pb.Close{}, nil
+	return nil
 }
 
 // Rooms
@@ -167,9 +139,15 @@ func (h *Handler) GetMessageByID(ctx context.Context, req *pb.GetMessageByIDRequ
 	return mdl.MessageToProto(msg), nil
 }
 
-func (h *Handler) CreateMessage(ctx context.Context, req *pb.CreateMessageRequest) (*pb.Message, error) {
-	if req == nil {
-		return nil, status.Errorf(codes.InvalidArgument, "nil req or empty id")
+func (h *Handler) CreateMessage(ctx context.Context, req *pb.CreateMessageRequest) (*pb.EmptyResponse, error) {
+	mediaPaths := make([]*mdl.Media, 0, len(req.Media))
+	for _, v := range req.Media {
+		path, err := h.ctrl.UploadMedia(ctx, v)
+		if err != nil {
+			log.Printf("Error uploading media: %v\n", err)
+			continue
+		}
+		mediaPaths = append(mediaPaths, path)
 	}
 
 	msg, err := h.ctrl.CreateMessage(ctx, &mdl.Message{
@@ -177,17 +155,33 @@ func (h *Handler) CreateMessage(ctx context.Context, req *pb.CreateMessageReques
 		RoomID:    req.RoomId,
 		ReplyToID: &req.ReplyToId,
 		Text:      req.Text,
+		Media:     mediaPaths,
 	})
 	if err != nil {
+		log.Printf("Error creating message: %v\n", err)
 		return nil, err
 	}
 
-	return mdl.MessageToProto(msg), nil
+	if err = h.broadcast(ctx, msg); err != nil {
+		log.Printf("Error broadcasting message: %v\n", err)
+		return nil, err
+	}
+	return &pb.EmptyResponse{}, nil
 }
 
-func (h *Handler) UpdateMessage(ctx context.Context, req *pb.UpdateMessageRequest) (*pb.Message, error) {
+func (h *Handler) UpdateMessage(ctx context.Context, req *pb.UpdateMessageRequest) (*pb.EmptyResponse, error) {
 	if req == nil || req.Id == 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "nil req or empty id")
+	}
+
+	mediaPaths := make([]*mdl.Media, 0, len(req.Media))
+	for _, v := range req.Media {
+		path, err := h.ctrl.UploadMedia(ctx, v)
+		if err != nil {
+			log.Printf("Error uploading media: %v\n", err)
+			continue
+		}
+		mediaPaths = append(mediaPaths, path)
 	}
 
 	msg, err := h.ctrl.UpdateMessage(ctx, req.Id, &mdl.Message{
@@ -195,12 +189,18 @@ func (h *Handler) UpdateMessage(ctx context.Context, req *pb.UpdateMessageReques
 		RoomID:    req.RoomId,
 		ReplyToID: &req.ReplyToId,
 		Text:      req.Text,
+		Media:     mediaPaths,
 	})
 	if err != nil {
+		log.Printf("Error updating message: %v\n", err)
 		return nil, err
 	}
 
-	return mdl.MessageToProto(msg), nil
+	if err = h.broadcast(ctx, msg); err != nil {
+		log.Printf("Error broadcasting message: %v\n", err)
+		return nil, err
+	}
+	return &pb.EmptyResponse{}, nil
 }
 
 func (h *Handler) DeleteMessage(ctx context.Context, req *pb.DeleteMessageRequest) (*pb.EmptyResponse, error) {
@@ -209,6 +209,11 @@ func (h *Handler) DeleteMessage(ctx context.Context, req *pb.DeleteMessageReques
 	}
 
 	if err := h.ctrl.DeleteMessage(ctx, req.MessageId); err != nil {
+		return nil, err
+	}
+
+	if err := h.broadcast(ctx, &mdl.Message{ID: req.MessageId, UserID: req.UserId, RoomID: req.RoomId}); err != nil {
+		log.Printf("Error broadcasting message: %v\n", err)
 		return nil, err
 	}
 	return &pb.EmptyResponse{}, nil

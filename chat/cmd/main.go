@@ -96,7 +96,7 @@ func main() {
 		if err = registry.Deregister(ctx, instanceID, serviceName); err != nil {
 			log.Printf("Error deregistering service: %v", err)
 		}
-		srv.GracefulStop()
+		srv.Stop()
 		os.Exit(0)
 	}()
 
