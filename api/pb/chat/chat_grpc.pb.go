@@ -59,7 +59,7 @@ func (c *broadcastClient) CreateStream(ctx context.Context, in *Connect, opts ..
 }
 
 type Broadcast_CreateStreamClient interface {
-	Recv() (*Message, error)
+	Recv() (*StreamMessage, error)
 	grpc.ClientStream
 }
 
@@ -67,8 +67,8 @@ type broadcastCreateStreamClient struct {
 	grpc.ClientStream
 }
 
-func (x *broadcastCreateStreamClient) Recv() (*Message, error) {
-	m := new(Message)
+func (x *broadcastCreateStreamClient) Recv() (*StreamMessage, error) {
+	m := new(StreamMessage)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -151,7 +151,7 @@ func _Broadcast_CreateStream_Handler(srv interface{}, stream grpc.ServerStream) 
 }
 
 type Broadcast_CreateStreamServer interface {
-	Send(*Message) error
+	Send(*StreamMessage) error
 	grpc.ServerStream
 }
 
@@ -159,7 +159,7 @@ type broadcastCreateStreamServer struct {
 	grpc.ServerStream
 }
 
-func (x *broadcastCreateStreamServer) Send(m *Message) error {
+func (x *broadcastCreateStreamServer) Send(m *StreamMessage) error {
 	return x.ServerStream.SendMsg(m)
 }
 

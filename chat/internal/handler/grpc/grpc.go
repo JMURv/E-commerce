@@ -12,6 +12,10 @@ import (
 	"sync"
 )
 
+const msgTypeCreate = "create"
+const msgTypeUpdate = "update"
+const msgTypeDelete = "delete"
+
 type Connection struct {
 	stream pb.Broadcast_CreateStreamServer
 	userID uint64
@@ -54,7 +58,7 @@ func (h *Handler) CreateStream(pbConn *pb.Connect, stream pb.Broadcast_CreateStr
 	return <-conn.error
 }
 
-func (h *Handler) broadcast(ctx context.Context, msg *mdl.Message) error {
+func (h *Handler) broadcast(ctx context.Context, msg *mdl.Message, msgType string) error {
 	currRoom, err := h.ctrl.GetRoomByID(ctx, msg.RoomID)
 	if err != nil {
 		log.Printf("Error getting room: %v\n", err)
@@ -69,7 +73,10 @@ func (h *Handler) broadcast(ctx context.Context, msg *mdl.Message) error {
 			defer wg.Done()
 			if slices.Contains(roomMembers, conn.userID) && conn.active {
 				log.Printf("Sending message to: %v from %v\n", conn.userID, msg.UserID)
-				err := conn.stream.Send(mdl.MessageToProto(msg))
+				err := conn.stream.Send(&pb.StreamMessage{
+					Type:    msgType,
+					Message: mdl.MessageToProto(msg),
+				})
 				if err != nil {
 					log.Printf("Error with Stream: %v - Error: %v\n", conn.stream, err)
 					conn.active = false
@@ -162,7 +169,7 @@ func (h *Handler) CreateMessage(ctx context.Context, req *pb.CreateMessageReques
 		return nil, err
 	}
 
-	if err = h.broadcast(ctx, msg); err != nil {
+	if err = h.broadcast(ctx, msg, msgTypeCreate); err != nil {
 		log.Printf("Error broadcasting message: %v\n", err)
 		return nil, err
 	}
@@ -196,7 +203,7 @@ func (h *Handler) UpdateMessage(ctx context.Context, req *pb.UpdateMessageReques
 		return nil, err
 	}
 
-	if err = h.broadcast(ctx, msg); err != nil {
+	if err = h.broadcast(ctx, msg, msgTypeUpdate); err != nil {
 		log.Printf("Error broadcasting message: %v\n", err)
 		return nil, err
 	}
@@ -212,7 +219,12 @@ func (h *Handler) DeleteMessage(ctx context.Context, req *pb.DeleteMessageReques
 		return nil, err
 	}
 
-	if err := h.broadcast(ctx, &mdl.Message{ID: req.MessageId, UserID: req.UserId, RoomID: req.RoomId}); err != nil {
+	msg := &mdl.Message{
+		ID:     req.MessageId,
+		UserID: req.UserId,
+		RoomID: req.RoomId,
+	}
+	if err := h.broadcast(ctx, msg, msgTypeDelete); err != nil {
 		log.Printf("Error broadcasting message: %v\n", err)
 		return nil, err
 	}
