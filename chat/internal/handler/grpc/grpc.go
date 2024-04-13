@@ -2,18 +2,19 @@ package grcp
 
 import (
 	"context"
-	"fmt"
 	pb "github.com/JMURv/e-commerce/api/pb/chat"
 	ctrl "github.com/JMURv/e-commerce/chat/internal/controller/chat"
 	mdl "github.com/JMURv/e-commerce/chat/pkg/model"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"log"
+	"slices"
 	"sync"
 )
 
 type Connection struct {
 	stream pb.Broadcast_CreateStreamServer
-	id     uint64
+	userID uint64
 	active bool
 	error  chan error
 }
@@ -31,7 +32,6 @@ type Handler struct {
 }
 
 func New(ctrl *ctrl.Controller) *Handler {
-	// Create a new connection pool
 	return &Handler{
 		ctrl: ctrl,
 		pool: &Pool{
@@ -44,52 +44,70 @@ func New(ctrl *ctrl.Controller) *Handler {
 func (h *Handler) CreateStream(pconn *pb.Connect, stream pb.Broadcast_CreateStreamServer) error {
 	conn := &Connection{
 		stream: stream,
-		id:     pconn.User.Id,
+		userID: pconn.User.Id,
 		active: true,
 		error:  make(chan error),
 	}
 
 	h.pool.Connection = append(h.pool.Connection, conn)
+	log.Printf("UserID: %v has been connected\n", pconn.User.Id)
 	return <-conn.error
 }
 
-func (h *Handler) BroadcastMessage(ctx context.Context, msg *pb.Message) (*pb.Close, error) {
-	wg := sync.WaitGroup{}
-	done := make(chan int)
+// TODO: Разделить бродкаст и создание смски
+func (h *Handler) broadcast(ctx context.Context, msg *mdl.Message) error {
+	return nil
+}
 
-	currRoom := h.ctrl.GetRoomByID()
+func (h *Handler) BroadcastMessage(ctx context.Context, msg *pb.CreateMessageRequest) (*pb.Close, error) {
+	currRoom, err := h.ctrl.GetRoomByID(ctx, msg.RoomId)
+	if err != nil {
+		log.Printf("Error getting room: %v\n", err)
+		return nil, err
+	}
+	roomMembers := []uint64{currRoom.SellerID, currRoom.BuyerID}
+
+	mediaPaths := make([]*mdl.Media, 0, len(msg.Media))
+	for _, v := range msg.Media {
+		path, err := h.ctrl.UploadMedia(ctx, v)
+		if err != nil {
+			log.Printf("Error uploading media: %v\n", err)
+			continue
+		}
+
+		mediaPaths = append(mediaPaths, path)
+	}
+
 	newMsg, err := h.ctrl.CreateMessage(ctx, &mdl.Message{
 		UserID:    msg.UserId,
 		RoomID:    msg.RoomId,
 		ReplyToID: &msg.ReplyToId,
 		Text:      msg.Text,
+		Media:     mediaPaths,
 	})
+	if err != nil {
+		log.Printf("Error creating message: %v\n", err)
+		return nil, err
+	}
 
+	var wg sync.WaitGroup
 	for _, conn := range h.pool.Connection {
 		wg.Add(1)
-		go func(msg *pb.Message, conn *Connection) {
+		go func(msg *mdl.Message, conn *Connection) {
 			defer wg.Done()
-			if conn.id == msg.UserId {
-
-			}
-			if conn.active {
-				fmt.Printf("Sending message to: %v from %v\n", conn.id, msg.UserId)
+			if slices.Contains(roomMembers, conn.userID) && conn.active {
+				log.Printf("Sending message to: %v from %v\n", conn.userID, msg.UserID)
 				err = conn.stream.Send(mdl.MessageToProto(newMsg))
 				if err != nil {
-					fmt.Printf("Error with Stream: %v - Error: %v\n", conn.stream, err)
+					log.Printf("Error with Stream: %v - Error: %v\n", conn.stream, err)
 					conn.active = false
 					conn.error <- err
 				}
 			}
-		}(msg, conn)
+		}(newMsg, conn)
 	}
 
-	go func() {
-		wg.Wait()
-		close(done)
-	}()
-
-	<-done
+	wg.Wait()
 	return &pb.Close{}, nil
 }
 

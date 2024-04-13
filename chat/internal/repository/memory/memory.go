@@ -1,9 +1,15 @@
 package memory
 
 import (
+	"bytes"
 	"context"
+	"fmt"
 	repo "github.com/JMURv/e-commerce/chat/internal/repository"
+	conf "github.com/JMURv/e-commerce/chat/pkg/config"
 	mdl "github.com/JMURv/e-commerce/chat/pkg/model"
+	"io"
+	"os"
+	"path/filepath"
 	"sync"
 	"time"
 )
@@ -12,16 +18,29 @@ type Repository struct {
 	sync.RWMutex
 	messageData map[uint64]*mdl.Message
 	roomsData   map[uint64]*mdl.Room
+	mediaData   map[uint64]*mdl.Media
 }
 
-func New() *Repository {
+func New(_ *conf.Config) *Repository {
 	return &Repository{
 		roomsData:   map[uint64]*mdl.Room{},
 		messageData: map[uint64]*mdl.Message{},
+		mediaData:   map[uint64]*mdl.Media{},
 	}
 }
 
 // Rooms
+
+func (r *Repository) GetRoomByID(_ context.Context, roomID uint64) (*mdl.Room, error) {
+	r.RLock()
+	room, ok := r.roomsData[roomID]
+	r.RUnlock()
+	if !ok {
+		return nil, repo.ErrNotFound
+	}
+	return room, nil
+}
+
 func (r *Repository) CreateRoom(_ context.Context, room *mdl.Room) (*mdl.Room, error) {
 	room.ID = uint64(time.Now().Unix())
 	if room.SellerID == 0 || room.BuyerID == 0 {
@@ -114,4 +133,32 @@ func (r *Repository) DeleteMessage(_ context.Context, msgID uint64) error {
 	delete(r.messageData, msgID)
 	r.Unlock()
 	return nil
+}
+
+func (r *Repository) UploadMedia(_ context.Context, file []byte) (*mdl.Media, error) {
+
+	reader := bytes.NewReader(file)
+
+	path := filepath.Join("media", fmt.Sprintf("chat_media_%v", time.Now().Unix()))
+	out, err := os.Create(path)
+	if err != nil {
+		return nil, err
+	}
+	defer out.Close()
+
+	_, err = io.Copy(out, reader)
+	if err != nil {
+		return nil, err
+	}
+
+	media := &mdl.Media{
+		ID:       uint64(time.Now().Unix()),
+		FilePath: path,
+	}
+
+	r.Lock()
+	r.mediaData[media.ID] = media
+	r.Unlock()
+
+	return media, nil
 }

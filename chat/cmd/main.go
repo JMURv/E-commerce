@@ -7,10 +7,10 @@ import (
 	kafka "github.com/JMURv/e-commerce/chat/internal/broker/kafka"
 	ctrl "github.com/JMURv/e-commerce/chat/internal/controller/chat"
 	hdlr "github.com/JMURv/e-commerce/chat/internal/handler/grpc"
-	db "github.com/JMURv/e-commerce/chat/internal/repository/db"
+	//db "github.com/JMURv/e-commerce/chat/internal/repository/db"
+	mem "github.com/JMURv/e-commerce/chat/internal/repository/memory"
 
 	redis "github.com/JMURv/e-commerce/chat/internal/cache/redis"
-	//mem "github.com/JMURv/e-commerce/chat/internal/repository/memory"
 	cfg "github.com/JMURv/e-commerce/chat/pkg/config"
 	"github.com/JMURv/e-commerce/pkg/discovery"
 	"github.com/JMURv/e-commerce/pkg/discovery/consul"
@@ -67,7 +67,7 @@ func main() {
 	// Setting up main app
 	broker := kafka.New(conf)
 	cache := redis.New(conf.RedisAddr, conf.RedisPass)
-	repo := db.New(conf)
+	repo := mem.New(conf)
 
 	svc := ctrl.New(repo, cache, broker)
 	h := hdlr.New(svc)

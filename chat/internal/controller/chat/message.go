@@ -32,6 +32,9 @@ type ChatRepository interface {
 	UpdateMessage(ctx context.Context, msgID uint64, msgData *mdl.Message) (*mdl.Message, error)
 	DeleteMessage(ctx context.Context, msgID uint64) error
 
+	UploadMedia(ctx context.Context, file []byte) (*mdl.Media, error)
+
+	GetRoomByID(ctx context.Context, roomID uint64) (*mdl.Room, error)
 	CreateRoom(ctx context.Context, room *mdl.Room) (*mdl.Room, error)
 	GetUserRooms(ctx context.Context, userID uint64) ([]*mdl.Room, error)
 	DeleteRoom(ctx context.Context, roomID uint64) error
@@ -52,6 +55,16 @@ func New(repo ChatRepository, cache CacheRepository, broker BrokerRepository) *C
 }
 
 // Rooms
+func (c *Controller) GetRoomByID(ctx context.Context, roomID uint64) (*mdl.Room, error) {
+	r, err := c.repo.GetRoomByID(ctx, roomID)
+	if err != nil && errors.Is(err, repo.ErrNotFound) {
+		return nil, ErrNotFound
+	} else if err != nil {
+		return nil, err
+	}
+	return r, nil
+}
+
 func (c *Controller) CreateRoom(ctx context.Context, room *mdl.Room) (*mdl.Room, error) {
 	r, err := c.repo.CreateRoom(ctx, room)
 	if err != nil && errors.Is(err, repo.ErrUserIDRequired) {
@@ -126,4 +139,13 @@ func (c *Controller) DeleteMessage(ctx context.Context, msgID uint64) error {
 		return err
 	}
 	return nil
+}
+
+// Media
+func (c *Controller) UploadMedia(ctx context.Context, file []byte) (*mdl.Media, error) {
+	media, err := c.repo.UploadMedia(ctx, file)
+	if err != nil {
+		return nil, err
+	}
+	return media, nil
 }

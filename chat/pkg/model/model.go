@@ -2,6 +2,11 @@ package model
 
 import "time"
 
+type Media struct {
+	ID       uint64 `gorm:"primaryKey"`
+	FilePath string `json:"file_path"`
+}
+
 type Room struct {
 	ID        uint64     `gorm:"primaryKey"`
 	SellerID  uint64     `json:"seller_id"`
@@ -21,5 +26,6 @@ type Message struct {
 	Edited    bool      `json:"edited"`
 	ReplyToID *uint64   `json:"reply_to_id"`
 	ReplyTo   *Message  `json:"reply_to"`
+	Media     []*Media  `json:"media"`
 	CreatedAt time.Time `json:"created_at"`
 }

@@ -10,7 +10,7 @@ message Close {}
 
 service Broadcast {
   rpc CreateStream(Connect) returns (stream Message);
-  rpc BroadcastMessage(Message) returns (Close);
+  rpc BroadcastMessage(CreateMessageRequest) returns (Close);
 }
 
 message Connect {
@@ -58,6 +58,11 @@ service Messages {
   rpc DeleteMessage(DeleteMessageRequest) returns (EmptyResponse);
 }
 
+message Media {
+  uint64 id = 1;
+  string url = 2;
+}
+
 message Message {
   uint64 id = 1;
   uint64 user_id = 2;
@@ -67,6 +72,7 @@ message Message {
   bool seen = 6;
   bool edited = 7;
   uint64 created_at = 8;
+  repeated Media media = 9;
 }
 
 message GetMessageByIDRequest {
@@ -78,6 +84,7 @@ message CreateMessageRequest {
   uint64 room_id = 2;
   uint64 reply_to_id = 3;
   string text = 4;
+  repeated bytes media = 5;
 }
 
 message UpdateMessageRequest {

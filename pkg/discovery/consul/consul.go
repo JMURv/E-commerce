@@ -14,8 +14,6 @@ type Registry struct {
 	client *consul.Client
 }
 
-// NewRegistry creates a new Consul-based service
-// registry instance.
 func NewRegistry(addr string) (*Registry, error) {
 	config := consul.DefaultConfig()
 	config.Address = addr
@@ -44,9 +42,9 @@ func (r *Registry) Register(_ context.Context, id string, name string, hostPort 
 			ID:      id,
 			Name:    name,
 			Port:    port,
-			Check:   &consul.AgentServiceCheck{
+			Check: &consul.AgentServiceCheck{
 				CheckID: id,
-				TTL: "5s",
+				TTL:     "5s",
 			},
 		},
 	)

@@ -1,6 +1,7 @@
 package db
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	repo "github.com/JMURv/e-commerce/chat/internal/repository"
@@ -8,7 +9,10 @@ import (
 	mdl "github.com/JMURv/e-commerce/chat/pkg/model"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"io"
 	"log"
+	"os"
+	"path/filepath"
 	"time"
 )
 
@@ -40,6 +44,14 @@ func New(conf *conf.Config) *Repository {
 	}
 
 	return &Repository{conn: conn}
+}
+
+func (r *Repository) GetRoomByID(_ context.Context, roomID uint64) (*mdl.Room, error) {
+	var room *mdl.Room
+	if err := r.conn.Where("ID = ?", roomID).First(room).Error; err != nil {
+		return nil, err
+	}
+	return room, nil
 }
 
 func (r *Repository) CreateRoom(_ context.Context, room *mdl.Room) (*mdl.Room, error) {
@@ -82,7 +94,7 @@ func (r *Repository) DeleteRoom(_ context.Context, roomID uint64) error {
 	return nil
 }
 
-func (r *Repository) GetMessageByID(ctx context.Context, msgID uint64) (*mdl.Message, error) {
+func (r *Repository) GetMessageByID(_ context.Context, msgID uint64) (*mdl.Message, error) {
 	var msg *mdl.Message
 	if err := r.conn.Where("ID=?", msgID).First(&msg).Error; err != nil {
 		return nil, repo.ErrNotFound
@@ -90,9 +102,7 @@ func (r *Repository) GetMessageByID(ctx context.Context, msgID uint64) (*mdl.Mes
 	return msg, nil
 }
 
-func (r *Repository) CreateMessage(ctx context.Context, msgData *mdl.Message) (*mdl.Message, error) {
-	var m *mdl.Message
-
+func (r *Repository) CreateMessage(_ context.Context, msgData *mdl.Message) (*mdl.Message, error) {
 	if msgData.UserID == 0 {
 		return nil, repo.ErrUserIDRequired
 	}
@@ -105,11 +115,11 @@ func (r *Repository) CreateMessage(ctx context.Context, msgData *mdl.Message) (*
 		return nil, repo.ErrTextRequired
 	}
 
-	if err := r.conn.Create(&m).Error; err != nil {
+	if err := r.conn.Create(&msgData).Error; err != nil {
 		return nil, err
 	}
 
-	return m, nil
+	return msgData, nil
 }
 
 func (r *Repository) UpdateMessage(ctx context.Context, msgID uint64, msgData *mdl.Message) (*mdl.Message, error) {
@@ -129,9 +139,33 @@ func (r *Repository) UpdateMessage(ctx context.Context, msgID uint64, msgData *m
 	return msg, nil
 }
 
-func (r *Repository) DeleteMessage(ctx context.Context, msgID uint64) error {
+func (r *Repository) DeleteMessage(_ context.Context, msgID uint64) error {
 	if err := r.conn.Delete(&mdl.Message{}, msgID).Error; err != nil {
 		return err
 	}
 	return nil
+}
+
+// Media
+func (r *Repository) UploadMedia(_ context.Context, file []byte) (*mdl.Media, error) {
+	reader := bytes.NewReader(file)
+
+	path := filepath.Join("media", fmt.Sprintf("chat_media_%v", time.Now().Unix()))
+	out, err := os.Create(path)
+	if err != nil {
+		return nil, err
+	}
+	defer out.Close()
+
+	_, err = io.Copy(out, reader)
+	if err != nil {
+		return nil, err
+	}
+
+	media := &mdl.Media{FilePath: path}
+	if err = r.conn.Create(media).Error; err != nil {
+		return nil, err
+	}
+
+	return media, nil
 }
