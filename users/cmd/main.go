@@ -10,10 +10,10 @@ import (
 	redis "github.com/JMURv/e-commerce/users/internal/cache/redis"
 	ctrl "github.com/JMURv/e-commerce/users/internal/controller/user"
 	itmgate "github.com/JMURv/e-commerce/users/internal/gateway/items"
+	mem "github.com/JMURv/e-commerce/users/internal/repository/memory"
 	cfg "github.com/JMURv/e-commerce/users/pkg/config"
-	//mem "github.com/JMURv/e-commerce/users/internal/repository/memory"
+	//db "github.com/JMURv/e-commerce/users/internal/repository/db"
 	handler "github.com/JMURv/e-commerce/users/internal/handler/grpc"
-	db "github.com/JMURv/e-commerce/users/internal/repository/db"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"log"
@@ -67,7 +67,7 @@ func main() {
 	// Setting up main app
 	broker := kafka.New(conf)
 	cache := redis.New(conf.RedisAddr, conf.RedisPass)
-	repo := db.New(conf)
+	repo := mem.New()
 
 	svc := ctrl.New(repo, cache, broker, itmgate.New(registry))
 	h := handler.New(svc)

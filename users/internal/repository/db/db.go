@@ -40,12 +40,12 @@ func New(conf *conf.Config) *Repository {
 	return &Repository{conn: conn}
 }
 
-func (r *Repository) GetUsersList(_ context.Context) (*[]model.User, error) {
-	var u []model.User
+func (r *Repository) GetUsersList(_ context.Context) ([]*model.User, error) {
+	var u []*model.User
 	if err := r.conn.Find(&u).Error; err != nil {
 		return nil, err
 	}
-	return &u, nil
+	return u, nil
 }
 
 func (r *Repository) GetByID(_ context.Context, userID uint64) (*model.User, error) {

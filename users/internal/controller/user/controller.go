@@ -23,7 +23,7 @@ type CacheRepository interface {
 }
 
 type userRepository interface {
-	GetUsersList(ctx context.Context) (*[]model.User, error)
+	GetUsersList(ctx context.Context) ([]*model.User, error)
 	GetByID(ctx context.Context, userID uint64) (*model.User, error)
 	GetByEmail(ctx context.Context, email string) (*model.User, error)
 	Create(ctx context.Context, userData *model.User) (*model.User, error)
@@ -47,12 +47,13 @@ func New(repo userRepository, cache CacheRepository, broker BrokerRepository, it
 	}
 }
 
-func (c *Controller) GetUsersList(ctx context.Context) (*[]model.User, error) {
+func (c *Controller) GetUsersList(ctx context.Context) ([]*model.User, error) {
 	res, err := c.repo.GetUsersList(ctx)
 	if err != nil && errors.Is(err, repo.ErrNotFound) {
 		return nil, ErrNotFound
+	} else if err != nil {
+		return nil, err
 	}
-
 	return res, nil
 }
 
@@ -65,6 +66,8 @@ func (c *Controller) GetUserByID(ctx context.Context, userID uint64) (*model.Use
 	res, err := c.repo.GetByID(ctx, userID)
 	if err != nil && errors.Is(err, repo.ErrNotFound) {
 		return nil, ErrNotFound
+	} else if err != nil {
+		return nil, err
 	}
 
 	err = c.cache.Set(ctx, time.Hour, fmt.Sprintf(cacheKey, userID), res)
@@ -78,6 +81,8 @@ func (c *Controller) GetUserByEmail(ctx context.Context, email string) (*model.U
 	res, err := c.repo.GetByEmail(ctx, email)
 	if err != nil && errors.Is(err, repo.ErrNotFound) {
 		return nil, repo.ErrNotFound
+	} else if err != nil {
+		return nil, err
 	}
 
 	return res, nil
@@ -85,9 +90,10 @@ func (c *Controller) GetUserByEmail(ctx context.Context, email string) (*model.U
 
 func (c *Controller) CreateUser(ctx context.Context, userData *model.User) (*model.User, error) {
 	res, err := c.repo.Create(ctx, userData)
-	// TODO: Check for errs
 	if err != nil && errors.Is(err, repo.ErrNotFound) {
 		return nil, repo.ErrNotFound
+	} else if err != nil {
+		return nil, err
 	}
 
 	err = c.cache.Set(ctx, time.Hour, fmt.Sprintf(cacheKey, res.ID), res)
@@ -101,6 +107,8 @@ func (c *Controller) UpdateUser(ctx context.Context, userID uint64, newData *mod
 	res, err := c.repo.Update(ctx, userID, newData)
 	if err != nil && errors.Is(err, repo.ErrNotFound) {
 		return nil, repo.ErrNotFound
+	} else if err != nil {
+		return nil, err
 	}
 
 	err = c.cache.Set(ctx, time.Hour, fmt.Sprintf(cacheKey, res.ID), res)

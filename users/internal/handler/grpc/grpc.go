@@ -29,7 +29,7 @@ func (h *Handler) ListUser(ctx context.Context, req *pb.EmptyRequest) (*pb.ListU
 	if u, err := h.ctrl.GetUsersList(ctx); err != nil {
 		return nil, status.Errorf(codes.Internal, err.Error())
 	} else {
-		return &pb.ListUserResponse{Users: model.UsersToProto(*u)}, nil
+		return &pb.ListUserResponse{Users: model.UsersToProto(u)}, nil
 	}
 }
 

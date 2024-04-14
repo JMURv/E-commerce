@@ -3,14 +3,12 @@ package redis
 import (
 	"context"
 	"encoding/json"
-	"errors"
+	errs "github.com/JMURv/e-commerce/users/internal/cache"
 	"github.com/JMURv/e-commerce/users/pkg/model"
 	"github.com/go-redis/redis/v8"
 	"log"
 	"time"
 )
-
-var ErrNotFoundInCache = errors.New("not found")
 
 type Cache struct {
 	cli *redis.Client
@@ -39,7 +37,7 @@ func (c *Cache) Close() {
 func (c *Cache) Get(ctx context.Context, key string) (*model.User, error) {
 	val, err := c.cli.Get(ctx, key).Bytes()
 	if err == redis.Nil {
-		return nil, ErrNotFoundInCache
+		return nil, errs.ErrNotFoundInCache
 	} else if err != nil {
 		return nil, err
 	}

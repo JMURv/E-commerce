@@ -20,10 +20,10 @@ func UserToProto(u *User) *common.User {
 	}
 }
 
-func UsersToProto(u []User) []*common.User {
+func UsersToProto(u []*User) []*common.User {
 	var users []*common.User
 	for i := range u {
-		users = append(users, UserToProto(&u[i]))
+		users = append(users, UserToProto(u[i]))
 	}
 	return users
 }
