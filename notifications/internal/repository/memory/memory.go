@@ -3,6 +3,7 @@ package memory
 import (
 	"context"
 	repo "github.com/JMURv/e-commerce/notifications/internal/repository"
+	conf "github.com/JMURv/e-commerce/notifications/pkg/config"
 	"github.com/JMURv/e-commerce/notifications/pkg/model"
 	"sync"
 	"time"
@@ -13,7 +14,7 @@ type Repository struct {
 	data map[uint64]*model.Notification
 }
 
-func New() *Repository {
+func New(_ *conf.Config) *Repository {
 	return &Repository{data: map[uint64]*model.Notification{}}
 }
 

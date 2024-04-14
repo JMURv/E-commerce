@@ -13,8 +13,6 @@ const cacheKey = "notification:%v"
 
 var ErrNotFound = errors.New("not found")
 
-type BrokerRepository interface{}
-
 type CacheRepository interface {
 	Get(ctx context.Context, key string) (*model.Notification, error)
 	Set(ctx context.Context, t time.Duration, key string, r *model.Notification) error
@@ -29,16 +27,14 @@ type notificationsRepository interface {
 }
 
 type Controller struct {
-	repo   notificationsRepository
-	cache  CacheRepository
-	broker BrokerRepository
+	repo  notificationsRepository
+	cache CacheRepository
 }
 
-func New(repo notificationsRepository, cache CacheRepository, broker BrokerRepository) *Controller {
+func New(repo notificationsRepository, cache CacheRepository) *Controller {
 	return &Controller{
-		repo:   repo,
-		cache:  cache,
-		broker: broker,
+		repo:  repo,
+		cache: cache,
 	}
 }
 

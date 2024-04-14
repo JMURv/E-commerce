@@ -6,6 +6,11 @@ import (
 )
 
 func MessageToProto(msg *Message) *pb.Message {
+	pbMedia := make([]*pb.Media, 0, len(msg.Media))
+	for _, v := range msg.Media {
+		pbMedia = append(pbMedia, &pb.Media{Id: v.ID, Url: v.FilePath})
+	}
+
 	return &pb.Message{
 		Id:        msg.ID,
 		UserId:    msg.UserID,
@@ -15,10 +20,16 @@ func MessageToProto(msg *Message) *pb.Message {
 		Seen:      msg.Seen,
 		Edited:    msg.Edited,
 		CreatedAt: uint64(msg.CreatedAt.Unix()),
+		Media:     pbMedia,
 	}
 }
 
 func MessageFromProto(msg *pb.Message) *Message {
+	mdMedia := make([]*Media, 0, len(msg.Media))
+	for _, v := range msg.Media {
+		mdMedia = append(mdMedia, &Media{ID: v.Id, FilePath: v.Url})
+	}
+
 	return &Message{
 		ID:        msg.Id,
 		UserID:    msg.UserId,
@@ -28,6 +39,7 @@ func MessageFromProto(msg *pb.Message) *Message {
 		Edited:    msg.Edited,
 		ReplyToID: &msg.ReplyToId,
 		CreatedAt: time.Unix(int64(msg.CreatedAt), 0),
+		Media:     mdMedia,
 	}
 }
 

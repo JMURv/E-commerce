@@ -1,45 +1,83 @@
 package kafka
 
 import (
+	"context"
+	"encoding/json"
 	"github.com/IBM/sarama"
+	ctrl "github.com/JMURv/e-commerce/notifications/internal/controller/notifications"
+	hdlr "github.com/JMURv/e-commerce/notifications/internal/handler/grpc"
 	conf "github.com/JMURv/e-commerce/notifications/pkg/config"
+	mdl "github.com/JMURv/e-commerce/notifications/pkg/model"
 	"log"
 )
 
 type Broker struct {
 	cfg      *conf.Config
 	consumer sarama.Consumer
+	pc       map[string]sarama.PartitionConsumer
+
+	ctrl    *ctrl.Controller
+	handler *hdlr.Handler
 }
 
-// Start Kafka consumer loop
-//go func() {
-//	for {
-//		m, err := reader.ReadMessage(ctx)
-//		if err != nil && errors.Is(err, io.EOF) {
-//			log.Printf("Kafka has been stopped")
-//			return
-//		} else if err != nil {
-//			log.Printf("Error reading message from Kafka: %v", err)
-//			continue
-//		}
-//		log.Println(m.Topic)
-//		log.Printf("Received message from Kafka: %s", m.Value)
-//	}
-//}()
+func New(conf *conf.Config, ctrl *ctrl.Controller, handler *hdlr.Handler) *Broker {
+	config := sarama.NewConfig()
+	config.Consumer.Return.Errors = true
 
-func New(conf *conf.Config) *Broker {
-	consumer, err := sarama.NewConsumer(conf.Kafka.Addrs, nil)
+	consumer, err := sarama.NewConsumer(conf.Kafka.Addrs, config)
 	if err != nil {
-		log.Fatalf("Error creating Kafka producer: %v", err)
+		log.Fatalf("Error creating Kafka consumer: %v", err)
 	}
 
 	return &Broker{
 		cfg:      conf,
 		consumer: consumer,
+		ctrl:     ctrl,
+		handler:  handler,
+		pc:       make(map[string]sarama.PartitionConsumer),
+	}
+}
+
+func (b *Broker) Start() {
+	ctx := context.Background()
+	topic := b.cfg.Kafka.NotificationTopic
+
+	pc, err := b.consumer.ConsumePartition(topic, 0, sarama.OffsetNewest)
+	if err != nil {
+		log.Fatalf("Error consuming Kafka topic %s: %v", topic, err)
+	}
+	b.pc[topic] = pc
+
+	log.Println("Kafka consumer started")
+	for msg := range pc.Messages() {
+		log.Printf("Received message from topic %s: %s", msg.Topic, string(msg.Value))
+		switch msg.Topic {
+		case topic:
+			var n mdl.Notification
+			if err := json.Unmarshal(msg.Value, &n); err != nil {
+				log.Printf("Error unmarshalling notification: %v", err)
+				continue
+			}
+
+			notification, err := b.ctrl.CreateNotification(ctx, &n)
+			if err != nil {
+				log.Printf("Error creating notification: %v", err)
+			}
+
+			err = b.handler.Broadcast(ctx, notification)
+			if err != nil {
+				log.Printf("Error broadcasting notification: %v", err)
+			}
+		}
 	}
 }
 
 func (b *Broker) Close() {
+	for _, pc := range b.pc {
+		if err := pc.Close(); err != nil {
+			log.Printf("Error closing Kafka partition consumer: %v", err)
+		}
+	}
 	if err := b.consumer.Close(); err != nil {
 		log.Printf("Error closing Kafka consumer: %v", err)
 	}

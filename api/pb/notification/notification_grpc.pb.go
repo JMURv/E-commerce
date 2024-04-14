@@ -19,6 +19,123 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
+	Broadcast_CreateStream_FullMethodName = "/chat.Broadcast/CreateStream"
+)
+
+// BroadcastClient is the client API for Broadcast service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type BroadcastClient interface {
+	CreateStream(ctx context.Context, in *Connect, opts ...grpc.CallOption) (Broadcast_CreateStreamClient, error)
+}
+
+type broadcastClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewBroadcastClient(cc grpc.ClientConnInterface) BroadcastClient {
+	return &broadcastClient{cc}
+}
+
+func (c *broadcastClient) CreateStream(ctx context.Context, in *Connect, opts ...grpc.CallOption) (Broadcast_CreateStreamClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Broadcast_ServiceDesc.Streams[0], Broadcast_CreateStream_FullMethodName, opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &broadcastCreateStreamClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type Broadcast_CreateStreamClient interface {
+	Recv() (*Notification, error)
+	grpc.ClientStream
+}
+
+type broadcastCreateStreamClient struct {
+	grpc.ClientStream
+}
+
+func (x *broadcastCreateStreamClient) Recv() (*Notification, error) {
+	m := new(Notification)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+// BroadcastServer is the server API for Broadcast service.
+// All implementations must embed UnimplementedBroadcastServer
+// for forward compatibility
+type BroadcastServer interface {
+	CreateStream(*Connect, Broadcast_CreateStreamServer) error
+	mustEmbedUnimplementedBroadcastServer()
+}
+
+// UnimplementedBroadcastServer must be embedded to have forward compatible implementations.
+type UnimplementedBroadcastServer struct {
+}
+
+func (UnimplementedBroadcastServer) CreateStream(*Connect, Broadcast_CreateStreamServer) error {
+	return status.Errorf(codes.Unimplemented, "method CreateStream not implemented")
+}
+func (UnimplementedBroadcastServer) mustEmbedUnimplementedBroadcastServer() {}
+
+// UnsafeBroadcastServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to BroadcastServer will
+// result in compilation errors.
+type UnsafeBroadcastServer interface {
+	mustEmbedUnimplementedBroadcastServer()
+}
+
+func RegisterBroadcastServer(s grpc.ServiceRegistrar, srv BroadcastServer) {
+	s.RegisterService(&Broadcast_ServiceDesc, srv)
+}
+
+func _Broadcast_CreateStream_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(Connect)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(BroadcastServer).CreateStream(m, &broadcastCreateStreamServer{stream})
+}
+
+type Broadcast_CreateStreamServer interface {
+	Send(*Notification) error
+	grpc.ServerStream
+}
+
+type broadcastCreateStreamServer struct {
+	grpc.ServerStream
+}
+
+func (x *broadcastCreateStreamServer) Send(m *Notification) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+// Broadcast_ServiceDesc is the grpc.ServiceDesc for Broadcast service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var Broadcast_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "chat.Broadcast",
+	HandlerType: (*BroadcastServer)(nil),
+	Methods:     []grpc.MethodDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "CreateStream",
+			Handler:       _Broadcast_CreateStream_Handler,
+			ServerStreams: true,
+		},
+	},
+	Metadata: "notification/notification.proto",
+}
+
+const (
 	Notifications_ListUserNotifications_FullMethodName  = "/chat.Notifications/ListUserNotifications"
 	Notifications_CreateNotification_FullMethodName     = "/chat.Notifications/CreateNotification"
 	Notifications_DeleteNotification_FullMethodName     = "/chat.Notifications/DeleteNotification"

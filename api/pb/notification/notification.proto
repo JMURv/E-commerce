@@ -7,9 +7,17 @@ import "common/common.proto";
 
 message EmptyResponse {}
 
+service Broadcast {
+  rpc CreateStream(Connect) returns (stream Notification);
+}
+
+message Connect {
+  common.User user = 1;
+  bool active = 2;
+}
+
 service Notifications {
   rpc ListUserNotifications(ByUserIDRequest) returns (ListNotificationResponse);
-  rpc CreateNotification(Notification) returns (Notification);
   rpc DeleteNotification(DeleteNotificationRequest) returns (EmptyResponse);
   rpc DeleteAllNotifications(ByUserIDRequest) returns (EmptyResponse);
 }

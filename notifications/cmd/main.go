@@ -7,9 +7,9 @@ import (
 	redis "github.com/JMURv/e-commerce/notifications/internal/cache/redis"
 	ctrl "github.com/JMURv/e-commerce/notifications/internal/controller/notifications"
 	hdlr "github.com/JMURv/e-commerce/notifications/internal/handler/grpc"
-	db "github.com/JMURv/e-commerce/notifications/internal/repository/db"
 	cfg "github.com/JMURv/e-commerce/notifications/pkg/config"
-	//mem "github.com/JMURv/e-commerce/notifications/internal/repository/memory"
+	//db "github.com/JMURv/e-commerce/notifications/internal/repository/db"
+	mem "github.com/JMURv/e-commerce/notifications/internal/repository/memory"
 	"github.com/JMURv/e-commerce/pkg/discovery"
 	"github.com/JMURv/e-commerce/pkg/discovery/consul"
 	"log"
@@ -66,20 +66,50 @@ func main() {
 	}()
 
 	// Setting up main app
-	broker := kafka.New(conf)
 	cache := redis.New(conf.RedisAddr, conf.RedisPass)
-	repo := db.New(conf)
+	repo := mem.New(conf)
 
-	svc := ctrl.New(repo, cache, broker)
+	svc := ctrl.New(repo, cache)
 	h := hdlr.New(svc)
+
+	broker := kafka.New(conf, svc, h)
+	go broker.Start()
 
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%v", port))
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
+	// TEST START
+	//go func() {
+	//	time.Sleep(time.Second * 10)
+	//	n := &mdl.Notification{
+	//		ID:         1,
+	//		Type:       "TEST",
+	//		UserID:     2066,
+	//		User:       "",
+	//		ReceiverID: 3066,
+	//		Receiver:   "",
+	//		Message:    "Test message",
+	//		CreatedAt:  time.Now(),
+	//	}
+	//	bytes, err := json.Marshal(n)
+	//	producer, err := sarama.NewAsyncProducer(conf.Kafka.Addrs, nil)
+	//	if err != nil {
+	//		log.Fatalf("Error creating Kafka producer: %v", err)
+	//	}
+	//	producer.Input() <- &sarama.ProducerMessage{
+	//		Topic: conf.Kafka.NotificationTopic,
+	//		Key:   sarama.StringEncoder(strconv.FormatUint(n.ID, 10)),
+	//		Value: sarama.ByteEncoder(bytes),
+	//	}
+	//	log.Println("Message sent successfully!")
+	//}()
+	// TEST END
+
 	srv := grpc.NewServer()
 	pb.RegisterNotificationsServer(srv, h)
+	pb.RegisterBroadcastServer(srv, h)
 	reflection.Register(srv)
 
 	// Graceful shutdown
@@ -95,7 +125,7 @@ func main() {
 		if err = registry.Deregister(ctx, instanceID, serviceName); err != nil {
 			log.Printf("Error deregistering service: %v", err)
 		}
-		srv.GracefulStop()
+		srv.Stop()
 		os.Exit(0)
 	}()
 
