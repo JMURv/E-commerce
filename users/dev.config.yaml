@@ -12,3 +12,5 @@ redisPass: ""
 kafka:
   addrs: [ "localhost:9092" ]
   notificationTopic: "notifications"
+jaeger:
+  url: "localhost:6831"

@@ -7,6 +7,7 @@ import (
 	itmgate "github.com/JMURv/e-commerce/users/internal/gateway/items"
 	repo "github.com/JMURv/e-commerce/users/internal/repository"
 	"github.com/JMURv/e-commerce/users/pkg/model"
+	"github.com/opentracing/opentracing-go"
 	"time"
 )
 
@@ -48,6 +49,10 @@ func New(repo userRepository, cache CacheRepository, broker BrokerRepository, it
 }
 
 func (c *Controller) GetUsersList(ctx context.Context) ([]*model.User, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "users.GetUsersList.ctrl")
+	ctx = opentracing.ContextWithSpan(ctx, span)
+	defer span.Finish()
+
 	res, err := c.repo.GetUsersList(ctx)
 	if err != nil && errors.Is(err, repo.ErrNotFound) {
 		return nil, ErrNotFound
@@ -58,6 +63,10 @@ func (c *Controller) GetUsersList(ctx context.Context) ([]*model.User, error) {
 }
 
 func (c *Controller) GetUserByID(ctx context.Context, userID uint64) (*model.User, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "users.GetUserByID.ctrl")
+	ctx = opentracing.ContextWithSpan(ctx, span)
+	defer span.Finish()
+
 	cached, err := c.cache.Get(ctx, fmt.Sprintf(cacheKey, userID))
 	if err == nil {
 		return cached, nil
@@ -78,6 +87,10 @@ func (c *Controller) GetUserByID(ctx context.Context, userID uint64) (*model.Use
 }
 
 func (c *Controller) GetUserByEmail(ctx context.Context, email string) (*model.User, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "users.GetUserByEmail.ctrl")
+	ctx = opentracing.ContextWithSpan(ctx, span)
+	defer span.Finish()
+
 	res, err := c.repo.GetByEmail(ctx, email)
 	if err != nil && errors.Is(err, repo.ErrNotFound) {
 		return nil, repo.ErrNotFound
@@ -89,6 +102,10 @@ func (c *Controller) GetUserByEmail(ctx context.Context, email string) (*model.U
 }
 
 func (c *Controller) CreateUser(ctx context.Context, userData *model.User) (*model.User, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "users.CreateUser.ctrl")
+	ctx = opentracing.ContextWithSpan(ctx, span)
+	defer span.Finish()
+
 	res, err := c.repo.Create(ctx, userData)
 	if err != nil && errors.Is(err, repo.ErrNotFound) {
 		return nil, repo.ErrNotFound
@@ -104,6 +121,10 @@ func (c *Controller) CreateUser(ctx context.Context, userData *model.User) (*mod
 }
 
 func (c *Controller) UpdateUser(ctx context.Context, userID uint64, newData *model.User) (*model.User, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "users.UpdateUser.ctrl")
+	ctx = opentracing.ContextWithSpan(ctx, span)
+	defer span.Finish()
+
 	res, err := c.repo.Update(ctx, userID, newData)
 	if err != nil && errors.Is(err, repo.ErrNotFound) {
 		return nil, repo.ErrNotFound
@@ -119,6 +140,10 @@ func (c *Controller) UpdateUser(ctx context.Context, userID uint64, newData *mod
 }
 
 func (c *Controller) DeleteUser(ctx context.Context, userID uint64) error {
+	span, _ := opentracing.StartSpanFromContext(ctx, "users.DeleteUser.ctrl")
+	ctx = opentracing.ContextWithSpan(ctx, span)
+	defer span.Finish()
+
 	if err := c.repo.Delete(ctx, userID); err != nil {
 		return err
 	}

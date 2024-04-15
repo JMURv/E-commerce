@@ -12,6 +12,11 @@ import (
 	itmgate "github.com/JMURv/e-commerce/users/internal/gateway/items"
 	mem "github.com/JMURv/e-commerce/users/internal/repository/memory"
 	cfg "github.com/JMURv/e-commerce/users/pkg/config"
+	"github.com/opentracing/opentracing-go"
+	jaeger "github.com/uber/jaeger-client-go"
+	jaegercfg "github.com/uber/jaeger-client-go/config"
+	"io"
+
 	//db "github.com/JMURv/e-commerce/users/internal/repository/db"
 	handler "github.com/JMURv/e-commerce/users/internal/handler/grpc"
 	"google.golang.org/grpc"
@@ -25,6 +30,28 @@ import (
 )
 
 const configName = "dev.config"
+
+func JaegerStart(serviceName, url string) io.Closer {
+	jeagerCfg := jaegercfg.Configuration{
+		ServiceName: serviceName,
+		Sampler: &jaegercfg.SamplerConfig{
+			Type:  jaeger.SamplerTypeConst,
+			Param: 1,
+		},
+		Reporter: &jaegercfg.ReporterConfig{
+			LogSpans:           true,
+			LocalAgentHostPort: url,
+		},
+	}
+
+	tracer, closer, err := jeagerCfg.NewTracer(jaegercfg.Logger(jaeger.StdLogger))
+	if err != nil {
+		log.Fatalf("Error initializing Jaeger tracer: %s", err.Error())
+	}
+
+	opentracing.SetGlobalTracer(tracer)
+	return closer
+}
 
 func main() {
 	defer func() {
@@ -43,6 +70,9 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	port := conf.Port
 	serviceName := conf.ServiceName
+
+	// Start jaeger
+	closer := JaegerStart(serviceName, conf.Jaeger.URL)
 
 	// Setting up registry
 	registry, err := consul.NewRegistry(conf.RegistryAddr)
@@ -65,11 +95,13 @@ func main() {
 	}()
 
 	// Setting up main app
+	itemGate := itmgate.New(registry)
+
 	broker := kafka.New(conf)
 	cache := redis.New(conf.RedisAddr, conf.RedisPass)
 	repo := mem.New()
 
-	svc := ctrl.New(repo, cache, broker, itmgate.New(registry))
+	svc := ctrl.New(repo, cache, broker, itemGate)
 	h := handler.New(svc)
 
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%v", port))
@@ -91,6 +123,9 @@ func main() {
 		cancel()
 		broker.Close()
 		cache.Close()
+		if err = closer.Close(); err != nil {
+			log.Printf("Error closing Jaeger tracer: %v", err)
+		}
 		if err = registry.Deregister(ctx, instanceID, serviceName); err != nil {
 			log.Printf("Error deregistering service: %v", err)
 		}

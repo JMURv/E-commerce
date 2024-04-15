@@ -6,6 +6,7 @@ import (
 	errs "github.com/JMURv/e-commerce/users/internal/cache"
 	"github.com/JMURv/e-commerce/users/pkg/model"
 	"github.com/go-redis/redis/v8"
+	"github.com/opentracing/opentracing-go"
 	"log"
 	"time"
 )
@@ -50,6 +51,9 @@ func (c *Cache) Get(ctx context.Context, key string) (*model.User, error) {
 }
 
 func (c *Cache) Set(ctx context.Context, t time.Duration, key string, r *model.User) error {
+	span, _ := opentracing.StartSpanFromContext(ctx, "users.SetToCache")
+	defer span.Finish()
+
 	bytes, err := json.Marshal(r)
 	if err != nil {
 		return err

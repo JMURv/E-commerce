@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: jaeger-query
+  namespace: default
+spec:
+  selector:
+    app: jaeger-operator
+  ports:
+    - name: http-query
+      port: 16686
+      targetPort: 16686

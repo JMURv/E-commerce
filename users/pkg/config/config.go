@@ -25,6 +25,10 @@ type Config struct {
 		Addrs             []string `yaml:"addrs"`
 		NotificationTopic string   `yaml:"notificationTopic"`
 	} `yaml:"kafka"`
+
+	Jaeger struct {
+		URL string `yaml:"url"`
+	} `yaml:"jaeger"`
 }
 
 func LoadConfig(configName string) (*Config, error) {

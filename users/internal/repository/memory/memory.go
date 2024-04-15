@@ -4,6 +4,7 @@ import (
 	"context"
 	repo "github.com/JMURv/e-commerce/users/internal/repository"
 	"github.com/JMURv/e-commerce/users/pkg/model"
+	"github.com/opentracing/opentracing-go"
 	"sync"
 	"time"
 )
@@ -17,7 +18,10 @@ func New() *Repository {
 	return &Repository{data: map[uint64]*model.User{}}
 }
 
-func (r *Repository) GetUsersList(_ context.Context) ([]*model.User, error) {
+func (r *Repository) GetUsersList(ctx context.Context) ([]*model.User, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "users.GetUsersList.repo")
+	defer span.Finish()
+
 	r.RLock()
 	defer r.RUnlock()
 
@@ -28,7 +32,10 @@ func (r *Repository) GetUsersList(_ context.Context) ([]*model.User, error) {
 	return res, nil
 }
 
-func (r *Repository) GetByID(_ context.Context, userID uint64) (*model.User, error) {
+func (r *Repository) GetByID(ctx context.Context, userID uint64) (*model.User, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "users.GetByID.repo")
+	defer span.Finish()
+
 	r.RLock()
 	defer r.RUnlock()
 	for _, v := range r.data {
@@ -39,7 +46,10 @@ func (r *Repository) GetByID(_ context.Context, userID uint64) (*model.User, err
 	return nil, repo.ErrNotFound
 }
 
-func (r *Repository) GetByEmail(_ context.Context, email string) (*model.User, error) {
+func (r *Repository) GetByEmail(ctx context.Context, email string) (*model.User, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "users.GetByEmail.repo")
+	defer span.Finish()
+
 	r.RLock()
 	defer r.RUnlock()
 	for _, v := range r.data {
@@ -50,7 +60,10 @@ func (r *Repository) GetByEmail(_ context.Context, email string) (*model.User, e
 	return nil, repo.ErrNotFound
 }
 
-func (r *Repository) Create(_ context.Context, u *model.User) (*model.User, error) {
+func (r *Repository) Create(ctx context.Context, u *model.User) (*model.User, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "users.CreateUser.repo")
+	defer span.Finish()
+
 	u.ID = uint64(time.Now().Unix())
 
 	if u.Username == "" {
@@ -67,7 +80,10 @@ func (r *Repository) Create(_ context.Context, u *model.User) (*model.User, erro
 	return u, nil
 }
 
-func (r *Repository) Update(_ context.Context, userID uint64, u *model.User) (*model.User, error) {
+func (r *Repository) Update(ctx context.Context, userID uint64, u *model.User) (*model.User, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "users.UpdateUser.repo")
+	defer span.Finish()
+
 	if u.Username == "" {
 		return nil, repo.ErrUsernameIsRequired
 	}
@@ -85,7 +101,10 @@ func (r *Repository) Update(_ context.Context, userID uint64, u *model.User) (*m
 	return nil, repo.ErrNotFound
 }
 
-func (r *Repository) Delete(_ context.Context, userID uint64) error {
+func (r *Repository) Delete(ctx context.Context, userID uint64) error {
+	span, _ := opentracing.StartSpanFromContext(ctx, "users.DeleteUser.repo")
+	defer span.Finish()
+
 	r.Lock()
 	defer r.Unlock()
 
