@@ -10,8 +10,6 @@ type Config struct {
 	Port         int    `yaml:"port"`
 	ServiceName  string `yaml:"serviceName"`
 	RegistryAddr string `yaml:"registryAddr"`
-	RedisAddr    string `yaml:"redisAddr"`
-	RedisPass    string `yaml:"redisPass"`
 
 	DB struct {
 		Host     string `yaml:"host"`
@@ -21,13 +19,25 @@ type Config struct {
 		Database string `yaml:"database"`
 	} `yaml:"db"`
 
+	Redis struct {
+		Addr string `yaml:"addr"`
+		Pass string `yaml:"pass"`
+	} `yaml:"redis"`
+
 	Kafka struct {
 		Addrs             []string `yaml:"addrs"`
 		NotificationTopic string   `yaml:"notificationTopic"`
 	} `yaml:"kafka"`
 
 	Jaeger struct {
-		URL string `yaml:"url"`
+		Sampler struct {
+			Type  string `yaml:"type"`
+			Param int    `yaml:"param"`
+		} `yaml:"sampler"`
+		Reporter struct {
+			LogSpans           bool   `yaml:"LogSpans"`
+			LocalAgentHostPort string `yaml:"LocalAgentHostPort"`
+		} `yaml:"reporter"`
 	} `yaml:"jaeger"`
 }
 

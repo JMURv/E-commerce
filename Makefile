@@ -24,3 +24,10 @@ jaeger:
       -p 14269:14269 \
       -p 9411:9411 \
       jaegertracing/all-in-one:latest
+
+prometheus:
+	docker run --rm --name prometheus \
+		-p 9090:9090 \
+		-v $PWD/prometheus.yml:/etc/prometheus/prometheus.yml \
+		-v prometheus-data:/prometheus \
+ 		prom/prometheus:latest

@@ -12,10 +12,19 @@ import (
 	itmgate "github.com/JMURv/e-commerce/users/internal/gateway/items"
 	mem "github.com/JMURv/e-commerce/users/internal/repository/memory"
 	cfg "github.com/JMURv/e-commerce/users/pkg/config"
+	grpcprom "github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
 	"github.com/opentracing/opentracing-go"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	jaeger "github.com/uber/jaeger-client-go"
 	jaegercfg "github.com/uber/jaeger-client-go/config"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"io"
+	"net/http"
+	"strconv"
 
 	//db "github.com/JMURv/e-commerce/users/internal/repository/db"
 	handler "github.com/JMURv/e-commerce/users/internal/handler/grpc"
@@ -30,6 +39,16 @@ import (
 )
 
 const configName = "dev.config"
+
+func PrometheusStart() {
+	//srvMetrics := grpcprom.NewServerMetrics(
+	//	grpcprom.WithServerHandlingTimeHistogram(
+	//		grpcprom.WithHistogramBuckets([]float64{0.001, 0.01, 0.1, 0.3, 0.6, 1, 3, 6, 9, 20, 30, 60, 90, 120}),
+	//	),
+	//)
+	//reg := prometheus.NewRegistry()
+	//reg.MustRegister(srvMetrics)
+}
 
 func JaegerStart(serviceName, url string) io.Closer {
 	jeagerCfg := jaegercfg.Configuration{
@@ -72,7 +91,30 @@ func main() {
 	serviceName := conf.ServiceName
 
 	// Start jaeger
-	closer := JaegerStart(serviceName, conf.Jaeger.URL)
+	closer := JaegerStart(serviceName, conf.Jaeger.Reporter.LocalAgentHostPort)
+
+	// Start metrics
+	srvMetrics := grpcprom.NewServerMetrics(
+		grpcprom.WithServerHandlingTimeHistogram(
+			grpcprom.WithHistogramBuckets([]float64{0.001, 0.01, 0.1, 0.3, 0.6, 1, 3, 6, 9, 20, 30, 60, 90, 120}),
+		),
+	)
+	reg := prometheus.NewRegistry()
+	reg.MustRegister(srvMetrics)
+
+	exemplarFromContext := func(ctx context.Context) prometheus.Labels {
+		return prometheus.Labels{"traceID": strconv.Itoa(1)}
+	}
+
+	// Setup metric for panic recoveries.
+	panicsTotal := promauto.With(reg).NewCounter(prometheus.CounterOpts{
+		Name: "grpc_req_panics_recovered_total",
+		Help: "Total number of gRPC requests recovered from internal panic.",
+	})
+	grpcPanicRecoveryHandler := func(p any) (err error) {
+		panicsTotal.Inc()
+		return status.Errorf(codes.Internal, "%s", p)
+	}
 
 	// Setting up registry
 	registry, err := consul.NewRegistry(conf.RegistryAddr)
@@ -98,7 +140,7 @@ func main() {
 	itemGate := itmgate.New(registry)
 
 	broker := kafka.New(conf)
-	cache := redis.New(conf.RedisAddr, conf.RedisPass)
+	cache := redis.New(conf.Redis.Addr, conf.Redis.Pass)
 	repo := mem.New()
 
 	svc := ctrl.New(repo, cache, broker, itemGate)
@@ -109,9 +151,31 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	srv := grpc.NewServer()
+	srv := grpc.NewServer(
+		grpc.ChainUnaryInterceptor(
+			srvMetrics.UnaryServerInterceptor(grpcprom.WithExemplarFromContext(exemplarFromContext)),
+			recovery.UnaryServerInterceptor(recovery.WithRecoveryHandler(grpcPanicRecoveryHandler)),
+		),
+		grpc.ChainStreamInterceptor(
+			srvMetrics.StreamServerInterceptor(grpcprom.WithExemplarFromContext(exemplarFromContext)),
+			recovery.StreamServerInterceptor(recovery.WithRecoveryHandler(grpcPanicRecoveryHandler)),
+		),
+	)
 	pb.RegisterUserServiceServer(srv, h)
 	reflection.Register(srv)
+
+	// Start http server for prometheus
+	go func() {
+		m := http.NewServeMux()
+		m.Handle("/metrics", promhttp.HandlerFor(
+			reg,
+			promhttp.HandlerOpts{
+				EnableOpenMetrics: true,
+			},
+		))
+		log.Println("starting http server for prometheus")
+		http.ListenAndServe(fmt.Sprintf(":%d", conf.Port+1), m)
+	}()
 
 	// Graceful shutdown
 	go func() {

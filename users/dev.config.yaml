@@ -1,16 +1,26 @@
 port: 50075
 serviceName: "users"
 registryAddr: "localhost:8500"
+
 db:
   host: "localhost"
   port: 5432
   user: "postgres"
   password: "794613825Zx!"
   database: "users_db"
-redisAddr: "localhost:6379"
-redisPass: ""
+
+redis:
+  addr: "localhost:6379"
+  pass: ""
+
 kafka:
   addrs: [ "localhost:9092" ]
   notificationTopic: "notifications"
+
 jaeger:
-  url: "localhost:6831"
+  sampler:
+    type: "const"
+    param: 1
+  reporter:
+    LogSpans: true
+    LocalAgentHostPort: "localhost:6831"
