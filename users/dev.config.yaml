@@ -1,3 +1,5 @@
+server:
+  mode: "dev"
 port: 50075
 serviceName: "users"
 registryAddr: "localhost:8500"

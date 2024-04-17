@@ -40,14 +40,16 @@ import (
 
 const configName = "dev.config"
 
-func PrometheusStart() {
-	//srvMetrics := grpcprom.NewServerMetrics(
-	//	grpcprom.WithServerHandlingTimeHistogram(
-	//		grpcprom.WithHistogramBuckets([]float64{0.001, 0.01, 0.1, 0.3, 0.6, 1, 3, 6, 9, 20, 30, 60, 90, 120}),
-	//	),
-	//)
-	//reg := prometheus.NewRegistry()
-	//reg.MustRegister(srvMetrics)
+func PrometheusServerStart(reg prometheus.Gatherer, port int) {
+	m := http.NewServeMux()
+	m.Handle("/metrics", promhttp.HandlerFor(
+		reg,
+		promhttp.HandlerOpts{
+			EnableOpenMetrics: true,
+		},
+	))
+	log.Printf("starting http server for prometheus on port:%d", port)
+	http.ListenAndServe(fmt.Sprintf(":%d", port), m)
 }
 
 func JaegerStart(serviceName, url string) io.Closer {
@@ -89,9 +91,6 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	port := conf.Port
 	serviceName := conf.ServiceName
-
-	// Start jaeger
-	closer := JaegerStart(serviceName, conf.Jaeger.Reporter.LocalAgentHostPort)
 
 	// Start metrics
 	srvMetrics := grpcprom.NewServerMetrics(
@@ -164,18 +163,8 @@ func main() {
 	pb.RegisterUserServiceServer(srv, h)
 	reflection.Register(srv)
 
-	// Start http server for prometheus
-	go func() {
-		m := http.NewServeMux()
-		m.Handle("/metrics", promhttp.HandlerFor(
-			reg,
-			promhttp.HandlerOpts{
-				EnableOpenMetrics: true,
-			},
-		))
-		log.Println("starting http server for prometheus")
-		http.ListenAndServe(fmt.Sprintf(":%d", conf.Port+1), m)
-	}()
+	// Start jaeger
+	closer := JaegerStart(serviceName, conf.Jaeger.Reporter.LocalAgentHostPort)
 
 	// Graceful shutdown
 	go func() {
@@ -197,7 +186,10 @@ func main() {
 		os.Exit(0)
 	}()
 
-	// Start server
+	// Start http server for prometheus
+	go PrometheusServerStart(reg, conf.Port+1)
+
+	// Start main server
 	log.Printf("%v service is listening", serviceName)
 	srv.Serve(lis)
 }
