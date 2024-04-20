@@ -31,3 +31,12 @@ prometheus:
 		-v $PWD/prometheus.yml:/etc/prometheus/prometheus.yml \
 		-v prometheus-data:/prometheus \
  		prom/prometheus:latest
+
+node-exp:
+	docker run --rm --name node-exp -p 9100:9100 prom/node-exporter
+
+grafana:
+	docker run --rm --name grafana \
+		-p 3000:3000 \
+		-v grafana-data:/var/lib/grafana \
+		grafana/grafana:latest

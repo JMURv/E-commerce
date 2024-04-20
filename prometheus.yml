@@ -2,12 +2,37 @@ global:
   scrape_interval: 15s
 
 scrape_configs:
-  - job_name: 'prometheus'
+  - job_name: 'node_exporter'
     scrape_interval: 5s
     static_configs:
-      - targets: [ 'localhost:9090' ]
+      - targets: [ 'host.docker.internal:9100' ]
 
   - job_name: 'users-svc'
+    scrape_interval: 5s
+    static_configs:
+      - targets: [ 'host.docker.internal:50076' ]
+
+  - job_name: 'items-svc'
+    scrape_interval: 5s
+    static_configs:
+      - targets: [ 'host.docker.internal:50076' ]
+
+  - job_name: 'reviews-svc'
+    scrape_interval: 5s
+    static_configs:
+      - targets: [ 'host.docker.internal:50076' ]
+
+  - job_name: 'favorites-svc'
+    scrape_interval: 5s
+    static_configs:
+      - targets: [ 'host.docker.internal:50076' ]
+
+  - job_name: 'chat-svc'
+    scrape_interval: 5s
+    static_configs:
+      - targets: [ 'host.docker.internal:50076' ]
+
+  - job_name: 'notifications-svc'
     scrape_interval: 5s
     static_configs:
       - targets: [ 'host.docker.internal:50076' ]
