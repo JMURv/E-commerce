@@ -6,11 +6,13 @@ import (
 	"github.com/JMURv/e-commerce/api/pb/common"
 	pb "github.com/JMURv/e-commerce/api/pb/user"
 	controller "github.com/JMURv/e-commerce/users/internal/controller/user"
+	metrics "github.com/JMURv/e-commerce/users/internal/metrics/prometheus"
 	"github.com/JMURv/e-commerce/users/pkg/model"
 	"github.com/opentracing/opentracing-go"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
+	"time"
 )
 
 type Handler struct {
@@ -23,18 +25,28 @@ func New(ctrl *controller.Controller) *Handler {
 }
 
 func (h *Handler) ListUser(ctx context.Context, req *pb.EmptyRequest) (*pb.ListUserResponse, error) {
+	var statusCode codes.Code
+	start := time.Now()
+
 	span := opentracing.GlobalTracer().StartSpan("users.ListUser.handler")
-	defer span.Finish()
 	ctx = opentracing.ContextWithSpan(ctx, span)
+	defer func() {
+		span.Finish()
+		metrics.ObserveRequestTotal("list_user")
+		metrics.ObserveRequest(time.Since(start), int(statusCode))
+	}()
 
 	if req == nil {
-		return nil, status.Errorf(codes.InvalidArgument, "nil req")
+		statusCode = codes.InvalidArgument
+		return nil, status.Errorf(statusCode, "nil req")
 	}
 
 	if u, err := h.ctrl.GetUsersList(ctx); err != nil {
+		statusCode = codes.Internal
 		span.SetTag("error", true)
 		return nil, status.Errorf(codes.Internal, err.Error())
 	} else {
+		statusCode = codes.OK
 		return &pb.ListUserResponse{Users: model.UsersToProto(u)}, nil
 	}
 }

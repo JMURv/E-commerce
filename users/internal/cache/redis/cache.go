@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	errs "github.com/JMURv/e-commerce/users/internal/cache"
+	cfg "github.com/JMURv/e-commerce/users/pkg/config"
 	"github.com/JMURv/e-commerce/users/pkg/model"
 	"github.com/go-redis/redis/v8"
 	"github.com/opentracing/opentracing-go"
@@ -15,10 +16,10 @@ type Cache struct {
 	cli *redis.Client
 }
 
-func New(addr, pass string) *Cache {
+func New(conf *cfg.RedisConfig) *Cache {
 	redisCli := redis.NewClient(&redis.Options{
-		Addr:     addr,
-		Password: pass,
+		Addr:     conf.Addr,
+		Password: conf.Pass,
 		DB:       0,
 	})
 	_, err := redisCli.Ping(context.Background()).Result()

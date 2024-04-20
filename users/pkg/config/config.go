@@ -19,26 +19,30 @@ type Config struct {
 		Database string `yaml:"database"`
 	} `yaml:"db"`
 
-	Redis struct {
-		Addr string `yaml:"addr"`
-		Pass string `yaml:"pass"`
-	} `yaml:"redis"`
+	Redis  RedisConfig  `yaml:"redis"`
+	Kafka  KafkaConfig  `yaml:"kafka"`
+	Jaeger JaegerConfig `yaml:"jaeger"`
+}
 
-	Kafka struct {
-		Addrs             []string `yaml:"addrs"`
-		NotificationTopic string   `yaml:"notificationTopic"`
-	} `yaml:"kafka"`
+type RedisConfig struct {
+	Addr string `yaml:"addr"`
+	Pass string `yaml:"pass"`
+}
 
-	Jaeger struct {
-		Sampler struct {
-			Type  string `yaml:"type"`
-			Param int    `yaml:"param"`
-		} `yaml:"sampler"`
-		Reporter struct {
-			LogSpans           bool   `yaml:"LogSpans"`
-			LocalAgentHostPort string `yaml:"LocalAgentHostPort"`
-		} `yaml:"reporter"`
-	} `yaml:"jaeger"`
+type KafkaConfig struct {
+	Addrs             []string `yaml:"addrs"`
+	NotificationTopic string   `yaml:"notificationTopic"`
+}
+
+type JaegerConfig struct {
+	Sampler struct {
+		Type  string `yaml:"type"`
+		Param int    `yaml:"param"`
+	} `yaml:"sampler"`
+	Reporter struct {
+		LogSpans           bool   `yaml:"LogSpans"`
+		LocalAgentHostPort string `yaml:"LocalAgentHostPort"`
+	} `yaml:"reporter"`
 }
 
 func LoadConfig(configName string) (*Config, error) {
