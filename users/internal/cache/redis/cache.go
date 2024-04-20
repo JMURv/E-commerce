@@ -37,6 +37,9 @@ func (c *Cache) Close() {
 }
 
 func (c *Cache) Get(ctx context.Context, key string) (*model.User, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "users.GetFromCache")
+	defer span.Finish()
+
 	val, err := c.cli.Get(ctx, key).Bytes()
 	if err == redis.Nil {
 		return nil, errs.ErrNotFoundInCache
@@ -67,6 +70,9 @@ func (c *Cache) Set(ctx context.Context, t time.Duration, key string, r *model.U
 }
 
 func (c *Cache) Delete(ctx context.Context, key string) error {
+	span, _ := opentracing.StartSpanFromContext(ctx, "users.DeleteFromCache")
+	defer span.Finish()
+
 	if err := c.cli.Del(ctx, key).Err(); err != nil {
 		return err
 	}

@@ -35,7 +35,6 @@ func New() *Metric {
 		srvMetrics,
 		PanicsTotal,
 		RequestMetrics,
-		RequestTotal,
 		collectors.NewGoCollector(),
 		collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}),
 	)
@@ -91,17 +90,8 @@ var RequestMetrics = promauto.NewSummaryVec(prometheus.SummaryOpts{
 	Namespace:  "users",
 	Name:       "request_metrics",
 	Objectives: map[float64]float64{0.5: 0.05, 0.9: 0.01, 0.99: 0.001},
-}, []string{"status"})
+}, []string{"status", "endpoint"})
 
-var RequestTotal = promauto.NewCounterVec(prometheus.CounterOpts{
-	Namespace: "users",
-	Name:      "request_total",
-}, []string{"endpoint"})
-
-func ObserveRequestTotal(endpoint string) {
-	RequestTotal.WithLabelValues(endpoint).Inc()
-}
-
-func ObserveRequest(d time.Duration, status int) {
-	RequestMetrics.WithLabelValues(strconv.Itoa(status)).Observe(d.Seconds())
+func ObserveRequest(d time.Duration, status int, endpoint string) {
+	RequestMetrics.WithLabelValues(strconv.Itoa(status), endpoint).Observe(d.Seconds())
 }

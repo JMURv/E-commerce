@@ -32,8 +32,7 @@ func (h *Handler) ListUser(ctx context.Context, req *pb.EmptyRequest) (*pb.ListU
 	ctx = opentracing.ContextWithSpan(ctx, span)
 	defer func() {
 		span.Finish()
-		metrics.ObserveRequestTotal("list_user")
-		metrics.ObserveRequest(time.Since(start), int(statusCode))
+		metrics.ObserveRequest(time.Since(start), int(statusCode), "ListUser")
 	}()
 
 	if req == nil {
@@ -52,54 +51,81 @@ func (h *Handler) ListUser(ctx context.Context, req *pb.EmptyRequest) (*pb.ListU
 }
 
 func (h *Handler) GetUserByID(ctx context.Context, req *pb.GetUserByIDRequest) (*common.User, error) {
+	var statusCode codes.Code
+	start := time.Now()
+
 	span := opentracing.GlobalTracer().StartSpan("users.GetUserByID.handler")
-	defer span.Finish()
 	ctx = opentracing.ContextWithSpan(ctx, span)
+	defer func() {
+		span.Finish()
+		metrics.ObserveRequest(time.Since(start), int(statusCode), "GetUserByID")
+	}()
 
 	userID := req.UserId
 	if req == nil || userID == 0 {
-		return nil, status.Errorf(codes.InvalidArgument, "nil req or empty id")
+		statusCode = codes.InvalidArgument
+		return nil, status.Errorf(statusCode, "nil req or empty id")
 	}
 
 	u, err := h.ctrl.GetUserByID(ctx, userID)
 	if err != nil && errors.Is(err, controller.ErrNotFound) {
-		return nil, status.Errorf(codes.NotFound, err.Error())
+		statusCode = codes.NotFound
+		return nil, status.Errorf(statusCode, err.Error())
 	} else if err != nil {
 		span.SetTag("error", true)
-		return nil, status.Errorf(codes.Internal, err.Error())
+		statusCode = codes.Internal
+		return nil, status.Errorf(statusCode, err.Error())
 	}
 
+	statusCode = codes.OK
 	return model.UserToProto(u), nil
 }
 
 func (h *Handler) GetUserByEmail(ctx context.Context, req *pb.GetUserByEmailRequest) (*common.User, error) {
+	var statusCode codes.Code
+	start := time.Now()
+
 	span := opentracing.GlobalTracer().StartSpan("users.GetUserByEmail.handler")
-	defer span.Finish()
 	ctx = opentracing.ContextWithSpan(ctx, span)
+	defer func() {
+		span.Finish()
+		metrics.ObserveRequest(time.Since(start), int(statusCode), "GetUserByEmail")
+	}()
 
 	userEmail := req.Email
 	if req == nil || userEmail == "" {
-		return nil, status.Errorf(codes.InvalidArgument, "nil req or empty id")
+		statusCode = codes.InvalidArgument
+		return nil, status.Errorf(statusCode, "nil req or empty id")
 	}
 
 	u, err := h.ctrl.GetUserByEmail(ctx, userEmail)
 	if err != nil && errors.Is(err, controller.ErrNotFound) {
-		return nil, status.Errorf(codes.NotFound, err.Error())
+		statusCode = codes.NotFound
+		return nil, status.Errorf(statusCode, err.Error())
 	} else if err != nil {
 		span.SetTag("error", true)
-		return nil, status.Errorf(codes.Internal, err.Error())
+		statusCode = codes.Internal
+		return nil, status.Errorf(statusCode, err.Error())
 	}
 
+	statusCode = codes.OK
 	return model.UserToProto(u), nil
 }
 
 func (h *Handler) CreateUser(ctx context.Context, req *pb.CreateUserRequest) (*common.User, error) {
+	var statusCode codes.Code
+	start := time.Now()
+
 	span := opentracing.GlobalTracer().StartSpan("users.CreateUser.handler")
-	defer span.Finish()
 	ctx = opentracing.ContextWithSpan(ctx, span)
+	defer func() {
+		span.Finish()
+		metrics.ObserveRequest(time.Since(start), int(statusCode), "CreateUser")
+	}()
 
 	if req == nil {
-		return nil, status.Errorf(codes.InvalidArgument, "nil req")
+		statusCode = codes.InvalidArgument
+		return nil, status.Errorf(statusCode, "nil req")
 	}
 
 	u, err := h.ctrl.CreateUser(ctx, model.UserFromProto(&common.User{
@@ -108,52 +134,76 @@ func (h *Handler) CreateUser(ctx context.Context, req *pb.CreateUserRequest) (*c
 	}))
 	if err != nil {
 		span.SetTag("error", true)
-		return nil, status.Errorf(codes.Internal, err.Error())
+		statusCode = codes.Internal
+		return nil, status.Errorf(statusCode, err.Error())
 	}
+
+	statusCode = codes.OK
 	return model.UserToProto(u), nil
 }
 
 func (h *Handler) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest) (*common.User, error) {
+	var statusCode codes.Code
+	start := time.Now()
+
 	span := opentracing.GlobalTracer().StartSpan("users.UpdateUser.handler")
-	defer span.Finish()
 	ctx = opentracing.ContextWithSpan(ctx, span)
+	defer func() {
+		span.Finish()
+		metrics.ObserveRequest(time.Since(start), int(statusCode), "UpdateUser")
+	}()
 
 	userID := req.UserId
 	if req == nil || userID == 0 {
-		return nil, status.Errorf(codes.InvalidArgument, "nil req or empty id")
+		statusCode = codes.InvalidArgument
+		return nil, status.Errorf(statusCode, "nil req or empty id")
 	}
 
 	reqData, err := proto.Marshal(req)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, err.Error())
+		statusCode = codes.Internal
+		return nil, status.Errorf(statusCode, err.Error())
 	}
 
 	updateUserData := &common.User{}
 	if err = proto.Unmarshal(reqData, updateUserData); err != nil {
-		return nil, status.Errorf(codes.Internal, err.Error())
+		statusCode = codes.Internal
+		return nil, status.Errorf(statusCode, err.Error())
 	}
 
 	u, err := h.ctrl.UpdateUser(ctx, userID, model.UserFromProto(updateUserData))
 	if err != nil {
 		span.SetTag("error", true)
-		return nil, status.Errorf(codes.Internal, err.Error())
+		statusCode = codes.Internal
+		return nil, status.Errorf(statusCode, err.Error())
 	}
 
+	statusCode = codes.OK
 	return model.UserToProto(u), nil
 }
 
 func (h *Handler) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest) (*pb.EmptyResponse, error) {
+	var statusCode codes.Code
+	start := time.Now()
+
 	span := opentracing.GlobalTracer().StartSpan("users.DeleteUser.handler")
-	defer span.Finish()
 	ctx = opentracing.ContextWithSpan(ctx, span)
+	defer func() {
+		span.Finish()
+		metrics.ObserveRequest(time.Since(start), int(statusCode), "DeleteUser")
+	}()
 
 	if req == nil || req.UserId == 0 {
-		return nil, status.Errorf(codes.InvalidArgument, "nil req or empty id")
+		statusCode = codes.InvalidArgument
+		return nil, status.Errorf(statusCode, "nil req or empty id")
 	}
 
 	if err := h.ctrl.DeleteUser(ctx, req.UserId); err != nil {
 		span.SetTag("error", true)
-		return nil, status.Errorf(codes.Internal, err.Error())
+		statusCode = codes.Internal
+		return nil, status.Errorf(statusCode, err.Error())
 	}
+
+	statusCode = codes.OK
 	return &pb.EmptyResponse{}, nil
 }
