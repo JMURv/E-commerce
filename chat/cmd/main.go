@@ -7,6 +7,9 @@ import (
 	kafka "github.com/JMURv/e-commerce/chat/internal/broker/kafka"
 	ctrl "github.com/JMURv/e-commerce/chat/internal/controller/chat"
 	hdlr "github.com/JMURv/e-commerce/chat/internal/handler/grpc"
+	tracing "github.com/JMURv/e-commerce/chat/internal/metrics/jaeger"
+	metrics "github.com/JMURv/e-commerce/chat/internal/metrics/prometheus"
+
 	//db "github.com/JMURv/e-commerce/chat/internal/repository/db"
 	mem "github.com/JMURv/e-commerce/chat/internal/repository/memory"
 
@@ -14,7 +17,6 @@ import (
 	cfg "github.com/JMURv/e-commerce/chat/pkg/config"
 	"github.com/JMURv/e-commerce/pkg/discovery"
 	"github.com/JMURv/e-commerce/pkg/discovery/consul"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"log"
 	"net"
@@ -64,24 +66,26 @@ func main() {
 		}
 	}()
 
+	// Start metrics and tracing
+	metric := metrics.New()
+	trace := tracing.New(serviceName, &conf.Jaeger)
+
 	// Setting up main app
-	broker := kafka.New(conf)
-	cache := redis.New(conf.RedisAddr, conf.RedisPass)
+	broker := kafka.New(&conf.Kafka)
+	cache := redis.New(&conf.Redis)
 	repo := mem.New(conf)
 
 	svc := ctrl.New(repo, cache, broker)
 	h := hdlr.New(svc)
 
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
-	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
-	}
-
-	srv := grpc.NewServer()
+	srv := metric.ConfigureServerGRPC() // grpc.NewServer()
 	pb.RegisterBroadcastServer(srv, h)
 	pb.RegisterMessagesServer(srv, h)
 	pb.RegisterRoomsServer(srv, h)
 	reflection.Register(srv)
+
+	// Start http server for prometheus
+	go metric.Start(conf.Port + 1)
 
 	// Graceful shutdown
 	go func() {
@@ -93,6 +97,10 @@ func main() {
 		cancel()
 		broker.Close()
 		cache.Close()
+		metric.Close()
+		if err = trace.Close(); err != nil {
+			log.Printf("Error closing tracer: %v", err)
+		}
 		if err = registry.Deregister(ctx, instanceID, serviceName); err != nil {
 			log.Printf("Error deregistering service: %v", err)
 		}
@@ -101,6 +109,11 @@ func main() {
 	}()
 
 	// Start server
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
+	}
+
 	log.Printf("%v service is listening", serviceName)
 	srv.Serve(lis)
 }

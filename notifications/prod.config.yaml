@@ -1,14 +1,29 @@
+server:
+  mode: "prod"
+
 port: 50095
 serviceName: "notifications"
 registryAddress: "consul-service:8500"
+
 db:
-  host: "reviews-db-service"
+  host: "notifications-db-service"
   port: 5432
   user: "postgres"
   password: "794613825Zx!"
   database: "notifications_db"
-redisAddr: "redis-notifications-service.default.svc.cluster.local:6379"
-redisPass: ""
+
+redis:
+  addr: "redis-notifications-service.default.svc.cluster.local:6379"
+  pass: ""
+
 kafka:
-  addrs: [ "localhost:9092" ]
+  addrs: [ "kafka-service.default.svc.cluster.local:9092" ]
   notificationTopic: "notifications"
+
+jaeger:
+  sampler:
+    type: "const"
+    param: 1
+  reporter:
+    LogSpans: true
+    LocalAgentHostPort: "jaeger-service.default.svc.cluster.local:6831"

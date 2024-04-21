@@ -8,6 +8,7 @@ import (
 	pb "github.com/JMURv/e-commerce/api/pb/notification"
 	repo "github.com/JMURv/e-commerce/reviews/internal/repository"
 	"github.com/JMURv/e-commerce/reviews/pkg/model"
+	"github.com/opentracing/opentracing-go"
 	"log"
 	"time"
 )
@@ -50,6 +51,10 @@ func New(repo ReviewRepository, cache CacheRepository, broker BrokerRepository) 
 }
 
 func (c *Controller) GetReviewByID(ctx context.Context, reviewID uint64) (*model.Review, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "reviews.GetReviewByID.ctrl")
+	ctx = opentracing.ContextWithSpan(ctx, span)
+	defer span.Finish()
+
 	cached, err := c.cache.Get(ctx, fmt.Sprintf(cacheKey, reviewID))
 	if err == nil {
 		return cached, nil
@@ -58,6 +63,8 @@ func (c *Controller) GetReviewByID(ctx context.Context, reviewID uint64) (*model
 	r, err := c.repo.GetByID(ctx, reviewID)
 	if err != nil && errors.Is(err, repo.ErrNotFound) {
 		return nil, ErrNotFound
+	} else if err != nil {
+		return nil, err
 	}
 
 	err = c.cache.Set(ctx, time.Hour, fmt.Sprintf(cacheKey, reviewID), r)
@@ -68,6 +75,10 @@ func (c *Controller) GetReviewByID(ctx context.Context, reviewID uint64) (*model
 }
 
 func (c *Controller) AggregateUserRatingByID(ctx context.Context, userID uint64) (float32, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "reviews.AggregateUserRatingByID.ctrl")
+	ctx = opentracing.ContextWithSpan(ctx, span)
+	defer span.Finish()
+
 	r, err := c.repo.AggregateUserRatingByID(ctx, userID)
 	if err != nil && errors.Is(err, repo.ErrNotFound) {
 		return 0.0, ErrNotFound
@@ -76,18 +87,29 @@ func (c *Controller) AggregateUserRatingByID(ctx context.Context, userID uint64)
 }
 
 func (c *Controller) GetReviewsByUserID(ctx context.Context, userID uint64) (*[]*model.Review, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "reviews.GetReviewsByUserID.ctrl")
+	ctx = opentracing.ContextWithSpan(ctx, span)
+	defer span.Finish()
+
 	r, err := c.repo.GetReviewsByUserID(ctx, userID)
 	if err != nil && errors.Is(err, repo.ErrNotFound) {
 		return nil, ErrNotFound
+	} else if err != nil {
+		return nil, err
 	}
 	return r, nil
 }
 
 func (c *Controller) CreateReview(ctx context.Context, review *model.Review) (*model.Review, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "reviews.CreateReview.ctrl")
+	ctx = opentracing.ContextWithSpan(ctx, span)
+	defer span.Finish()
+
 	res, err := c.repo.Create(ctx, review)
-	// TODO: Check for errs
 	if err != nil && errors.Is(err, repo.ErrNotFound) {
 		return nil, ErrNotFound
+	} else if err != nil {
+		return nil, err
 	}
 
 	// Save review to cache
@@ -115,9 +137,15 @@ func (c *Controller) CreateReview(ctx context.Context, review *model.Review) (*m
 }
 
 func (c *Controller) UpdateReview(ctx context.Context, reviewID uint64, newData *model.Review) (*model.Review, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "reviews.UpdateReview.ctrl")
+	ctx = opentracing.ContextWithSpan(ctx, span)
+	defer span.Finish()
+
 	res, err := c.repo.Update(ctx, reviewID, newData)
 	if err != nil && errors.Is(err, repo.ErrNotFound) {
 		return nil, ErrNotFound
+	} else if err != nil {
+		return nil, err
 	}
 
 	err = c.cache.Set(ctx, time.Hour, fmt.Sprintf(cacheKey, res.ID), res)
@@ -128,6 +156,10 @@ func (c *Controller) UpdateReview(ctx context.Context, reviewID uint64, newData 
 }
 
 func (c *Controller) DeleteReview(ctx context.Context, reviewID uint64) error {
+	span, _ := opentracing.StartSpanFromContext(ctx, "reviews.DeleteReview.ctrl")
+	ctx = opentracing.ContextWithSpan(ctx, span)
+	defer span.Finish()
+
 	if err := c.repo.Delete(ctx, reviewID); err != nil {
 		return err
 	}

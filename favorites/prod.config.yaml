@@ -1,14 +1,29 @@
+server:
+  mode: "prod"
+
 port: 50090
 serviceName: "favorites"
 registryAddress: "consul-service:8500"
+
 db:
   host: "favorites-db-service.default.svc.cluster.local"
   port: 5432
   user: "postgres"
   password: "794613825Zx!"
   database: "favorites_db"
-redisAddr: "redis-favorites-service.default.svc.cluster.local:6379"
-redisPass: ""
+
+redis:
+  addr: "redis-favorites-service.default.svc.cluster.local:6379"
+  pass: ""
+
 kafka:
-  addrs: [ "localhost:9092" ]
+  addrs: [ "kafka-service.default.svc.cluster.local:9092" ]
   notificationTopic: "notifications"
+
+jaeger:
+  sampler:
+    type: "const"
+    param: 1
+  reporter:
+    LogSpans: true
+    LocalAgentHostPort: "jaeger-service.default.svc.cluster.local:6831"

@@ -8,7 +8,7 @@ import (
 
 type Broker struct {
 	producer sarama.AsyncProducer
-	topics   string
+	topic    string
 }
 
 func New(conf *cfg.KafkaConfig) *Broker {
@@ -19,7 +19,7 @@ func New(conf *cfg.KafkaConfig) *Broker {
 
 	return &Broker{
 		producer: producer,
-		topics:   conf.NotificationTopic,
+		topic:    conf.NotificationTopic,
 	}
 }
 

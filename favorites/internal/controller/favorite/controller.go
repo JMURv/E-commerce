@@ -6,6 +6,7 @@ import (
 	"fmt"
 	repo "github.com/JMURv/e-commerce/favorites/internal/repository"
 	"github.com/JMURv/e-commerce/favorites/pkg/model"
+	"github.com/opentracing/opentracing-go"
 	"time"
 )
 
@@ -43,6 +44,10 @@ func New(repo favoriteRepository, cache CacheRepository, broker BrokerRepository
 }
 
 func (c *Controller) GetAllUserFavorites(ctx context.Context, userID uint64) ([]*model.Favorite, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "favorites.GetAllUserFavorites.ctrl")
+	ctx = opentracing.ContextWithSpan(ctx, span)
+	defer span.Finish()
+
 	r, err := c.repo.GetAllUserFavorites(ctx, userID)
 	if err != nil && errors.Is(err, repo.ErrNotFound) {
 		return nil, ErrNotFound
@@ -53,6 +58,10 @@ func (c *Controller) GetAllUserFavorites(ctx context.Context, userID uint64) ([]
 }
 
 func (c *Controller) GetFavoriteByID(ctx context.Context, favoriteID uint64) (*model.Favorite, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "favorites.GetFavoriteByID.ctrl")
+	ctx = opentracing.ContextWithSpan(ctx, span)
+	defer span.Finish()
+
 	cached, err := c.cache.Get(ctx, fmt.Sprintf(cacheKey, favoriteID))
 	if err == nil {
 		return cached, nil
@@ -69,6 +78,10 @@ func (c *Controller) GetFavoriteByID(ctx context.Context, favoriteID uint64) (*m
 }
 
 func (c *Controller) CreateFavorite(ctx context.Context, favData *model.Favorite) (*model.Favorite, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "favorites.CreateFavorite.ctrl")
+	ctx = opentracing.ContextWithSpan(ctx, span)
+	defer span.Finish()
+
 	res, err := c.repo.CreateFavorite(ctx, favData)
 	if err != nil {
 		return nil, ErrNotFound
@@ -83,6 +96,10 @@ func (c *Controller) CreateFavorite(ctx context.Context, favData *model.Favorite
 }
 
 func (c *Controller) DeleteFavorite(ctx context.Context, favoriteID uint64) error {
+	span, _ := opentracing.StartSpanFromContext(ctx, "favorites.DeleteFavorite.ctrl")
+	ctx = opentracing.ContextWithSpan(ctx, span)
+	defer span.Finish()
+
 	err := c.repo.DeleteFavorite(ctx, favoriteID)
 	if err != nil && errors.Is(err, repo.ErrNotFound) {
 		return ErrNotFound

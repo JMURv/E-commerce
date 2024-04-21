@@ -5,6 +5,7 @@ import (
 	"errors"
 	repo "github.com/JMURv/e-commerce/chat/internal/repository"
 	mdl "github.com/JMURv/e-commerce/chat/pkg/model"
+	"github.com/opentracing/opentracing-go"
 	"time"
 )
 
@@ -56,6 +57,10 @@ func New(repo ChatRepository, cache CacheRepository, broker BrokerRepository) *C
 
 // Rooms
 func (c *Controller) GetRoomByID(ctx context.Context, roomID uint64) (*mdl.Room, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "chat.GetRoomByID.ctrl")
+	ctx = opentracing.ContextWithSpan(ctx, span)
+	defer span.Finish()
+
 	r, err := c.repo.GetRoomByID(ctx, roomID)
 	if err != nil && errors.Is(err, repo.ErrNotFound) {
 		return nil, ErrNotFound
@@ -66,6 +71,10 @@ func (c *Controller) GetRoomByID(ctx context.Context, roomID uint64) (*mdl.Room,
 }
 
 func (c *Controller) CreateRoom(ctx context.Context, room *mdl.Room) (*mdl.Room, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "chat.CreateRoom.ctrl")
+	ctx = opentracing.ContextWithSpan(ctx, span)
+	defer span.Finish()
+
 	r, err := c.repo.CreateRoom(ctx, room)
 	if err != nil && errors.Is(err, repo.ErrUserIDRequired) {
 		return nil, ErrUserIDRequired
@@ -78,6 +87,10 @@ func (c *Controller) CreateRoom(ctx context.Context, room *mdl.Room) (*mdl.Room,
 }
 
 func (c *Controller) GetUserRooms(ctx context.Context, userID uint64) ([]*mdl.Room, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "chat.GetUserRooms.ctrl")
+	ctx = opentracing.ContextWithSpan(ctx, span)
+	defer span.Finish()
+
 	r, err := c.repo.GetUserRooms(ctx, userID)
 	if err != nil {
 		return nil, err
@@ -86,6 +99,10 @@ func (c *Controller) GetUserRooms(ctx context.Context, userID uint64) ([]*mdl.Ro
 }
 
 func (c *Controller) DeleteRoom(ctx context.Context, roomID uint64) error {
+	span, _ := opentracing.StartSpanFromContext(ctx, "chat.DeleteRoom.ctrl")
+	ctx = opentracing.ContextWithSpan(ctx, span)
+	defer span.Finish()
+
 	err := c.repo.DeleteRoom(ctx, roomID)
 	if err != nil && errors.Is(err, repo.ErrNotFound) {
 		return ErrNotFound
@@ -98,6 +115,10 @@ func (c *Controller) DeleteRoom(ctx context.Context, roomID uint64) error {
 //Messages
 
 func (c *Controller) GetMessageByID(ctx context.Context, msgID uint64) (*mdl.Message, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "chat.GetMessageByID.ctrl")
+	ctx = opentracing.ContextWithSpan(ctx, span)
+	defer span.Finish()
+
 	r, err := c.repo.GetMessageByID(ctx, msgID)
 	if err != nil && errors.Is(err, repo.ErrNotFound) {
 		return nil, ErrNotFound
@@ -108,6 +129,10 @@ func (c *Controller) GetMessageByID(ctx context.Context, msgID uint64) (*mdl.Mes
 }
 
 func (c *Controller) CreateMessage(ctx context.Context, msgData *mdl.Message) (*mdl.Message, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "chat.CreateMessage.ctrl")
+	ctx = opentracing.ContextWithSpan(ctx, span)
+	defer span.Finish()
+
 	r, err := c.repo.CreateMessage(ctx, msgData)
 	if err != nil && errors.Is(err, repo.ErrUserIDRequired) {
 		return nil, ErrUserIDRequired
@@ -122,6 +147,10 @@ func (c *Controller) CreateMessage(ctx context.Context, msgData *mdl.Message) (*
 }
 
 func (c *Controller) UpdateMessage(ctx context.Context, msgID uint64, msgData *mdl.Message) (*mdl.Message, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "chat.UpdateMessage.ctrl")
+	ctx = opentracing.ContextWithSpan(ctx, span)
+	defer span.Finish()
+
 	r, err := c.repo.UpdateMessage(ctx, msgID, msgData)
 	if err != nil && errors.Is(err, repo.ErrNotFound) {
 		return nil, ErrNotFound
@@ -132,6 +161,10 @@ func (c *Controller) UpdateMessage(ctx context.Context, msgID uint64, msgData *m
 }
 
 func (c *Controller) DeleteMessage(ctx context.Context, msgID uint64) error {
+	span, _ := opentracing.StartSpanFromContext(ctx, "chat.DeleteMessage.ctrl")
+	ctx = opentracing.ContextWithSpan(ctx, span)
+	defer span.Finish()
+
 	err := c.repo.DeleteMessage(ctx, msgID)
 	if err != nil && errors.Is(err, repo.ErrNotFound) {
 		return ErrNotFound
@@ -143,6 +176,10 @@ func (c *Controller) DeleteMessage(ctx context.Context, msgID uint64) error {
 
 // Media
 func (c *Controller) UploadMedia(ctx context.Context, file []byte) (*mdl.Media, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "chat.UploadMedia.ctrl")
+	ctx = opentracing.ContextWithSpan(ctx, span)
+	defer span.Finish()
+
 	media, err := c.repo.UploadMedia(ctx, file)
 	if err != nil {
 		return nil, err

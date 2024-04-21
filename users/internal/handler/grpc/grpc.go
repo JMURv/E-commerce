@@ -43,7 +43,7 @@ func (h *Handler) ListUser(ctx context.Context, req *pb.EmptyRequest) (*pb.ListU
 	if u, err := h.ctrl.GetUsersList(ctx); err != nil {
 		statusCode = codes.Internal
 		span.SetTag("error", true)
-		return nil, status.Errorf(codes.Internal, err.Error())
+		return nil, status.Errorf(statusCode, err.Error())
 	} else {
 		statusCode = codes.OK
 		return &pb.ListUserResponse{Users: model.UsersToProto(u)}, nil

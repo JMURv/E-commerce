@@ -7,6 +7,7 @@ import (
 	repo "github.com/JMURv/e-commerce/items/internal/repository"
 	conf "github.com/JMURv/e-commerce/items/pkg/config"
 	"github.com/JMURv/e-commerce/items/pkg/model"
+	"github.com/opentracing/opentracing-go"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -44,12 +45,21 @@ func New(conf *conf.Config) *Repository {
 	return &Repository{conn: conn}
 }
 
-func (r *Repository) ListItem(_ context.Context) ([]*model.Item, error) {
-	//TODO implement me
-	panic("implement me")
+func (r *Repository) ListItem(ctx context.Context) ([]*model.Item, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "items.ListItem.repo")
+	defer span.Finish()
+
+	var items []*model.Item
+	if err := r.conn.Preload("Category").Preload("Tags").Find(&items).Error; err != nil {
+		return nil, repo.ErrNotFound
+	}
+	return items, nil
 }
 
-func (r *Repository) GetItemByID(_ context.Context, id uint64) (*model.Item, error) {
+func (r *Repository) GetItemByID(ctx context.Context, id uint64) (*model.Item, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "items.GetItemByID.repo")
+	defer span.Finish()
+
 	var getItem model.Item
 	if err := r.conn.Preload("Category").Preload("Tags").Where("ID=?", id).First(&getItem).Error; err != nil {
 		return nil, repo.ErrNotFound
@@ -58,7 +68,10 @@ func (r *Repository) GetItemByID(_ context.Context, id uint64) (*model.Item, err
 
 }
 
-func (r *Repository) ListUserItemsByID(_ context.Context, userID uint64) ([]*model.Item, error) {
+func (r *Repository) ListUserItemsByID(ctx context.Context, userID uint64) ([]*model.Item, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "items.ListUserItemsByID.repo")
+	defer span.Finish()
+
 	var items []*model.Item
 	if err := r.conn.Preload("Category").Preload("Tags").Where("UserID=?", userID).Find(&items).Error; err != nil {
 		return nil, repo.ErrNotFound
@@ -66,7 +79,10 @@ func (r *Repository) ListUserItemsByID(_ context.Context, userID uint64) ([]*mod
 	return items, nil
 }
 
-func (r *Repository) CreateItem(_ context.Context, i *model.Item) (*model.Item, error) {
+func (r *Repository) CreateItem(ctx context.Context, i *model.Item) (*model.Item, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "items.CreateItem.repo")
+	defer span.Finish()
+
 	if i.UserID == 0 {
 		return nil, repo.ErrUserIDRequired
 	}
@@ -116,6 +132,9 @@ func (r *Repository) CreateItem(_ context.Context, i *model.Item) (*model.Item, 
 }
 
 func (r *Repository) UpdateItem(ctx context.Context, itemID uint64, newData *model.Item) (*model.Item, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "items.UpdateItem.repo")
+	defer span.Finish()
+
 	i, err := r.GetItemByID(ctx, itemID)
 	if err != nil {
 		return i, err
@@ -146,7 +165,10 @@ func (r *Repository) UpdateItem(ctx context.Context, itemID uint64, newData *mod
 	return i, nil
 }
 
-func (r *Repository) DeleteItem(_ context.Context, itemID uint64) error {
+func (r *Repository) DeleteItem(ctx context.Context, itemID uint64) error {
+	span, _ := opentracing.StartSpanFromContext(ctx, "items.DeleteItem.repo")
+	defer span.Finish()
+
 	var item model.Item
 
 	if err := r.conn.Delete(&item, itemID).Error; err != nil {

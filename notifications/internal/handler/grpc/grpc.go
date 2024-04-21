@@ -4,11 +4,14 @@ import (
 	"context"
 	pb "github.com/JMURv/e-commerce/api/pb/notification"
 	ctrl "github.com/JMURv/e-commerce/notifications/internal/controller/notifications"
+	metrics "github.com/JMURv/e-commerce/notifications/internal/metrics/prometheus"
 	mdl "github.com/JMURv/e-commerce/notifications/pkg/model"
+	"github.com/opentracing/opentracing-go"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"log"
 	"sync"
+	"time"
 )
 
 type BrokerRepository interface{}
@@ -54,7 +57,17 @@ func (h *Handler) CreateStream(pbConn *pb.Connect, stream pb.Broadcast_CreateStr
 	return <-conn.error
 }
 
-func (h *Handler) Broadcast(_ context.Context, msg *mdl.Notification) error {
+func (h *Handler) Broadcast(ctx context.Context, msg *mdl.Notification) error {
+	var statusCode codes.Code
+	start := time.Now()
+
+	span := opentracing.GlobalTracer().StartSpan("notifications.Broadcast.handler")
+	ctx = opentracing.ContextWithSpan(ctx, span)
+	defer func() {
+		span.Finish()
+		metrics.ObserveRequest(time.Since(start), int(statusCode), "Broadcast")
+	}()
+
 	var wg sync.WaitGroup
 	for _, conn := range h.pool.Connection {
 		wg.Add(1)
@@ -76,37 +89,81 @@ func (h *Handler) Broadcast(_ context.Context, msg *mdl.Notification) error {
 }
 
 func (h *Handler) ListUserNotifications(ctx context.Context, req *pb.ByUserIDRequest) (*pb.ListNotificationResponse, error) {
+	var statusCode codes.Code
+	start := time.Now()
+
+	span := opentracing.GlobalTracer().StartSpan("notifications.ListUserNotifications.handler")
+	ctx = opentracing.ContextWithSpan(ctx, span)
+	defer func() {
+		span.Finish()
+		metrics.ObserveRequest(time.Since(start), int(statusCode), "ListUserNotifications")
+	}()
+
 	userID := req.UserId
 	if req == nil || userID == 0 {
-		return nil, status.Errorf(codes.InvalidArgument, "nil req or empty id")
+		statusCode = codes.InvalidArgument
+		return nil, status.Errorf(statusCode, "nil req or empty id")
 	}
 
 	n, err := h.ctrl.ListUserNotifications(ctx, userID)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, err.Error())
+		statusCode = codes.Internal
+		span.SetTag("error", true)
+		return nil, status.Errorf(statusCode, err.Error())
 	}
 
+	statusCode = codes.OK
 	return &pb.ListNotificationResponse{Notifications: mdl.NotificationsToProto(*n)}, nil
 }
 
 func (h *Handler) DeleteNotification(ctx context.Context, req *pb.DeleteNotificationRequest) (*pb.EmptyResponse, error) {
+	var statusCode codes.Code
+	start := time.Now()
+
+	span := opentracing.GlobalTracer().StartSpan("notifications.DeleteNotification.handler")
+	ctx = opentracing.ContextWithSpan(ctx, span)
+	defer func() {
+		span.Finish()
+		metrics.ObserveRequest(time.Since(start), int(statusCode), "DeleteNotification")
+	}()
+
 	if req == nil || req.Id == 0 {
-		return nil, status.Errorf(codes.InvalidArgument, "nil req or empty id")
+		statusCode = codes.InvalidArgument
+		return nil, status.Errorf(statusCode, "nil req or empty id")
 	}
 
 	if err := h.ctrl.DeleteNotification(ctx, req.Id); err != nil {
-		return nil, err
+		statusCode = codes.Internal
+		span.SetTag("error", true)
+		return nil, status.Errorf(statusCode, err.Error())
 	}
+
+	statusCode = codes.OK
 	return &pb.EmptyResponse{}, nil
 }
 
 func (h *Handler) DeleteAllNotifications(ctx context.Context, req *pb.ByUserIDRequest) (*pb.EmptyResponse, error) {
+	var statusCode codes.Code
+	start := time.Now()
+
+	span := opentracing.GlobalTracer().StartSpan("notifications.DeleteAllNotifications.handler")
+	ctx = opentracing.ContextWithSpan(ctx, span)
+	defer func() {
+		span.Finish()
+		metrics.ObserveRequest(time.Since(start), int(statusCode), "DeleteAllNotifications")
+	}()
+
 	if req == nil || req.UserId == 0 {
-		return nil, status.Errorf(codes.InvalidArgument, "nil req or empty id")
+		statusCode = codes.InvalidArgument
+		return nil, status.Errorf(statusCode, "nil req or empty id")
 	}
 
 	if err := h.ctrl.DeleteAllNotifications(ctx, req.UserId); err != nil {
-		return nil, err
+		statusCode = codes.Internal
+		span.SetTag("error", true)
+		return nil, status.Errorf(statusCode, err.Error())
 	}
+
+	statusCode = codes.OK
 	return &pb.EmptyResponse{}, nil
 }

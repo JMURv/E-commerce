@@ -4,8 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	cfg "github.com/JMURv/e-commerce/items/pkg/config"
 	"github.com/JMURv/e-commerce/items/pkg/model"
 	"github.com/go-redis/redis/v8"
+	"github.com/opentracing/opentracing-go"
 	"log"
 	"time"
 )
@@ -16,10 +18,10 @@ type Cache struct {
 	cli *redis.Client
 }
 
-func New(addr, pass string) *Cache {
+func New(conf *cfg.RedisConfig) *Cache {
 	redisCli := redis.NewClient(&redis.Options{
-		Addr:     addr,
-		Password: pass,
+		Addr:     conf.Addr,
+		Password: conf.Pass,
 		DB:       0,
 	})
 	_, err := redisCli.Ping(context.Background()).Result()
@@ -37,6 +39,9 @@ func (c *Cache) Close() {
 }
 
 func (c *Cache) Get(ctx context.Context, key string) (*model.Item, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "items.GetFromCache")
+	defer span.Finish()
+
 	val, err := c.cli.Get(ctx, key).Bytes()
 	if err == redis.Nil {
 		return nil, ErrNotFoundInCache
@@ -52,6 +57,9 @@ func (c *Cache) Get(ctx context.Context, key string) (*model.Item, error) {
 }
 
 func (c *Cache) Set(ctx context.Context, t time.Duration, key string, r *model.Item) error {
+	span, _ := opentracing.StartSpanFromContext(ctx, "items.SetToCache")
+	defer span.Finish()
+
 	bytes, err := json.Marshal(r)
 	if err != nil {
 		return err
@@ -64,6 +72,9 @@ func (c *Cache) Set(ctx context.Context, t time.Duration, key string, r *model.I
 }
 
 func (c *Cache) Delete(ctx context.Context, key string) error {
+	span, _ := opentracing.StartSpanFromContext(ctx, "items.DeleteFromCache")
+	defer span.Finish()
+
 	if err := c.cli.Del(ctx, key).Err(); err != nil {
 		return err
 	}

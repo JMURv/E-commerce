@@ -6,13 +6,13 @@ import (
 	"github.com/IBM/sarama"
 	ctrl "github.com/JMURv/e-commerce/notifications/internal/controller/notifications"
 	hdlr "github.com/JMURv/e-commerce/notifications/internal/handler/grpc"
-	conf "github.com/JMURv/e-commerce/notifications/pkg/config"
+	cfg "github.com/JMURv/e-commerce/notifications/pkg/config"
 	mdl "github.com/JMURv/e-commerce/notifications/pkg/model"
 	"log"
 )
 
 type Broker struct {
-	cfg      *conf.Config
+	topic    string
 	consumer sarama.Consumer
 	pc       map[string]sarama.PartitionConsumer
 
@@ -20,17 +20,17 @@ type Broker struct {
 	handler *hdlr.Handler
 }
 
-func New(conf *conf.Config, ctrl *ctrl.Controller, handler *hdlr.Handler) *Broker {
+func New(conf *cfg.KafkaConfig, ctrl *ctrl.Controller, handler *hdlr.Handler) *Broker {
 	config := sarama.NewConfig()
 	config.Consumer.Return.Errors = true
 
-	consumer, err := sarama.NewConsumer(conf.Kafka.Addrs, config)
+	consumer, err := sarama.NewConsumer(conf.Addrs, config)
 	if err != nil {
 		log.Fatalf("Error creating Kafka consumer: %v", err)
 	}
 
 	return &Broker{
-		cfg:      conf,
+		topic:    conf.NotificationTopic,
 		consumer: consumer,
 		ctrl:     ctrl,
 		handler:  handler,
@@ -40,7 +40,7 @@ func New(conf *conf.Config, ctrl *ctrl.Controller, handler *hdlr.Handler) *Broke
 
 func (b *Broker) Start() {
 	ctx := context.Background()
-	topic := b.cfg.Kafka.NotificationTopic
+	topic := b.topic
 
 	pc, err := b.consumer.ConsumePartition(topic, 0, sarama.OffsetNewest)
 	if err != nil {

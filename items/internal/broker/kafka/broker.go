@@ -7,18 +7,18 @@ import (
 )
 
 type Broker struct {
-	cfg      *conf.Config
+	topic    string
 	producer sarama.AsyncProducer
 }
 
-func New(conf *conf.Config) *Broker {
-	producer, err := sarama.NewAsyncProducer(conf.Kafka.Addrs, nil)
+func New(conf *conf.KafkaConfig) *Broker {
+	producer, err := sarama.NewAsyncProducer(conf.Addrs, nil)
 	if err != nil {
 		log.Fatalf("Error creating Kafka producer: %v", err)
 	}
 
 	return &Broker{
-		cfg:      conf,
+		topic:    conf.NotificationTopic,
 		producer: producer,
 	}
 }

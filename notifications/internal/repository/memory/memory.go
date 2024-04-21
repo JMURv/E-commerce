@@ -5,6 +5,7 @@ import (
 	repo "github.com/JMURv/e-commerce/notifications/internal/repository"
 	conf "github.com/JMURv/e-commerce/notifications/pkg/config"
 	"github.com/JMURv/e-commerce/notifications/pkg/model"
+	"github.com/opentracing/opentracing-go"
 	"sync"
 	"time"
 )
@@ -18,7 +19,10 @@ func New(_ *conf.Config) *Repository {
 	return &Repository{data: map[uint64]*model.Notification{}}
 }
 
-func (r *Repository) ListUserNotifications(_ context.Context, userID uint64) (*[]*model.Notification, error) {
+func (r *Repository) ListUserNotifications(ctx context.Context, userID uint64) (*[]*model.Notification, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "notifications.ListUserNotifications.repo")
+	defer span.Finish()
+
 	r.RLock()
 	defer r.RUnlock()
 	n := make([]*model.Notification, 0, len(r.data))
@@ -30,7 +34,10 @@ func (r *Repository) ListUserNotifications(_ context.Context, userID uint64) (*[
 	return &n, nil
 }
 
-func (r *Repository) CreateNotification(_ context.Context, notify *model.Notification) (*model.Notification, error) {
+func (r *Repository) CreateNotification(ctx context.Context, notify *model.Notification) (*model.Notification, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "notifications.CreateNotification.repo")
+	defer span.Finish()
+
 	notify.ID = uint64(time.Now().Unix())
 
 	if notify.Type == "" {
@@ -58,14 +65,20 @@ func (r *Repository) CreateNotification(_ context.Context, notify *model.Notific
 	return notify, nil
 }
 
-func (r *Repository) DeleteNotification(_ context.Context, notificationID uint64) error {
+func (r *Repository) DeleteNotification(ctx context.Context, notificationID uint64) error {
+	span, _ := opentracing.StartSpanFromContext(ctx, "notifications.DeleteNotification.repo")
+	defer span.Finish()
+
 	r.Lock()
 	defer r.Unlock()
 	delete(r.data, notificationID)
 	return nil
 }
 
-func (r *Repository) DeleteAllNotifications(_ context.Context, userID uint64) error {
+func (r *Repository) DeleteAllNotifications(ctx context.Context, userID uint64) error {
+	span, _ := opentracing.StartSpanFromContext(ctx, "notifications.DeleteAllNotifications.repo")
+	defer span.Finish()
+
 	r.Lock()
 	defer r.Unlock()
 	for i, n := range r.data {

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	repo "github.com/JMURv/e-commerce/notifications/internal/repository"
 	"github.com/JMURv/e-commerce/notifications/pkg/model"
+	"github.com/opentracing/opentracing-go"
 	"time"
 )
 
@@ -39,6 +40,10 @@ func New(repo notificationsRepository, cache CacheRepository) *Controller {
 }
 
 func (c *Controller) ListUserNotifications(ctx context.Context, userID uint64) (*[]*model.Notification, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "notifications.ListUserNotifications.ctrl")
+	ctx = opentracing.ContextWithSpan(ctx, span)
+	defer span.Finish()
+
 	res, err := c.repo.ListUserNotifications(ctx, userID)
 	if err != nil {
 		return nil, err
@@ -47,8 +52,11 @@ func (c *Controller) ListUserNotifications(ctx context.Context, userID uint64) (
 }
 
 func (c *Controller) CreateNotification(ctx context.Context, data *model.Notification) (*model.Notification, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "notifications.CreateNotification.ctrl")
+	ctx = opentracing.ContextWithSpan(ctx, span)
+	defer span.Finish()
+
 	res, err := c.repo.CreateNotification(ctx, data)
-	// TODO: Check for errs
 	if err != nil && errors.Is(err, repo.ErrNotFound) {
 		return nil, ErrNotFound
 	} else if err != nil {
@@ -64,6 +72,10 @@ func (c *Controller) CreateNotification(ctx context.Context, data *model.Notific
 }
 
 func (c *Controller) DeleteNotification(ctx context.Context, notificationID uint64) error {
+	span, _ := opentracing.StartSpanFromContext(ctx, "notifications.DeleteNotification.ctrl")
+	ctx = opentracing.ContextWithSpan(ctx, span)
+	defer span.Finish()
+
 	err := c.repo.DeleteNotification(ctx, notificationID)
 	if err != nil && errors.Is(err, repo.ErrNotFound) {
 		return ErrNotFound
@@ -79,6 +91,10 @@ func (c *Controller) DeleteNotification(ctx context.Context, notificationID uint
 }
 
 func (c *Controller) DeleteAllNotifications(ctx context.Context, userID uint64) error {
+	span, _ := opentracing.StartSpanFromContext(ctx, "notifications.DeleteAllNotifications.ctrl")
+	ctx = opentracing.ContextWithSpan(ctx, span)
+	defer span.Finish()
+
 	err := c.repo.DeleteAllNotifications(ctx, userID)
 	if err != nil && errors.Is(err, repo.ErrNotFound) {
 		return ErrNotFound

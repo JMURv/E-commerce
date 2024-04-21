@@ -9,11 +9,12 @@ import (
 	ctrl "github.com/JMURv/e-commerce/items/internal/controller/item"
 	usrgate "github.com/JMURv/e-commerce/items/internal/gateway/users"
 	handler "github.com/JMURv/e-commerce/items/internal/handler/grpc"
+	tracing "github.com/JMURv/e-commerce/items/internal/metrics/jaeger"
+	metrics "github.com/JMURv/e-commerce/items/internal/metrics/prometheus"
 	"github.com/JMURv/e-commerce/items/internal/repository/db"
 	cfg "github.com/JMURv/e-commerce/items/pkg/config"
 	"github.com/JMURv/e-commerce/pkg/discovery"
 	"github.com/JMURv/e-commerce/pkg/discovery/consul"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"log"
 	"net"
@@ -44,7 +45,7 @@ func main() {
 	serviceName := conf.ServiceName
 
 	// Setting up registry
-	registry, err := consul.NewRegistry("localhost:8500")
+	registry, err := consul.NewRegistry(conf.RegistryAddr)
 	if err != nil {
 		panic(err)
 	}
@@ -63,23 +64,20 @@ func main() {
 		}
 	}()
 
-	// Setting up other services
-	usrGateway := usrgate.New(registry)
+	// Start metrics and tracing
+	metric := metrics.New()
+	trace := tracing.New(serviceName, &conf.Jaeger)
 
 	// Setting up main app
-	broker := kafka.New(conf)
-	cache := redis.New(conf.RedisAddr, conf.RedisPass)
+	usrGateway := usrgate.New(registry)
+	broker := kafka.New(&conf.Kafka)
+	cache := redis.New(&conf.Redis)
 	repo := db.New(conf)
 
-	svc := ctrl.New(repo, cache, broker, *usrGateway)
+	svc := ctrl.New(repo, cache, broker, usrGateway)
 	h := handler.New(svc)
 
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
-	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
-	}
-
-	srv := grpc.NewServer()
+	srv := metric.ConfigureServerGRPC() // grpc.NewServer()
 	pb.RegisterItemServiceServer(srv, h)
 	pb.RegisterCategoryServiceServer(srv, h)
 	pb.RegisterTagServiceServer(srv, h)
@@ -95,12 +93,21 @@ func main() {
 		cancel()
 		broker.Close()
 		cache.Close()
+		metric.Close()
+		if err = trace.Close(); err != nil {
+			log.Printf("Error closing tracer: %v", err)
+		}
 		if err = registry.Deregister(ctx, instanceID, serviceName); err != nil {
 			log.Printf("Error deregistering service: %v", err)
 		}
 		srv.GracefulStop()
 		os.Exit(0)
 	}()
+
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
+	}
 
 	log.Printf("%v service is listening", serviceName)
 	srv.Serve(lis)

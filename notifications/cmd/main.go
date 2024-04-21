@@ -7,7 +7,10 @@ import (
 	redis "github.com/JMURv/e-commerce/notifications/internal/cache/redis"
 	ctrl "github.com/JMURv/e-commerce/notifications/internal/controller/notifications"
 	hdlr "github.com/JMURv/e-commerce/notifications/internal/handler/grpc"
+	tracing "github.com/JMURv/e-commerce/notifications/internal/metrics/jaeger"
+	metrics "github.com/JMURv/e-commerce/notifications/internal/metrics/prometheus"
 	cfg "github.com/JMURv/e-commerce/notifications/pkg/config"
+
 	//db "github.com/JMURv/e-commerce/notifications/internal/repository/db"
 	mem "github.com/JMURv/e-commerce/notifications/internal/repository/memory"
 	"github.com/JMURv/e-commerce/pkg/discovery"
@@ -19,7 +22,6 @@ import (
 	"syscall"
 	"time"
 
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 
 	pb "github.com/JMURv/e-commerce/api/pb/notification"
@@ -65,20 +67,19 @@ func main() {
 		}
 	}()
 
+	// Start metrics and tracing
+	metric := metrics.New()
+	trace := tracing.New(serviceName, &conf.Jaeger)
+
 	// Setting up main app
-	cache := redis.New(conf.RedisAddr, conf.RedisPass)
+	cache := redis.New(&conf.Redis)
 	repo := mem.New(conf)
 
 	svc := ctrl.New(repo, cache)
 	h := hdlr.New(svc)
 
-	broker := kafka.New(conf, svc, h)
+	broker := kafka.New(&conf.Kafka, svc, h)
 	go broker.Start()
-
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%v", port))
-	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
-	}
 
 	// TEST START
 	//go func() {
@@ -107,10 +108,13 @@ func main() {
 	//}()
 	// TEST END
 
-	srv := grpc.NewServer()
+	srv := metric.ConfigureServerGRPC() // grpc.NewServer()
 	pb.RegisterNotificationsServer(srv, h)
 	pb.RegisterBroadcastServer(srv, h)
 	reflection.Register(srv)
+
+	// Start http server for prometheus
+	go metric.Start(conf.Port + 1)
 
 	// Graceful shutdown
 	go func() {
@@ -122,12 +126,21 @@ func main() {
 		cancel()
 		broker.Close()
 		cache.Close()
+		metric.Close()
+		if err = trace.Close(); err != nil {
+			log.Printf("Error closing tracer: %v", err)
+		}
 		if err = registry.Deregister(ctx, instanceID, serviceName); err != nil {
 			log.Printf("Error deregistering service: %v", err)
 		}
 		srv.Stop()
 		os.Exit(0)
 	}()
+
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%v", port))
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
+	}
 
 	log.Printf("%v service is listening", serviceName)
 	srv.Serve(lis)

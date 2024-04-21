@@ -6,6 +6,7 @@ import (
 	repo "github.com/JMURv/e-commerce/reviews/internal/repository"
 	conf "github.com/JMURv/e-commerce/reviews/pkg/config"
 	"github.com/JMURv/e-commerce/reviews/pkg/model"
+	"github.com/opentracing/opentracing-go"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"log"
@@ -40,7 +41,10 @@ func New(conf *conf.Config) *Repository {
 	return &Repository{conn: conn}
 }
 
-func (r *Repository) GetByID(_ context.Context, reviewID uint64) (*model.Review, error) {
+func (r *Repository) GetByID(ctx context.Context, reviewID uint64) (*model.Review, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "reviews.GetByID.repo")
+	defer span.Finish()
+
 	var review model.Review
 	if err := r.conn.Where("ID=?", reviewID).First(&review).Error; err != nil {
 		return nil, err
@@ -50,7 +54,10 @@ func (r *Repository) GetByID(_ context.Context, reviewID uint64) (*model.Review,
 
 // TODO: reviewed user id
 
-func (r *Repository) GetReviewsByUserID(_ context.Context, userID uint64) (*[]*model.Review, error) {
+func (r *Repository) GetReviewsByUserID(ctx context.Context, userID uint64) (*[]*model.Review, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "reviews.GetReviewsByUserID.repo")
+	defer span.Finish()
+
 	var reviews []*model.Review
 	if err := r.conn.Where("UserID=?", userID).Find(&reviews).Error; err != nil {
 		return nil, err
@@ -58,7 +65,10 @@ func (r *Repository) GetReviewsByUserID(_ context.Context, userID uint64) (*[]*m
 	return &reviews, nil
 }
 
-func (r *Repository) AggregateUserRatingByID(_ context.Context, userID uint64) (float32, error) {
+func (r *Repository) AggregateUserRatingByID(ctx context.Context, userID uint64) (float32, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "reviews.AggregateUserRatingByID.repo")
+	defer span.Finish()
+
 	var rating float32
 	var reviews []model.Review
 
@@ -78,7 +88,10 @@ func (r *Repository) AggregateUserRatingByID(_ context.Context, userID uint64) (
 	return rating, nil
 }
 
-func (r *Repository) Create(_ context.Context, review *model.Review) (*model.Review, error) {
+func (r *Repository) Create(ctx context.Context, review *model.Review) (*model.Review, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "reviews.Create.repo")
+	defer span.Finish()
+
 	if review.UserID == 0 {
 		return nil, repo.ErrUserIDRequired
 	}
@@ -99,6 +112,9 @@ func (r *Repository) Create(_ context.Context, review *model.Review) (*model.Rev
 }
 
 func (r *Repository) Update(ctx context.Context, reviewID uint64, newData *model.Review) (*model.Review, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "reviews.Update.repo")
+	defer span.Finish()
+
 	review, err := r.GetByID(ctx, reviewID)
 	if err != nil {
 		return nil, err
@@ -138,7 +154,10 @@ func (r *Repository) Update(ctx context.Context, reviewID uint64, newData *model
 	return review, nil
 }
 
-func (r *Repository) Delete(_ context.Context, reviewID uint64) error {
+func (r *Repository) Delete(ctx context.Context, reviewID uint64) error {
+	span, _ := opentracing.StartSpanFromContext(ctx, "reviews.Delete.repo")
+	defer span.Finish()
+
 	if err := r.conn.Delete(&model.Review{}, reviewID).Error; err != nil {
 		return err
 	}

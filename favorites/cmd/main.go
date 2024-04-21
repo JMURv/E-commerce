@@ -7,7 +7,10 @@ import (
 	redis "github.com/JMURv/e-commerce/favorites/internal/cache/redis"
 	ctrl "github.com/JMURv/e-commerce/favorites/internal/controller/favorite"
 	hdlr "github.com/JMURv/e-commerce/favorites/internal/handler/grpc"
+	tracing "github.com/JMURv/e-commerce/favorites/internal/metrics/jaeger"
+	metrics "github.com/JMURv/e-commerce/favorites/internal/metrics/prometheus"
 	db "github.com/JMURv/e-commerce/favorites/internal/repository/db"
+
 	//mem "github.com/JMURv/e-commerce/favorites/internal/repository/memory"
 	cfg "github.com/JMURv/e-commerce/favorites/pkg/config"
 	"github.com/JMURv/e-commerce/pkg/discovery"
@@ -19,7 +22,6 @@ import (
 	"syscall"
 	"time"
 
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 
 	pb "github.com/JMURv/e-commerce/api/pb/favorite"
@@ -65,22 +67,24 @@ func main() {
 		}
 	}()
 
+	// Start metrics and tracing
+	metric := metrics.New()
+	trace := tracing.New(serviceName, &conf.Jaeger)
+
 	// Setting up main app
-	broker := kafka.New(conf)
-	cache := redis.New(conf.RedisAddr, conf.RedisPass)
+	broker := kafka.New(&conf.Kafka)
+	cache := redis.New(&conf.Redis)
 	repo := db.New(conf)
 
 	svc := ctrl.New(repo, cache, broker)
 	h := hdlr.New(svc)
 
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%v", port))
-	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
-	}
-
-	srv := grpc.NewServer()
+	srv := metric.ConfigureServerGRPC() // grpc.NewServer()
 	pb.RegisterFavoriteServiceServer(srv, h)
 	reflection.Register(srv)
+
+	// Start http server for prometheus
+	go metric.Start(conf.Port + 1)
 
 	// Graceful shutdown
 	go func() {
@@ -92,6 +96,10 @@ func main() {
 		cancel()
 		broker.Close()
 		cache.Close()
+		metric.Close()
+		if err = trace.Close(); err != nil {
+			log.Printf("Error closing tracer: %v", err)
+		}
 		if err = registry.Deregister(ctx, instanceID, serviceName); err != nil {
 			log.Printf("Error deregistering service: %v", err)
 		}
@@ -100,7 +108,11 @@ func main() {
 	}()
 
 	// Start server
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%v", port))
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
+	}
+
 	log.Printf("%v service is listening", serviceName)
 	srv.Serve(lis)
-
 }

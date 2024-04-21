@@ -1,3 +1,5 @@
+server:
+  mode: "dev"
 port: 50085
 serviceName: "reviews"
 registryAddr: "localhost:8500"
@@ -7,8 +9,19 @@ db:
   user: "postgres"
   password: "794613825Zx!"
   database: "reviews_db"
-redisAddr: "localhost:6379"
-redisPass: ""
+
+redis:
+  addr: "localhost:6379"
+  pass: ""
+
 kafka:
   addrs: [ "localhost:9092" ]
   notificationTopic: "notifications"
+
+jaeger:
+  sampler:
+    type: "const"
+    param: 1
+  reporter:
+    LogSpans: true
+    LocalAgentHostPort: "localhost:6831"

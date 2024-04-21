@@ -8,18 +8,18 @@ import (
 )
 
 type Broker struct {
-	cfg      *conf.Config
+	topic    string
 	producer sarama.AsyncProducer
 }
 
-func New(conf *conf.Config) *Broker {
-	producer, err := sarama.NewAsyncProducer(conf.Kafka.Addrs, nil)
+func New(conf *conf.KafkaConfig) *Broker {
+	producer, err := sarama.NewAsyncProducer(conf.Addrs, nil)
 	if err != nil {
 		log.Fatalf("Error creating Kafka producer: %v", err)
 	}
 
 	return &Broker{
-		cfg:      conf,
+		topic:    conf.NotificationTopic,
 		producer: producer,
 	}
 }
@@ -32,7 +32,7 @@ func (b *Broker) Close() {
 
 func (b *Broker) NewMessageNotification(msgID uint64, msg []byte) error {
 	b.producer.Input() <- &sarama.ProducerMessage{
-		Topic: b.cfg.Kafka.NotificationTopic,
+		Topic: b.topic,
 		Key:   sarama.StringEncoder(strconv.FormatUint(msgID, 10)),
 		Value: sarama.ByteEncoder(msg),
 	}

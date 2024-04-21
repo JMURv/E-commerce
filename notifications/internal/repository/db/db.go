@@ -6,6 +6,7 @@ import (
 	repo "github.com/JMURv/e-commerce/notifications/internal/repository"
 	conf "github.com/JMURv/e-commerce/notifications/pkg/config"
 	"github.com/JMURv/e-commerce/notifications/pkg/model"
+	"github.com/opentracing/opentracing-go"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"log"
@@ -41,7 +42,10 @@ func New(conf *conf.Config) *Repository {
 	return &Repository{conn: conn}
 }
 
-func (r *Repository) ListUserNotifications(_ context.Context, userID uint64) (*[]*model.Notification, error) {
+func (r *Repository) ListUserNotifications(ctx context.Context, userID uint64) (*[]*model.Notification, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "notifications.ListUserNotifications.repo")
+	defer span.Finish()
+
 	var n []*model.Notification
 	if err := r.conn.Where("ReceiverID=?", userID).Find(&n).Error; err != nil {
 		return nil, err
@@ -49,7 +53,10 @@ func (r *Repository) ListUserNotifications(_ context.Context, userID uint64) (*[
 	return &n, nil
 }
 
-func (r *Repository) CreateNotification(_ context.Context, notify *model.Notification) (*model.Notification, error) {
+func (r *Repository) CreateNotification(ctx context.Context, notify *model.Notification) (*model.Notification, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "notifications.CreateNotification.repo")
+	defer span.Finish()
+
 	if notify.Type == "" {
 		return nil, repo.ErrTypeIsRequired
 	}
@@ -75,14 +82,20 @@ func (r *Repository) CreateNotification(_ context.Context, notify *model.Notific
 	return notify, nil
 }
 
-func (r *Repository) DeleteNotification(_ context.Context, notificationID uint64) error {
+func (r *Repository) DeleteNotification(ctx context.Context, notificationID uint64) error {
+	span, _ := opentracing.StartSpanFromContext(ctx, "notifications.DeleteNotification.repo")
+	defer span.Finish()
+
 	if err := r.conn.Delete(&model.Notification{}, notificationID).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
-func (r *Repository) DeleteAllNotifications(_ context.Context, userID uint64) error {
+func (r *Repository) DeleteAllNotifications(ctx context.Context, userID uint64) error {
+	span, _ := opentracing.StartSpanFromContext(ctx, "notifications.DeleteAllNotifications.repo")
+	defer span.Finish()
+
 	if err := r.conn.Where("ReceiverID=?", userID).Delete(&model.Notification{}).Error; err != nil {
 		return err
 	}

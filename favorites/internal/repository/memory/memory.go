@@ -4,6 +4,7 @@ import (
 	"context"
 	repo "github.com/JMURv/e-commerce/favorites/internal/repository"
 	"github.com/JMURv/e-commerce/favorites/pkg/model"
+	"github.com/opentracing/opentracing-go"
 	"sync"
 	"time"
 )
@@ -17,7 +18,10 @@ func New() *Repository {
 	return &Repository{data: map[uint64]*model.Favorite{}}
 }
 
-func (r *Repository) GetAllUserFavorites(_ context.Context, userID uint64) ([]*model.Favorite, error) {
+func (r *Repository) GetAllUserFavorites(ctx context.Context, userID uint64) ([]*model.Favorite, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "favorites.GetAllUserFavorites.repo")
+	defer span.Finish()
+
 	r.RLock()
 	defer r.RUnlock()
 
@@ -30,7 +34,10 @@ func (r *Repository) GetAllUserFavorites(_ context.Context, userID uint64) ([]*m
 	return res, nil
 }
 
-func (r *Repository) GetFavoriteByID(_ context.Context, favoriteID uint64) (*model.Favorite, error) {
+func (r *Repository) GetFavoriteByID(ctx context.Context, favoriteID uint64) (*model.Favorite, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "favorites.GetFavoriteByID.repo")
+	defer span.Finish()
+
 	r.RLock()
 	defer r.RUnlock()
 
@@ -41,7 +48,10 @@ func (r *Repository) GetFavoriteByID(_ context.Context, favoriteID uint64) (*mod
 	}
 }
 
-func (r *Repository) CreateFavorite(_ context.Context, favData *model.Favorite) (*model.Favorite, error) {
+func (r *Repository) CreateFavorite(ctx context.Context, favData *model.Favorite) (*model.Favorite, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "favorites.CreateFavorite.repo")
+	defer span.Finish()
+
 	favData.ID = uint64(time.Now().Unix())
 
 	r.Lock()
@@ -51,7 +61,10 @@ func (r *Repository) CreateFavorite(_ context.Context, favData *model.Favorite) 
 	return favData, nil
 }
 
-func (r *Repository) DeleteFavorite(_ context.Context, favoriteID uint64) error {
+func (r *Repository) DeleteFavorite(ctx context.Context, favoriteID uint64) error {
+	span, _ := opentracing.StartSpanFromContext(ctx, "favorites.DeleteFavorite.repo")
+	defer span.Finish()
+
 	r.Lock()
 	delete(r.data, favoriteID)
 	r.Unlock()
